@@ -4,7 +4,7 @@ export const setting = (key) => game.settings.get(MODULE_ID, key);
 
 export const setSetting = (key, value) => game.settings.set(MODULE_ID, key, value);
 
-export function registerSettings({ onLibrary, onMapButtons, onDetectMode }) {
+export function registerSettings({ onLibrary, onMapButtons, onModes }) {
   const reg = (key, data) => game.settings.register(MODULE_ID, key, data);
   const name = (key) => ({ name: `TRAPS.Settings.${key}.name`, hint: `TRAPS.Settings.${key}.hint` });
 
@@ -41,7 +41,25 @@ export function registerSettings({ onLibrary, onMapButtons, onDetectMode }) {
     choices: { players: "TRAPS.Settings.triggerBy.players", all: "TRAPS.Settings.triggerBy.all" },
     default: "players",
   });
-  reg(SETTINGS.applyDamage, { ...name("applyDamage"), scope: "world", config: true, type: Boolean, default: true });
+  // Розыгрыш срабатывания: кто бросает спасброски и когда наносить урон (переключается и на вкладке сцены).
+  reg(SETTINGS.saveRolls, {
+    ...name("saveRolls"),
+    scope: "world",
+    config: true,
+    type: String,
+    choices: { players: "TRAPS.Settings.saveRolls.players", module: "TRAPS.Settings.saveRolls.module" },
+    default: "players",
+    onChange: onModes,
+  });
+  reg(SETTINGS.damageMode, {
+    ...name("damageMode"),
+    scope: "world",
+    config: true,
+    type: String,
+    choices: { button: "TRAPS.Settings.damageMode.button", auto: "TRAPS.Settings.damageMode.auto" },
+    default: "button",
+    onChange: onModes,
+  });
   reg(SETTINGS.chatMode, {
     ...name("chatMode"),
     scope: "world",
@@ -60,7 +78,7 @@ export function registerSettings({ onLibrary, onMapButtons, onDetectMode }) {
     type: String,
     choices: { gm: "TRAPS.Settings.detectMode.gm", reveal: "TRAPS.Settings.detectMode.reveal" },
     default: "gm",
-    onChange: onDetectMode,
+    onChange: onModes,
   });
   // Кнопки «показать / скрыть» у ловушек на карте — у каждого ведущего свои.
   reg(SETTINGS.mapButtons, { ...name("mapButtons"), scope: "client", config: true, type: Boolean, default: true, onChange: onMapButtons });

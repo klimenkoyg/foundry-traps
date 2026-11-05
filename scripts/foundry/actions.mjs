@@ -202,13 +202,23 @@ export function triggerNow(behavior, tokens) {
   return fireTrap(behavior, { targets: tokens?.length ? tokens : null });
 }
 
-/** Расставленную ловушку — в библиотеку своих (с уроном для 1–4 уровня). */
-export async function saveToLibrary(region, behavior) {
+/** Своя ловушка, из которой поставлена эта (если она ещё есть в «Моих ловушках»). */
+export function sourceCustom(behavior) {
+  const id = behavior.system.trapId;
+  const entry = id?.startsWith("custom-") ? getEntry(id) : null;
+  return entry?.custom ? entry : null;
+}
+
+/**
+ * Расставленную ловушку — в «Мои ловушки» (с уроном для 1–4 уровня).
+ * name — как назвать; asNew — новой, даже если поставлена из своей (иначе своя обновляется).
+ */
+export async function saveToLibrary(region, behavior, { name, asNew = false } = {}) {
   const system = behavior.system.toObject();
   const { width, height } = rectCells(regionBounds(region), region.parent.grid.size);
   const tier = Number(region.getFlag(MODULE_ID, "tier") ?? 1);
-  const id = system.trapId?.startsWith("custom-") && getEntry(system.trapId) ? system.trapId : undefined;
-  const trap = fromBehaviorData(system, { id, name: behavior.name || region.name, width, height, tier });
+  const id = !asNew ? sourceCustom(behavior)?.id : undefined;
+  const trap = fromBehaviorData(system, { id, name: name || behavior.name || region.name, width, height, tier });
   const entry = await saveCustom(trap);
   ui.notifications.info(t("Notify.saved", { name: entry.name }));
   return entry;

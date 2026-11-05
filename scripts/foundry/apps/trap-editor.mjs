@@ -19,6 +19,7 @@ import { DRAG_TYPE, MODULE_ID, SETTINGS, THEME, tpl } from "../constants.mjs";
 import { choices } from "../dnd5e.mjs";
 import { previewFx } from "../fx.mjs";
 import { t } from "../i18n.mjs";
+import { askName } from "../dialogs.mjs";
 import { getEntry, saveCustom } from "../library.mjs";
 import { rectCells } from "../../core/geometry.mjs";
 import { regionBounds } from "../scene.mjs";
@@ -119,7 +120,14 @@ export class TrapEditor extends HandlebarsApplicationMixin(ApplicationV2) {
   }
 
   get isCustom() {
-    return this.source.kind === "library" && this.source.entry.custom;
+    return Boolean(this.ownId);
+  }
+
+  /** Своя ловушка, которую правит окно: из «Моих ловушек» или поставленная из неё на сцену. */
+  get ownId() {
+    if (this.source.kind === "library") return this.source.entry.custom ? this.source.entry.id : null;
+    const id = this.draft?.id;
+    return id?.startsWith("custom-") && getEntry(id)?.custom ? id : null;
   }
 
   get dirty() {
@@ -469,27 +477,33 @@ export class TrapEditor extends HandlebarsApplicationMixin(ApplicationV2) {
     this.close();
   }
 
+  /** Своя — перезаписать под текущим названием; встроенная или со сцены — спросить название. */
   static async #onSaveLibrary() {
-    const own = this.isCustom ? this.source.entry.id : this.isScene && getEntry(this.draft.id)?.custom ? this.draft.id : undefined;
-    await this.#save(own);
+    if (this.ownId) return this.#save(this.ownId, this.draft.name);
+    const answer = await askName({ value: this.draft.name });
+    if (answer) await this.#save(undefined, answer.name);
   }
 
   static async #onSaveCopy() {
-    await this.#save(undefined);
+    const answer = await askName({ value: t("Name.copyOf", { name: this.draft.name }) });
+    if (answer) await this.#save(undefined, answer.name);
   }
 
-  /** В библиотеку — с уроном для 1–4 уровня. id — перезаписать свою; без id — новая. */
-  async #save(id) {
+  /** В «Мои ловушки» — с уроном для 1–4 уровня. id — перезаписать свою; без id — новая. */
+  async #save(id, name = this.draft.name) {
+    this.draft = { ...this.draft, name };
     const trap = unscaleTrap(this.draft, this.tier);
     const entry = await saveCustom({ ...trap, id });
+    const input = this.element?.querySelector('[name="name"]');
+    if (input) input.value = entry.name;
     ui.notifications.info(t("Notify.saved", { name: entry.name }));
     // Окно библиотечной ловушки дальше правит сохранённую: следующее «Сохранить» её перезапишет.
     if (this.source.kind === "library") {
       this.source = { kind: "library", entry };
       this.draft = { ...this.draft, id: entry.id };
       this.initial = foundry.utils.deepClone(this.draft);
-      this.render({ parts: ["preview"] });
     }
+    this.render({ parts: ["preview"] });
   }
 
   static #onPlay() {

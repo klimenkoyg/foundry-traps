@@ -108,8 +108,8 @@ export const ownerIds = (actor) =>
  * Сообщение модуля в чат.
  * audience: "auto" — по настройке «карточка срабатывания»; "gm" — ведущим; массив id — им и ведущим.
  */
-export function postMessage({ content, alias, rolls = [], audience = "auto" }) {
-  const data = { content, speaker: { alias }, flags: { [MODULE_ID]: { card: true } } };
+export function postMessage({ content, alias, rolls = [], audience = "auto", flags = {} }) {
+  const data = { content, speaker: { alias }, flags: { [MODULE_ID]: { card: true, ...flags } } };
   if (rolls.length) data.rolls = rolls;
   if (audience === "gm" || (audience === "auto" && setting(SETTINGS.chatMode) === "gm")) data.whisper = gmIds();
   else if (Array.isArray(audience)) data.whisper = [...new Set([...gmIds(), ...audience])];

@@ -9,7 +9,14 @@
   "TRAPS": {
     "Title": "Trap Library",
     "Controls": {
-      "title": "Trap Library"
+      "title": "Trap Library",
+      "open": "Open Trap Library",
+      "group": "Trap Library: traps",
+      "select": "Select and adjust a trap region",
+      "library": "Trap library",
+      "mine": "My traps",
+      "scene": "Traps on this scene",
+      "mapButtons": "Reveal / hide buttons on traps on the map"
     },
     "Keybinding": {
       "open": "Open the Trap Library"
@@ -187,7 +194,7 @@
       "dragHint": "Click a trap to configure it, or drag it onto the map — it is placed as a hidden region under the cursor.",
       "empty": "Nothing found. Try another search or filter.",
       "custom": "Custom",
-      "deleteCustom": "Remove from library",
+      "deleteCustom": "Remove from My traps",
       "sceneEmpty": "No traps on this scene yet. Drag one from the library onto the map.",
       "noScene": "No scene is open.",
       "searchSelected": "Search with selected tokens",
@@ -201,7 +208,7 @@
       "trigger": "Trigger",
       "triggerHint": "Fires at the selected tokens, or at everyone in the area if none are selected.",
       "attempt": "Try to disarm with the selected token",
-      "save": "Save to library",
+      "save": "To my traps…",
       "delete": "Remove trap from scene",
       "armed": "Armed",
       "disarmed": "Disarmed",
@@ -216,11 +223,27 @@
       "hideAll": "Hide all",
       "revealAllHint": "Reveal every trap on this scene to players",
       "hideAllHint": "Hide every trap on this scene from players",
-      "detectModeLabel": "When a character spots a trap:",
+      "detectModeLabel": "Trap spotted:",
       "detectMode": {
         "reveal": "Reveal right away",
         "gm": "Tell me"
-      }
+      },
+      "saveRollsLabel": "Saves:",
+      "saveRolls": {
+        "players": "Players roll",
+        "module": "Module rolls"
+      },
+      "damageModeLabel": "Damage:",
+      "damageMode": {
+        "button": "On click",
+        "auto": "Right away"
+      },
+      "tabMine": "My traps",
+      "mineEmptyTitle": "Nothing here yet",
+      "mineEmpty": "Traps you configure and save collect here. Open any trap from the library or on the scene, change what you need and press “To my traps…” — the module will ask what to call it.",
+      "toLibrary": "Open the library",
+      "mineHint": "Click a trap to configure it, or drag it onto the map. The pencil renames it.",
+      "renameCustom": "Rename"
     },
     "Hud": {
       "reveal": "“{name}” is hidden from players. Click to reveal.",
@@ -270,7 +293,34 @@
       "told": "Player knows",
       "pan": "Show on map",
       "searchNoneGm": "{name} searches for traps and finds nothing (Perception {value}).",
-      "searchNothingNew": "{name} finds nothing new."
+      "searchNothingNew": "{name} finds nothing new.",
+      "noCheck": "No check",
+      "noCheckWhy": "no saving throw",
+      "cause": {
+        "trigger": "steps on the trap",
+        "area": "in the trap area",
+        "manual": "hit by the trap"
+      },
+      "waitSave": "awaiting a save: {ability}, DC {dc}",
+      "whySave": "{ability} save: {total} vs DC {dc} — {outcome}",
+      "whyAttack": "attack {total} vs AC {ac} — {outcome}",
+      "nat20": "natural 20",
+      "nat1": "natural 1",
+      "halfDamage": "half damage",
+      "noDamage": "no damage",
+      "fullDamage": "full damage",
+      "waiting": "awaiting roll",
+      "willTake": "will take {n} damage",
+      "takes": "takes {n} damage",
+      "ofNominal": "of {n}",
+      "willCondition": "will be: {condition}",
+      "applied": "applied",
+      "rollSave": "{ability} save",
+      "saveFlavor": "{ability} save, DC {dc}",
+      "apply": "Apply",
+      "applyCondition": "Apply",
+      "rollAll": "Roll for everyone",
+      "applyAll": "Apply to all"
     },
     "Notify": {
       "gmOnly": "Only the GM can do this.",
@@ -278,14 +328,15 @@
       "selectToken": "Select a character token.",
       "noScene": "Open a scene first.",
       "placed": "Trap “{name}” placed.",
-      "saved": "Trap “{name}” saved to the library.",
+      "saved": "“{name}” is in My traps.",
       "noActor": "This token has no actor.",
       "notDnd5e": "Trap Library is made for D&D 5e: checks and damage won't work in another system.",
       "updated": "Trap “{name}” updated.",
       "revealedAll": "Traps revealed to players: {n}.",
       "hiddenAll": "Traps hidden from players: {n}.",
       "noticed": "{name} spots the trap “{trap}”. Players don’t see it yet: decide in chat or with the map button.",
-      "otherScene": "This trap is on another scene."
+      "otherScene": "This trap is on another scene.",
+      "renamed": "Renamed: “{name}”."
     },
     "Behavior": {
       "FIELDS": {
@@ -422,10 +473,6 @@
         "name": "Trap volume",
         "hint": "0 — silent."
       },
-      "applyDamage": {
-        "name": "Apply damage automatically",
-        "hint": "Otherwise the chat card only reports the result and the GM applies damage."
-      },
       "chatMode": {
         "name": "Trigger card",
         "hint": "Who sees the trap result in chat.",
@@ -455,6 +502,18 @@
         "hint": "What happens when a Perception check succeeds (passive or a search). Also switchable on the On this scene tab.",
         "reveal": "Reveal it to players on the map right away; whisper the player",
         "gm": "Tell the GM who spotted it; reveal to players by hand"
+      },
+      "saveRolls": {
+        "name": "Who rolls saves against traps",
+        "hint": "Players: each target in the trigger card has a save button for the character’s owner (the GM gets it too, plus “Roll for everyone”). Module: rolls right away. Characters without a player are always rolled by the module.",
+        "players": "Players roll with a button in the card",
+        "module": "The module rolls right away"
+      },
+      "damageMode": {
+        "name": "When to apply trap damage",
+        "hint": "On click: the GM sees in the card who takes how much and presses “Apply”. Right away: damage and conditions apply as soon as the check result is known.",
+        "button": "On the GM’s click in the card",
+        "auto": "Right away once the result is known"
       }
     },
     "Device": {
@@ -637,11 +696,24 @@
       "place": "Place on the map",
       "placeHint": "Placed hidden at the centre of the screen.",
       "apply": "Save trap",
-      "saveNew": "Save to library as your own",
-      "saveOver": "Save in library",
-      "saveCopy": "Save as copy",
+      "saveNew": "To my traps…",
+      "saveOver": "Save",
+      "saveCopy": "Save as new…",
       "play": "Animation",
       "reset": "Reset"
+    },
+    "Name": {
+      "title": "What should this trap be called?",
+      "renameTitle": "New name",
+      "label": "Name",
+      "hint": "This is the trap’s name in My traps and on the map.",
+      "overHint": "This trap was placed from your “{name}”. Update it or save as a new one?",
+      "overwrite": "Update mine",
+      "asNew": "Save as new",
+      "save": "Save",
+      "cancel": "Cancel",
+      "copyOf": "{name} (copy)",
+      "untitled": "My trap"
     }
   }
 }

@@ -1,15 +1,28 @@
 <div class="st-root">
   <nav class="st-tabs" role="tablist">
-    <button type="button" role="tab" data-action="switchTab" data-tab="library" aria-selected="{{isLibrary}}" class="{{#if isLibrary}}is-active{{/if}}">
+    <button type="button" role="tab" data-action="switchTab" data-tab="library" aria-selected="{{#if isLibrary}}true{{else}}false{{/if}}" class="{{#if isLibrary}}is-active{{/if}}">
       <i class="fa-solid fa-book-skull" inert></i> {{localize "TRAPS.App.tabLibrary"}}
     </button>
-    <button type="button" role="tab" data-action="switchTab" data-tab="scene" aria-selected="{{#if isLibrary}}false{{else}}true{{/if}}" class="{{#unless isLibrary}}is-active{{/unless}}">
+    <button type="button" role="tab" data-action="switchTab" data-tab="mine" aria-selected="{{#if isMine}}true{{else}}false{{/if}}" class="{{#if isMine}}is-active{{/if}}">
+      <i class="fa-solid fa-feather-pointed" inert></i> {{localize "TRAPS.App.tabMine"}}
+      {{#if mineCount}}<span class="st-count">{{mineCount}}</span>{{/if}}
+    </button>
+    <button type="button" role="tab" data-action="switchTab" data-tab="scene" aria-selected="{{#if isScene}}true{{else}}false{{/if}}" class="{{#if isScene}}is-active{{/if}}">
       <i class="fa-solid fa-map-location-dot" inert></i> {{localize "TRAPS.App.tabScene"}}
       {{#if sceneCount}}<span class="st-count">{{sceneCount}}</span>{{/if}}
     </button>
   </nav>
 
-  {{#if isLibrary}}
+  {{#if isGrid}}
+  {{#if isMine}}{{#unless entries.length}}
+  <div class="st-mine-empty">
+    <i class="fa-solid fa-feather-pointed" inert></i>
+    <h3>{{localize "TRAPS.App.mineEmptyTitle"}}</h3>
+    <p>{{localize "TRAPS.App.mineEmpty"}}</p>
+    <button type="button" class="st-btn is-primary" data-action="switchTab" data-tab="library"><i class="fa-solid fa-book-skull" inert></i> {{localize "TRAPS.App.toLibrary"}}</button>
+  </div>
+  {{/unless}}{{/if}}
+  {{#if entries.length}}
   <div class="st-toolbar">
     <label class="st-search">
       <i class="fa-solid fa-magnifying-glass" inert></i>
@@ -34,7 +47,7 @@
       </select>
     </label>
   </div>
-  <p class="st-hint"><i class="fa-solid fa-hand-pointer" inert></i> {{localize "TRAPS.App.dragHint"}}</p>
+  <p class="st-hint"><i class="fa-solid fa-hand-pointer" inert></i> {{#if isMine}}{{localize "TRAPS.App.mineHint"}}{{else}}{{localize "TRAPS.App.dragHint"}}{{/if}}</p>
 
   <div class="st-scroll">
     <div class="st-grid">
@@ -44,6 +57,7 @@
     </div>
     <p class="st-empty st-empty-filter" hidden>{{localize "TRAPS.App.empty"}}</p>
   </div>
+  {{/if}}
 
   {{else}}
 
@@ -62,12 +76,16 @@
     {{/if}}
   </div>
   <div class="st-toolbar st-detect-mode">
-    <span id="st-detect-mode-label">{{localize "TRAPS.App.detectModeLabel"}}</span>
-    <div class="st-seg" role="radiogroup" aria-labelledby="st-detect-mode-label">
-      {{#each detectModes}}
-      <label data-tooltip="{{hint}}"><input type="radio" name="detectMode" value="{{value}}" {{#if checked}}checked{{/if}}><span>{{label}}</span></label>
-      {{/each}}
+    {{#each modes}}
+    <div class="st-mode">
+      <span id="st-mode-{{key}}">{{label}}</span>
+      <div class="st-seg" role="radiogroup" aria-labelledby="st-mode-{{key}}">
+        {{#each options}}
+        <label data-tooltip="{{hint}}"><input type="radio" name="{{../key}}" data-setting="{{../key}}" value="{{value}}" {{#if checked}}checked{{/if}}><span>{{label}}</span></label>
+        {{/each}}
+      </div>
     </div>
+    {{/each}}
   </div>
   <div class="st-scroll">
     {{#if scene.traps.length}}

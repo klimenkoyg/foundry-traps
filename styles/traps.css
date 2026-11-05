@@ -1600,3 +1600,224 @@
     animation: none;
   }
 }
+
+/* ---------------------------------------------------------------- карточка розыгрыша */
+
+/* Цель: портрет, имя и «почему» в строку, ниже — итог и кнопки. */
+.ssl-traps-card .st-targets li {
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 3px 8px;
+  padding: 5px 0;
+}
+
+.ssl-traps-card .st-targets li + li {
+  border-top: 1px solid var(--st-line-soft);
+}
+
+.ssl-traps-card .st-target {
+  display: grid;
+  min-width: 0;
+}
+
+.ssl-traps-card .st-target b {
+  max-width: none;
+  line-height: 18px;
+}
+
+.ssl-traps-card .st-why {
+  color: var(--st-ink-2);
+  font-size: 11.5px;
+  line-height: 1.35;
+}
+
+.ssl-traps-card .st-targets li > .st-chips {
+  grid-column: 2;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.ssl-traps-card .st-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 7px;
+  border-radius: 9px;
+  background: var(--st-surface);
+  color: var(--st-ink-2);
+  font-size: 12px;
+  line-height: 20px;
+  white-space: nowrap;
+}
+
+.ssl-traps-card .st-chip.st-dmg {
+  margin: 0;
+  color: color-mix(in srgb, var(--st-bad) 78%, var(--st-ink));
+}
+
+.ssl-traps-card .st-chip.st-cond {
+  margin: 0;
+  color: var(--st-accent);
+}
+
+.ssl-traps-card .st-chip small {
+  color: var(--st-ink-3);
+}
+
+.ssl-traps-card .st-chip.is-good,
+.ssl-traps-card .st-chip.is-applied {
+  color: var(--st-good);
+}
+
+.ssl-traps-card .st-chip.is-wait {
+  color: var(--st-ink-3);
+  font-style: italic;
+}
+
+.ssl-traps-card .st-chip.is-done {
+  opacity: 0.85;
+}
+
+.ssl-traps-card li.is-applied .st-why,
+.ssl-traps-card li.is-clear .st-why {
+  color: var(--st-ink-3);
+}
+
+.ssl-traps-card .st-target-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.ssl-traps-card .st-card-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  width: auto;
+  min-height: 0;
+  margin: 0;
+  padding: 2px 9px;
+  border: 1px solid var(--st-line);
+  border-radius: 6px;
+  background: var(--st-surface);
+  color: var(--st-ink);
+  font: inherit;
+  font-size: 12px;
+  line-height: 18px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.ssl-traps-card .st-card-btn:hover {
+  border-color: var(--st-accent);
+}
+
+.ssl-traps-card .st-card-btn:disabled {
+  opacity: 0.55;
+  cursor: progress;
+}
+
+.ssl-traps-card .st-card-btn.is-roll i {
+  color: var(--st-accent);
+}
+
+.ssl-traps-card .st-card-btn.is-apply i {
+  color: var(--st-bad);
+}
+
+.ssl-traps-card .st-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 5px;
+  margin-top: 7px;
+  padding-top: 7px;
+  border-top: 1px solid var(--st-line-soft);
+}
+
+/* ---------------------------------------------------------------- мои ловушки */
+
+.ssl-traps .st-mine-empty {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  max-width: 46ch;
+  margin: 48px auto;
+  padding: 0 16px;
+  text-align: center;
+  color: var(--st-ink-2);
+}
+
+.ssl-traps .st-mine-empty > i {
+  color: var(--st-accent);
+  font-size: 26px;
+}
+
+.ssl-traps .st-mine-empty h3 {
+  margin: 0;
+  border: 0;
+  color: var(--st-ink);
+  font-family: var(--st-font-display);
+  font-size: 18px;
+}
+
+.ssl-traps .st-mine-empty p {
+  margin: 0 0 6px;
+  line-height: 1.5;
+}
+
+/* Окно «Как назвать ловушку?» */
+.ssl-traps.st-name-dialog {
+  display: grid;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.ssl-traps.st-name-dialog label {
+  display: grid;
+  gap: 4px;
+}
+
+.ssl-traps.st-name-dialog label span {
+  color: var(--st-ink-2);
+  font-size: 12px;
+}
+
+.ssl-traps.st-name-dialog input {
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--st-line);
+  border-radius: 6px;
+  background: var(--st-surface);
+  color: var(--st-ink);
+  font-size: 14px;
+}
+
+.ssl-traps.st-name-dialog input:focus-visible {
+  outline: 2px solid var(--st-accent);
+  outline-offset: 1px;
+}
+
+.ssl-traps.st-name-dialog p {
+  margin: 0;
+  color: var(--st-ink-3);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+/* Свои ловушки: «переименовать» и «удалить» — в нижней строке, чтобы не теснить название. */
+.ssl-traps .st-card footer {
+  align-items: center;
+}
+
+.ssl-traps .st-card-own {
+  display: inline-flex;
+  gap: 2px;
+  margin: -4px -4px -4px auto;
+}
+
+.ssl-traps .st-card-own .st-icon-btn {
+  width: 26px;
+  height: 26px;
+  font-size: 12px;
+}

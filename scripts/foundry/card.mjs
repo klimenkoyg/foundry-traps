@@ -1,0 +1,341 @@
+/* Карточка срабатывания в чате и всё, что с ней делают.
+   Состояние розыгрыша (core/resolve.mjs) лежит во флаге сообщения: у каждой цели видно, почему она
+   под ударом, чем проверялась и что получит. Игрок бросает свой спасбросок кнопкой в карточке,
+   ведущий бросает за отсутствующих и наносит урон. Менять сообщение может только ведущий, поэтому
+   броски игроков приходят ему по сокету модуля, а он дописывает их в карточку. */
+
+import { anyHit, counts, newTarget, nominal, settle, stage, trapSnapshot } from "../core/resolve.mjs";
+import { MODULE_ID, SETTINGS, SOCKET, THEME_ATTR } from "./constants.mjs";
+import {
+  abilityLabel,
+  applyCondition,
+  applyDamage,
+  armorClass,
+  conditionLabel,
+  damageLabel,
+  rollAttack,
+  rollSave,
+  rollSaveVisible,
+  skillLabel,
+} from "./dnd5e.mjs";
+import { esc, t } from "./i18n.mjs";
+import { ownerIds, postMessage } from "./scene.mjs";
+import { setting } from "./settings.mjs";
+
+const FLAG = "resolution";
+
+/* ---------------------------------------------------------------- данные */
+
+const read = (message) => {
+  const state = message?.getFlag?.(MODULE_ID, FLAG) ?? message?.flags?.[MODULE_ID]?.[FLAG];
+  return state ? foundry.utils.deepClone(state) : null;
+};
+
+function tokenDoc(state, id) {
+  const scene = game.scenes?.get?.(state.sceneId) ?? (canvas?.scene?.id === state.sceneId ? canvas.scene : null);
+  return scene?.tokens?.get?.(id) ?? null;
+}
+
+const actorOf = (state, target) => tokenDoc(state, target.id)?.actor ?? game.actors?.get?.(target.actorId) ?? null;
+
+/** Может ли пользователь бросать за эту цель: ведущий или владелец персонажа. */
+function canRoll(state, target, user = game.user) {
+  if (user.isGM) return true;
+  return Boolean(actorOf(state, target)?.testUserPermission?.(user, "OWNER"));
+}
+
+/* ---------------------------------------------------------------- карточка */
+
+function checkLine(trap) {
+  if (trap.mode === "attack") return t("Chat.attack", { bonus: trap.attackBonus });
+  if (trap.mode === "save") return t("Chat.save", { ability: abilityLabel(trap.saveAbility), dc: trap.saveDC });
+  return t("Chat.noCheck");
+}
+
+/** «Почему»: под ударом ли и чем закончилась проверка. */
+function why(state, tg) {
+  const { trap } = state;
+  const cause = t(`Chat.cause.${tg.cause}`);
+  if (!tg.res) return `${cause} · ${t("Chat.waitSave", { ability: abilityLabel(trap.saveAbility), dc: trap.saveDC })}`;
+  if (trap.mode === "attack") {
+    const outcome = t(tg.res.hit ? "Chat.hit" : "Chat.miss");
+    const nat = tg.check?.natural === 20 ? ` (${t("Chat.nat20")})` : tg.check?.natural === 1 ? ` (${t("Chat.nat1")})` : "";
+    return `${cause} · ${t("Chat.whyAttack", { total: tg.check?.total ?? 0, ac: tg.check?.ac ?? 10, outcome })}${nat}`;
+  }
+  if (trap.mode === "save") {
+    const ok = tg.res.success;
+    const effect = ok ? (tg.res.multiplier > 0 ? t("Chat.halfDamage") : t("Chat.noDamage")) : t("Chat.fullDamage");
+    const outcome = `${t(ok ? "Chat.saveOk" : "Chat.saveFail")}${state.parts.length ? `, ${effect}` : ""}`;
+    return `${cause} · ${t("Chat.whySave", { ability: abilityLabel(trap.saveAbility), total: tg.check?.total ?? 0, dc: trap.saveDC, outcome })}`;
+  }
+  return `${cause} · ${t("Chat.noCheckWhy")}`;
+}
+
+/** Что цель получит или получила. */
+function effects(state, tg, st) {
+  const bits = [];
+  if (st === "roll") return `<span class="st-chip is-wait"><i class="fa-solid fa-dice-d20" inert></i> ${esc(t("Chat.waiting"))}</span>`;
+  if (st === "clear") return `<span class="st-chip is-good">${esc(t("Chat.tookNone"))}</span>`;
+  const done = st === "applied";
+  if (state.parts.length && tg.res.multiplier > 0) {
+    const n = nominal(state, tg);
+    const dealt = done && Number.isFinite(tg.dealt) ? tg.dealt : n;
+    const types = [...new Set(state.parts.map((p) => damageLabel(p.type)))].join(", ");
+    const text = done ? t("Chat.takes", { n: dealt }) : t("Chat.willTake", { n });
+    const less = done && Number.isFinite(tg.dealt) && tg.dealt < n ? ` <small>${esc(t("Chat.ofNominal", { n }))}</small>` : "";
+    bits.push(`<span class="st-chip st-dmg${done ? " is-done" : ""}" data-tooltip="${esc(types)}"><b>${esc(text)}</b>${less}</span>`);
+  }
+  if (state.trap.condition && tg.res.condition) {
+    const text = t(done ? "Chat.condition" : "Chat.willCondition", { condition: conditionLabel(state.trap.condition) });
+    bits.push(`<span class="st-chip st-cond${done ? " is-done" : ""}">${esc(text)}</span>`);
+  }
+  if (done) bits.push(`<span class="st-chip is-applied"><i class="fa-solid fa-check" inert></i> ${esc(t("Chat.applied"))}</span>`);
+  return bits.join("");
+}
+
+function targetHtml(state, tg, i) {
+  const st = stage(state, tg);
+  const img = tg.img ? `<img src="${esc(tg.img)}" alt="">` : "";
+  const actions = [];
+  if (st === "roll") {
+    actions.push(`<button type="button" class="st-card-btn is-roll" data-ssl-traps-roll="${i}"><i class="fa-solid fa-dice-d20" inert></i> ${esc(t("Chat.rollSave", { ability: abilityLabel(state.trap.saveAbility) }))}</button>`);
+  }
+  if (st === "ready") {
+    const label = state.parts.length && tg.res.multiplier > 0 ? t("Chat.apply") : t("Chat.applyCondition");
+    actions.push(`<button type="button" class="st-card-btn is-apply" data-ssl-traps-apply="${i}"><i class="fa-solid fa-heart-crack" inert></i> ${esc(label)}</button>`);
+  }
+  return `<li class="is-${st}">${img}<div class="st-target"><b>${esc(tg.name)}</b><small class="st-why">${esc(why(state, tg))}</small></div>
+    <div class="st-chips">${effects(state, tg, st)}${actions.length ? `<span class="st-target-actions">${actions.join("")}</span>` : ""}</div></li>`;
+}
+
+export function cardHtml(state) {
+  const { trap } = state;
+  const sev = t(`Severity.${trap.severity}`);
+  const dmg = state.parts.map((p) => `<span><b>${p.value}</b> ${esc(damageLabel(p.type))} <small>${esc(p.formula)}</small></span>`).join(" + ");
+  const escape = trap.escapeDC && anyHit(state) ? t("Chat.escape", { skill: skillLabel(trap.escapeSkill), dc: trap.escapeDC }) : "";
+  const list = state.targets.length
+    ? `<ul class="st-targets">${state.targets.map((tg, i) => targetHtml(state, tg, i)).join("")}</ul>`
+    : `<p class="st-empty">${t("Chat.noTargets")}</p>`;
+  const c = counts(state);
+  const footer = [];
+  if (c.roll > 0) footer.push(`<button type="button" class="st-card-btn" data-ssl-traps-roll-all><i class="fa-solid fa-dice" inert></i> ${esc(t("Chat.rollAll"))}</button>`);
+  if (c.ready > 1 || (c.ready === 1 && c.roll > 0)) footer.push(`<button type="button" class="st-card-btn is-apply" data-ssl-traps-apply-all><i class="fa-solid fa-heart-crack" inert></i> ${esc(t("Chat.applyAll"))}</button>`);
+  return `<div class="ssl-traps-card" ${THEME_ATTR} data-severity="${trap.severity}">
+  <header><i class="${esc(trap.icon)}" inert></i><div><h3>${esc(state.name)}</h3><small>${esc(sev)}</small></div></header>
+  ${trap.flavor ? `<p class="st-flavor">${esc(trap.flavor)}</p>` : ""}
+  <div class="st-meta"><span>${esc(checkLine(trap))}</span>${dmg ? `<span class="st-damage">${dmg}</span>` : ""}</div>
+  ${escape ? `<p class="st-escape"><i class="fa-solid fa-person-arrow-up-from-line" inert></i> ${esc(escape)}</p>` : ""}
+  ${list}
+  ${footer.length ? `<div class="st-card-actions">${footer.join("")}</div>` : ""}
+</div>`;
+}
+
+/* ---------------------------------------------------------------- ведущий: броски и урон */
+
+/** Нанести урон и наложить состояние одной цели (мутирует state). */
+async function applyTarget(state, i) {
+  const tg = state.targets[i];
+  if (stage(state, tg) !== "ready") return;
+  const actor = actorOf(state, tg);
+  if (!actor) return;
+  if (state.parts.length && tg.res.multiplier > 0) {
+    try {
+      tg.dealt = await applyDamage(actor, state.parts, tg.res.multiplier);
+    } catch (err) {
+      console.warn("ssl_traps | урон не нанесён", err);
+    }
+  }
+  if (state.trap.condition && tg.res.condition) {
+    try {
+      tg.conditioned = await applyCondition(actor, state.trap.condition);
+    } catch (err) {
+      console.warn("ssl_traps | состояние не наложено", err);
+    }
+  }
+  tg.applied = true;
+}
+
+/** Урон «сразу»: применить всем, у кого итог уже есть. */
+async function autoApply(state) {
+  if (state.damage !== "auto") return;
+  for (let i = 0; i < state.targets.length; i++) await applyTarget(state, i);
+}
+
+/** Спасбросок за цель без окна и сообщения — итог сразу в карточке (модуль или «бросить за всех»). */
+async function quietSave(state, i, by) {
+  const tg = state.targets[i];
+  const actor = actorOf(state, tg);
+  const roll = actor ? await rollSave(actor, state.trap.saveAbility, state.trap.saveDC) : null;
+  state.targets[i] = settle(state.trap, tg, { total: roll?.total ?? 0 }, by);
+  return roll;
+}
+
+/** Изменения одного сообщения — по очереди: два броска игроков одновременно не затирают друг друга. */
+const queues = new Map();
+function mutate(messageId, fn) {
+  const prev = queues.get(messageId) ?? Promise.resolve();
+  const next = prev
+    .catch(() => {})
+    .then(async () => {
+      const message = game.messages.get(messageId);
+      const state = read(message);
+      if (!state) return;
+      if ((await fn(state)) === false) return;
+      await message.update({ content: cardHtml(state), [`flags.${MODULE_ID}.${FLAG}`]: state });
+    });
+  queues.set(messageId, next);
+  return next;
+}
+
+/**
+ * Начать розыгрыш (активный ведущий): цели, атаки и спасброски модуля, карточка в чате.
+ * tokens — кто под ударом; trigger — кто наступил; manual — ловушку запустил ведущий.
+ */
+export async function startCard({ scene, trap, name, tokens, trigger, manual, parts, rolls }) {
+  const saves = setting(SETTINGS.saveRolls) === "module" ? "module" : "players";
+  const damage = setting(SETTINGS.damageMode) === "auto" ? "auto" : "button";
+  const snapshot = trapSnapshot(trap);
+  const state = { v: 1, sceneId: scene.id, name, trap: snapshot, parts: parts.map(({ value, type, formula }) => ({ value, type, formula })), targets: [], saves, damage };
+  const allRolls = [...rolls];
+  for (const token of tokens) {
+    const cause = manual ? "manual" : trigger && token.id === trigger.id ? "trigger" : "area";
+    let tg = newTarget({ id: token.id, actorId: token.actor?.id, name: token.name, img: token.texture?.src ?? "", cause });
+    if (snapshot.mode === "attack") {
+      const { roll, natural } = await rollAttack(trap.attackBonus);
+      allRolls.push(roll);
+      tg = settle(snapshot, tg, { total: roll.total, natural, ac: armorClass(token.actor) }, "module");
+    } else if (snapshot.mode === "save") {
+      // Персонажа без игрока (чудовище) всегда бросает модуль.
+      const playerRolls = saves === "players" && ownerIds(token.actor).length > 0;
+      if (!playerRolls) {
+        state.targets.push(tg);
+        const roll = await quietSave(state, state.targets.length - 1, "module");
+        if (roll) allRolls.push(roll);
+        continue;
+      }
+    } else {
+      tg = settle(snapshot, tg);
+    }
+    state.targets.push(tg);
+  }
+  await autoApply(state);
+
+  // Карточка видна всем или только ведущим; бросать свои спасброски — владельцам целей.
+  let audience = "auto";
+  if (setting(SETTINGS.chatMode) === "gm") {
+    const owners = state.targets.filter((tg) => !tg.res).flatMap((tg) => ownerIds(actorOf(state, tg)));
+    audience = owners.length ? [...new Set(owners)] : "gm";
+  }
+  return postMessage({ alias: name, rolls: allRolls, content: cardHtml(state), audience, flags: { [FLAG]: state } });
+}
+
+/** Игрок прислал свой спасбросок. Принимает только активный ведущий. */
+async function receiveSave({ messageId, index, total, userId }) {
+  if (!game.user.isActiveGM) return;
+  const user = game.users.get(userId);
+  await mutate(messageId, async (state) => {
+    const tg = state.targets[index];
+    if (!tg || stage(state, tg) !== "roll" || !user || !canRoll(state, tg, user)) return false;
+    state.targets[index] = settle(state.trap, tg, { total: Number(total) || 0 }, user.isGM ? "gm" : "player");
+    await autoApply(state);
+  });
+}
+
+export function registerCardSocket() {
+  game.socket.on(SOCKET, (payload) => {
+    if (payload?.action === "trapSave") receiveSave(payload).catch((err) => console.warn("ssl_traps | спасбросок игрока", err));
+  });
+}
+
+/* ---------------------------------------------------------------- кнопки в карточке */
+
+async function onRoll(message, index) {
+  const state = read(message);
+  const tg = state?.targets[index];
+  if (!tg || stage(state, tg) !== "roll" || !canRoll(state, tg)) return;
+  const actor = actorOf(state, tg);
+  if (!actor) return;
+  const roll = await rollSaveVisible(actor, state.trap.saveAbility, state.trap.saveDC);
+  if (!roll) return;
+  if (game.user.isGM) {
+    await mutate(message.id, async (s) => {
+      if (stage(s, s.targets[index]) !== "roll") return false;
+      s.targets[index] = settle(s.trap, s.targets[index], { total: roll.total }, "gm");
+      await autoApply(s);
+    });
+  } else {
+    game.socket.emit(SOCKET, { action: "trapSave", messageId: message.id, index, total: roll.total, userId: game.user.id });
+  }
+}
+
+function onRollAll(message) {
+  return mutate(message.id, async (state) => {
+    let any = false;
+    for (let i = 0; i < state.targets.length; i++) {
+      if (stage(state, state.targets[i]) !== "roll") continue;
+      await quietSave(state, i, "gm");
+      any = true;
+    }
+    if (!any) return false;
+    await autoApply(state);
+  });
+}
+
+function onApply(message, index) {
+  return mutate(message.id, async (state) => {
+    if (stage(state, state.targets[index]) !== "ready") return false;
+    await applyTarget(state, index);
+  });
+}
+
+function onApplyAll(message) {
+  return mutate(message.id, async (state) => {
+    let any = false;
+    for (let i = 0; i < state.targets.length; i++) {
+      if (stage(state, state.targets[i]) !== "ready") continue;
+      await applyTarget(state, i);
+      any = true;
+    }
+    return any ? undefined : false;
+  });
+}
+
+function bind(el, fn) {
+  if (el.dataset.bound) return;
+  el.dataset.bound = "1";
+  el.addEventListener("click", async (event) => {
+    event.preventDefault();
+    el.disabled = true;
+    try {
+      await fn();
+    } catch (err) {
+      console.error("ssl_traps | кнопка карточки", err);
+    } finally {
+      el.disabled = false;
+    }
+  });
+}
+
+/** Хук renderChatMessageHTML: кнопки — только тем, кому они нужны. */
+export function onRenderCard(message, html) {
+  const root = html instanceof HTMLElement ? html : html?.[0];
+  const state = read(message);
+  if (!root?.querySelectorAll || !state) return;
+  for (const el of root.querySelectorAll("[data-ssl-traps-roll]")) {
+    const index = Number(el.dataset.sslTrapsRoll);
+    if (!canRoll(state, state.targets[index] ?? {})) el.remove();
+    else bind(el, () => onRoll(message, index));
+  }
+  for (const el of root.querySelectorAll("[data-ssl-traps-apply], [data-ssl-traps-apply-all], [data-ssl-traps-roll-all]")) {
+    if (!game.user.isGM) {
+      el.remove();
+      continue;
+    }
+    if (el.hasAttribute("data-ssl-traps-apply")) bind(el, () => onApply(message, Number(el.dataset.sslTrapsApply)));
+    else if (el.hasAttribute("data-ssl-traps-apply-all")) bind(el, () => onApplyAll(message));
+    else bind(el, () => onRollAll(message));
+  }
+  // Пустые ряды кнопок (у игрока) не оставляем.
+  for (const box of root.querySelectorAll(".st-target-actions, .st-card-actions")) if (!box.children.length) box.remove();
+}
+

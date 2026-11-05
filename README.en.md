@@ -22,14 +22,34 @@ https://github.com/klimenkoyg/foundry-traps/releases/latest/download/module.json
 
 ## How to use
 
-1. The skull button on the token controls opens the **Trap Library** (GM only).
+1. The left Foundry toolbar has its own **Trap Library: traps** group with a skull (GM only). It
+   works on the regions layer: trap outlines are visible and a region can be moved or redrawn. The
+   group has Library, My traps and Traps on this scene (the window opens on that tab) and a toggle
+   for the reveal / hide buttons on traps on the map. For quick access there's also a skull button
+   on the token controls, and you can bind a key in the controls settings.
 2. On the **Library** tab, pick the party level and drag a trap onto the map. It becomes a hidden
    region under the cursor; players don't see it. Click a trap to configure it first.
 3. A player character steps in — movement holds while the effect plays; a pit, bear trap, net or
-   sleep gas stops it altogether. Saves or an attack are rolled, damage and conditions are applied,
-   a card goes to chat. A triggered trap gets a marker on everyone's map; a one-shot trap switches off.
-4. The **On this scene** tab lists the scene's traps: show on map, trigger by hand, try to disarm
-   with the selected token, arm or disarm, reveal to players, configure, save to library, remove.
+   sleep gas stops it altogether. A trigger card goes to chat: who is hit, how they're checked and
+   what they take (see “Triggering” below). A triggered trap gets a marker on everyone's map; a
+   one-shot trap switches off.
+4. The **My traps** tab holds the traps you configured and saved (see below).
+5. The **On this scene** tab lists the scene's traps: show on map, trigger by hand, try to disarm
+   with the selected token, arm or disarm, reveal to players, configure, save to My traps, remove.
+
+### My traps
+
+Any trap — from the library or already on the scene — can be changed and saved as your own. When
+saving, the module asks **what to call it** (the current name is filled in). Your traps live on
+their own My traps tab with the same search and filters: configure them, drag them onto the map,
+rename them (the pencil) or delete them. Their damage is stored for levels 1–4 and rescaled to the
+party level, like the built-in ones.
+
+- In the configuration window of a built-in trap: “To my traps…”; of your own: “Save” (under the
+  current name) and “Save as new…”.
+- From the scene: the book button next to the trap. If the trap was placed from one of yours, the
+  module offers “Update mine” or “Save as new”.
+- Your traps are stored in the world (a module setting), shared by every GM of that world.
 
 ## Configuring a trap
 
@@ -54,8 +74,8 @@ numbers follow.
 
 Below are all of the trap's numbers: DCs, damage, condition, what it takes to escape, area size,
 animation, sound and texts. On the right is the card, updating as you go. Place the configured
-trap on the map (with the button, or by dragging the card), save it to the library as your own, or,
-for a trap on the scene, save it straight into the region.
+trap on the map (with the button, or by dragging the card), save it to My traps, or, for a trap
+on the scene, save it straight into the region.
 
 **Area size** is width and height in squares, 1 to 12 each: a square, a 1×4 corridor for a
 boulder or a blade, a 3×1 strip for a volley. The illustration follows the shape: the tripwire,
@@ -70,6 +90,27 @@ Hidden Pit, Spiked Pit, Bear Trap, Poison Darts, Arrow Volley, Scything Blade, F
 Collapsing Roof, Rolling Boulder, Fire Jet, Acid Spray, Poison Gas, Sleep Gas, Lightning Rune,
 Frost Rune, Thunder Plate, Withering Sigil and Alarm Plate. The numbers are for levels 1–4; at
 5–10, 11–16 and 17–20 damage scales with the SRD 5.1 severity table, DCs stay as written.
+
+## Triggering
+
+The chat card shows every target: why it's hit (“steps on the trap”, “in the trap area”), how it
+was checked and what it takes — for example, “Dex save: 8 vs DC 13 — failure, full damage · will
+take 9 damage · will be: Prone”. Damage is rolled once for everyone.
+
+Two switches, in the module settings and right on the On this scene tab:
+
+- **Saves: players roll** (default) — each target in the card has a “… save” button, visible to the
+  character's owner and the GM; the player rolls with the dnd5e dialog (advantage, bonuses) and the
+  result lands in the card. For absent players the GM presses “Roll for everyone”. Characters
+  without a player (monsters) are rolled by the module. **Module rolls** — everything is rolled at
+  once, as before.
+- **Damage: on click** (default) — the GM sees who takes how much and presses “Apply” on a target or
+  “Apply to all”; damage goes through resistances, the condition is applied, and the card keeps
+  “takes N damage · applied”. **Right away** — damage and conditions apply as soon as the check
+  result is known.
+
+The trap's attack against AC is rolled by the module: it's the trap's own roll. A trap with no
+check says “no saving throw” and how much each target takes.
 
 ## Spotting and disarming
 
@@ -134,8 +175,8 @@ The GM decides whether players see a trap — with one click from three places:
 ## Settings
 
 Animations (JB2A if Sequencer is installed, or built-in; built-in only; none), volume, who sets
-traps off (player characters only by default, or everyone), automatic damage, who sees the trigger
-card, passive Perception, spot only in line of sight, when a character spots a
+traps off (player characters only by default, or everyone), who rolls saves (players or the module),
+when damage applies (on the GM's click or right away), who sees the trigger card, passive Perception, spot only in line of sight, when a character spots a
 trap (tell the GM or reveal right away), trap buttons on the map (per GM).
 
 ## For macros

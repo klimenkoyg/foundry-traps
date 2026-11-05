@@ -13,14 +13,32 @@ function toast(level, message) {
   setTimeout(() => el.remove(), 4000);
 }
 
-function chat(data) {
+const messageEls = new Map();
+function paintMessage(message, el) {
+  const whisper = message.whisper?.length ? ' <span class="whisper">шёпот</span>' : "";
+  el.innerHTML = `<header>${message.speaker?.alias ?? ""}${whisper}</header>${message.content ?? ""}`;
+  // Как Foundry: модули дорисовывают сообщение в хуке.
+  Hooks.callAll("renderChatMessageHTML", message, el);
+}
+function chat(message) {
   const el = document.createElement("div");
   el.className = "msg";
-  const whisper = data.whisper?.length ? ' <span class="whisper">шёпот</span>' : "";
-  el.innerHTML = `<header>${data.speaker?.alias ?? ""}${whisper}</header>${data.content ?? ""}`;
+  el.dataset.messageId = message.id;
+  messageEls.set(message.id, el);
   $("#chat-log").prepend(el);
-  // Как Foundry: модули дорисовывают сообщение в хуке.
-  Hooks.callAll("renderChatMessageHTML", data, el);
+  paintMessage(message, el);
+}
+/** Сообщение обновили (message.update) — перерисовать, как Foundry. */
+function rerender(message) {
+  const el = messageEls.get(message.id);
+  if (el) paintMessage(message, el);
+}
+/** Глазами игрока или ведущего — сообщения перерисовываются под нового зрителя. */
+function rerenderAll() {
+  for (const [id, el] of messageEls) {
+    const message = game.messages.get(id);
+    if (message) paintMessage(message, el);
+  }
 }
 
 function renderParty() {
@@ -33,7 +51,7 @@ function renderParty() {
     .join("");
 }
 
-window.__harness = { toast, chat, onWorldChange: renderParty };
+window.__harness = { toast, chat, rerender, onWorldChange: renderParty };
 
 game.i18n.translations = await (await fetch(`/lang/${game.i18n.lang}.json`, { cache: "no-store" })).json();
 await import("/scripts/main.mjs");
@@ -320,16 +338,53 @@ map.addEventListener("drop", (event) => {
   Hooks.call("dropCanvasData", canvas, { ...data, ...toScene(event) });
 });
 
-/* ---------- панель ---------- */
+/* ---------- левая панель, как в Foundry v13: группы и их инструменты из getSceneControlButtons ---------- */
+let activeGroup = "tokens";
+function sceneControls() {
+  const controls = {
+    tokens: { name: "tokens", title: "Токены", icon: "fa-solid fa-user-large", order: 1, layer: "tokens", activeTool: "select", tools: { select: { name: "select", title: "Выбрать токены", icon: "fa-solid fa-expand", order: 0 } } },
+    regions: { name: "regions", title: "Регионы", icon: "fa-solid fa-vector-square", order: 8, layer: "regions", activeTool: "select", tools: { select: { name: "select", title: "Выбрать регионы", icon: "fa-solid fa-expand", order: 0 } } },
+  };
+  if (game.user.isGM) Hooks.callAll("getSceneControlButtons", controls);
+  return controls;
+}
+function renderControls() {
+  const controls = sceneControls();
+  const groups = Object.values(controls).sort((a, b) => a.order - b.order);
+  if (!controls[activeGroup]) activeGroup = "tokens";
+  const group = controls[activeGroup];
+  const tools = Object.values(group.tools).sort((a, b) => a.order - b.order);
+  const btn = (x, attrs, active) => `<button type="button" ${attrs} class="${active ? "is-active" : ""}" title="${game.i18n.localize(x.title)}" aria-label="${game.i18n.localize(x.title)}"><i class="${x.icon}"></i></button>`;
+  $("#controls").innerHTML = `<menu class="groups">${groups.map((g) => `<li>${btn(g, `data-group="${g.name}"`, g.name === activeGroup)}</li>`).join("")}</menu>
+    <menu class="tools">${tools.map((x) => `<li>${btn(x, `data-tool="${x.name}"`, x.toggle ? x.active : !x.button && x.name === group.activeTool)}</li>`).join("")}</menu>`;
+  $("#controls").dataset.layer = group.layer;
+}
+$("#controls").addEventListener("click", (event) => {
+  const g = event.target.closest("[data-group]");
+  if (g) {
+    activeGroup = g.dataset.group;
+    toast("info", `Слой: ${game.i18n.localize(sceneControls()[activeGroup].title)}`);
+    return renderControls();
+  }
+  const el = event.target.closest("[data-tool]");
+  if (!el) return;
+  const tool = sceneControls()[activeGroup].tools[el.dataset.tool];
+  if (tool?.toggle) tool.onChange?.(event, !tool.active);
+  else if (tool?.button) tool.onChange?.(event, true);
+  setTimeout(renderControls, 50);
+});
+window.ui.controls = { render: () => renderControls() };
+renderControls();
+
 $("#open").addEventListener("click", () => {
   if (window.__mock.playerView) window.__harness.setView(false);
-  const controls = { tokens: { tools: {} } };
-  Hooks.callAll("getSceneControlButtons", controls);
-  controls.tokens.tools.sslTraps.onChange();
+  sceneControls().tokens.tools.sslTraps.onChange();
 });
 $("#reset").addEventListener("click", reset);
 function setView(player) {
   window.__mock.setPlayerView(player);
+  renderControls();
+  rerenderAll();
   document.body.classList.toggle("is-player", player);
   $("#view").innerHTML = player
     ? '<i class="fa-solid fa-crown"></i> Глазами ведущего'

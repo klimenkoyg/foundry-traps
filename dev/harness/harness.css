@@ -37,3 +37,11 @@ body.is-player #hud { display: none; }
 #player-note { display: none; position: absolute; left: 12px; bottom: 12px; margin: 0; padding: 6px 12px; border-radius: 6px; background: rgba(20, 16, 12, 0.85); border: 1px solid #463e35; color: #d6c9b3; font-size: 13px; pointer-events: none; }
 body.is-player #player-note { display: block; }
 body.is-player #windows { display: none; }
+/* Левая панель, как в Foundry v13 */
+#controls { position: absolute; left: 8px; top: 8px; z-index: 5; display: flex; gap: 6px; align-items: flex-start; pointer-events: auto; }
+#controls menu { display: grid; gap: 4px; margin: 0; padding: 4px; list-style: none; background: rgba(20, 16, 12, 0.85); border: 1px solid #463e35; border-radius: 8px; }
+#controls button { display: grid; place-items: center; width: 34px; height: 34px; padding: 0; border: 1px solid transparent; border-radius: 6px; background: none; color: #c2b6a5; font-size: 15px; cursor: pointer; }
+#controls button:hover { border-color: #d9a441; color: #f4ecde; }
+#controls button.is-active { background: #3a2f22; border-color: #d9a441; color: #f0d79c; }
+body.is-player #controls { display: none; }
+#map { padding-left: 0; }

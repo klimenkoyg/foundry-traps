@@ -1,6 +1,8 @@
 /* Западня · Trap Library — ловушки с анимациями для D&D 5e в Foundry VTT v13–v14. */
 
 import { checkPassive, placeTrap } from "./foundry/actions.mjs";
+import { onRenderCard, registerCardSocket } from "./foundry/card.mjs";
+import { addSceneControls, refreshSceneControls } from "./foundry/controls.mjs";
 import { onRenderChatMessage, syncChatButtons } from "./foundry/chat.mjs";
 import { TrapApp } from "./foundry/apps/trap-app.mjs";
 import { registerBehavior } from "./foundry/behavior.mjs";
@@ -23,8 +25,9 @@ Hooks.once("init", () => {
     onMapButtons: () => {
       refreshHud();
       refreshMarkers({ animate: false });
+      refreshSceneControls();
     },
-    onDetectMode: () => TrapApp.refresh(),
+    onModes: () => TrapApp.refresh(),
   });
   registerBehavior();
   game.keybindings.register(MODULE_ID, "open", {
@@ -41,6 +44,7 @@ Hooks.once("init", () => {
 
 Hooks.once("ready", () => {
   registerFxSocket();
+  registerCardSocket();
   if (game.user.isGM && !isDnd5e()) ui.notifications.warn(t("Notify.notDnd5e"));
   game.modules.get(MODULE_ID).api = {
     /** Окно ведущего: open("scene") — сразу на вкладке сцены. */
@@ -60,18 +64,8 @@ Hooks.once("ready", () => {
   };
 });
 
-// Кнопка на панели токенов (v13+: объект инструментов; v12: массив).
-Hooks.on("getSceneControlButtons", (controls) => {
-  if (!game.user.isGM) return;
-  const tool = { name: "sslTraps", title: "TRAPS.Controls.title", icon: "fa-solid fa-skull-crossbones", button: true, visible: true };
-  if (Array.isArray(controls)) {
-    controls.find((c) => c.name === "token")?.tools.push({ ...tool, onClick: open });
-    return;
-  }
-  const tokens = controls.tokens;
-  if (!tokens?.tools) return;
-  tokens.tools.sslTraps = { ...tool, order: Object.keys(tokens.tools).length, onChange: open };
-});
+// Левая панель: своя группа «Ловушки» (на слое регионов) и кнопка на панели токенов.
+Hooks.on("getSceneControlButtons", addSceneControls);
 
 // Ловушку перетащили из окна на карту.
 Hooks.on("dropCanvasData", (cnv, data) => {
@@ -120,3 +114,5 @@ Hooks.on("canvasPan", () => syncHudZoom());
 
 // Кнопка ведущего «показать игрокам / скрыть» в сообщении о замеченной ловушке.
 Hooks.on("renderChatMessageHTML", onRenderChatMessage);
+// Карточка срабатывания: спасброски игроков и кнопки ведущего «нанести».
+Hooks.on("renderChatMessageHTML", onRenderCard);

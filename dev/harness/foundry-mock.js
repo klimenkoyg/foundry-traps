@@ -92,7 +92,8 @@
         attributes: { ac: { value: ac }, hp: { value: hp, max: hp, temp: 0 } },
         abilities: { str: { mod: 1 }, dex: { mod: dex, save: { value: dex } }, con: { mod: con, save: { value: con } }, int: { mod: 0 }, wis: { mod: 1 }, cha: { mod: 0 } },
       },
-      testUserPermission: (user) => user.isGM || owners.includes(user.id),
+      // «Глазами игрока» стенд смотрит за конкретного игрока (gm.playerAs) — он и владелец.
+      testUserPermission: (user) => user.isGM || owners.includes(user.playerAs ?? user.id),
       async rollSavingThrow({ ability }, dialog, message) {
         const r = await roll(actor.system.abilities[ability]?.save?.value ?? actor.system.abilities[ability]?.mod ?? 0);
         if (message?.create) await r.toMessage({ flavor: `${name}: спасбросок ${ability}` });
@@ -371,7 +372,17 @@
     system: { id: "dnd5e" },
     release: { generation: 14 },
     keybindings: { register() {} },
-    socket: { on() {}, emit() {} },
+    // В Foundry отправитель своё сообщение не получает. На стенде ведущий и игрок — один браузер:
+    // глазами игрока отправленное доходит до «ведущего» (до этого же окна), глазами ведущего — нет.
+    socket: {
+      _on: new Map(),
+      on(name, fn) { (this._on.get(name) ?? this._on.set(name, []).get(name)).push(fn); },
+      emit(name, data) {
+        if (gm.isGM) return;
+        for (const fn of this._on.get(name) ?? []) setTimeout(() => fn(clone(data)), 30);
+      },
+    },
+    messages: { get: (id) => messages.get(id) ?? null },
     modules: { get: (id) => (id === MODULE ? (game._module ??= { id, active: true }) : null) },
     i18n: {
       lang: params.get("lang") ?? "ru",
@@ -384,8 +395,25 @@
   window.ui = {
     notifications: Object.fromEntries(["info", "warn", "error"].map((level) => [level, (msg) => window.__harness?.toast?.(level, msg)])),
   };
+  /** Сообщения чата: как в Foundry — с флагами и update(), после которого сообщение перерисовывается. */
+  const messages = new Map();
   window.ChatMessage = {
-    create: async (data) => { window.__harness?.chat?.(data); return { id: rid() }; },
+    create: async (data) => {
+      const message = {
+        id: rid(),
+        ...clone({ ...data, rolls: undefined }),
+        flags: clone(data.flags ?? {}),
+        getFlag(ns, key) { return message.flags?.[ns]?.[key]; },
+        async update(change) {
+          applyUpdate(message, change);
+          window.__harness?.rerender?.(message);
+          return message;
+        },
+      };
+      messages.set(message.id, message);
+      window.__harness?.chat?.(message);
+      return message;
+    },
     getSpeaker: ({ actor } = {}) => ({ alias: actor?.name }),
   };
 
@@ -533,6 +561,36 @@
     };
 
   const DialogV2 = {
+    /** Как DialogV2.wait: кнопки с callback(event, button) — button.form есть; закрыли — null. */
+    async wait({ window: win, content, buttons = [] }) {
+      return new Promise((resolve) => {
+        const back = document.createElement("div");
+        back.className = "mock-dialog";
+        back.innerHTML = `<form><h3>${win?.title ?? ""}</h3><div>${content ?? ""}</div><footer>${buttons.map((b, i) => `<button type="button" data-i="${i}"${b.default ? " data-default" : ""}><i class="${b.icon ?? ""}"></i> ${b.label}</button>`).join("")}</footer></form>`;
+        const form = back.querySelector("form");
+        const finish = (i, event) => {
+          const b = buttons[i];
+          const el = form.querySelector(`[data-i="${i}"]`);
+          back.remove();
+          resolve(b?.callback ? b.callback(event, el) : b?.action ?? null);
+        };
+        back.addEventListener("click", (e) => {
+          const el = e.target.closest("button[data-i]");
+          if (el) finish(Number(el.dataset.i), e);
+          else if (e.target === back) { back.remove(); resolve(null); }
+        });
+        form.addEventListener("submit", (e) => {
+          e.preventDefault();
+          finish(Math.max(0, buttons.findIndex((b) => b.default)), e);
+        });
+        form.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") { e.preventDefault(); finish(Math.max(0, buttons.findIndex((b) => b.default)), e); }
+          if (e.key === "Escape") { back.remove(); resolve(null); }
+        });
+        document.body.append(back);
+        form.querySelector("[autofocus]")?.focus();
+      });
+    },
     async confirm({ window: win, content }) {
       return new Promise((resolve) => {
         const back = document.createElement("div");
@@ -586,6 +644,7 @@
     /** Смотреть на карту как игрок: метки рисуются для игрока, заливка областей пропадает. */
     setPlayerView(on) {
       gm.isGM = !on;
+      gm.playerAs = on ? "u-yura" : undefined;
       Hooks.callAll("canvasTearDown", canvas);
       Hooks.callAll("canvasReady", canvas);
     },

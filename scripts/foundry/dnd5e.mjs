@@ -88,6 +88,23 @@ export async function rollSave(actor, ability, dc) {
   return new Roll("1d20 + @mod", { mod }).evaluate();
 }
 
+/**
+ * Спасбросок, который бросает сам игрок (или ведущий за него): с окном dnd5e (преимущество,
+ * бонусы) и своим сообщением в чате — кубики видят все. → Roll или null (окно закрыли).
+ */
+export async function rollSaveVisible(actor, ability, dc) {
+  try {
+    const rolls = await actor.rollSavingThrow({ ability, target: dc }, { configure: true }, { create: true });
+    return rolls?.[0] ?? null;
+  } catch (err) {
+    console.warn("ssl_traps | спасбросок dnd5e не удался, бросаю сам", err);
+  }
+  const mod = Number(actor?.system?.abilities?.[ability]?.save?.value ?? actor?.system?.abilities?.[ability]?.mod ?? 0);
+  const roll = await new Roll("1d20 + @mod", { mod }).evaluate();
+  await roll.toMessage({ speaker: ChatMessage.getSpeaker({ actor }), flavor: t("Chat.saveFlavor", { ability: abilityLabel(ability), dc }) });
+  return roll;
+}
+
 /** Атака ловушки → { roll, natural }. */
 export async function rollAttack(bonus) {
   const roll = await new Roll("1d20 + @bonus", { bonus }).evaluate();

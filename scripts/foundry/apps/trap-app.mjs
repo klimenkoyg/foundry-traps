@@ -1,12 +1,14 @@
 /* Окно ведущего: библиотека ловушек (тащить на карту) и ловушки открытой сцены. */
 
 import { rectCells } from "../../core/geometry.mjs";
+import { DAMAGE_MODES, SAVE_ROLLS } from "../../core/resolve.mjs";
 import { DAMAGE_TYPES, DETECT_MODES, SEVERITIES, TIERS, filterTraps, scaleTrap } from "../../core/trap.mjs";
 import {
   attemptDisarm,
   noticedBy,
   saveToLibrary,
   searchWith,
+  sourceCustom,
   setArmed,
   setAllRevealed,
   setRevealed,
@@ -15,9 +17,10 @@ import {
 import { DRAG_TYPE, SETTINGS, THEME, tpl } from "../constants.mjs";
 import { damageLabel } from "../dnd5e.mjs";
 import { t } from "../i18n.mjs";
-import { deleteCustom, getEntry, listEntries } from "../library.mjs";
+import { deleteCustom, getEntry, listEntries, saveCustom } from "../library.mjs";
 import { isRevealed, regionBounds, sceneTraps } from "../scene.mjs";
 import { setSetting, setting } from "../settings.mjs";
+import { askName } from "../dialogs.mjs";
 import { stats } from "../summary.mjs";
 import { TrapEditor } from "./trap-editor.mjs";
 
@@ -48,6 +51,7 @@ export class TrapApp extends HandlebarsApplicationMixin(ApplicationV2) {
       saveTrap: TrapApp.#onSave,
       deleteTrap: TrapApp.#onDelete,
       deleteCustom: TrapApp.#onDeleteCustom,
+      renameCustom: TrapApp.#onRenameCustom,
       search: TrapApp.#onSearch,
     },
   };
@@ -92,7 +96,10 @@ export class TrapApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
   async _prepareContext() {
     const tier = Number(setting(SETTINGS.tier)) || 1;
-    const entries = listEntries().map((e) => {
+    const all = listEntries();
+    const mineCount = all.filter((e) => e.custom).length;
+    // «Библиотека» — встроенные ловушки, «Мои ловушки» — сохранённые ведущим.
+    const entries = all.filter((e) => (this._tab === "mine" ? e.custom : !e.custom)).map((e) => {
       const trap = scaleTrap(e.trap, tier);
       return {
         id: e.id,
@@ -138,6 +145,10 @@ export class TrapApp extends HandlebarsApplicationMixin(ApplicationV2) {
     return {
       tab: this._tab,
       isLibrary: this._tab === "library",
+      isMine: this._tab === "mine",
+      isScene: this._tab === "scene",
+      isGrid: this._tab !== "scene",
+      mineCount,
       filter: this._filter,
       tiers: TIERS.map((n) => ({ value: n, label: t(`Tier.${n}`), selected: n === tier })),
       severities: SEVERITIES.map((s) => ({ value: s, label: t(`Severity.${s}`), selected: s === this._filter.severity })),
@@ -147,7 +158,16 @@ export class TrapApp extends HandlebarsApplicationMixin(ApplicationV2) {
       scene: scene ? { name: scene.name, traps, anyHidden: traps.some((x) => !x.visible), anyShown: traps.some((x) => x.visible) } : null,
       sceneCount: traps.length,
       searchHint: t("App.searchSelectedHint"),
-      detectModes: DETECT_MODES.map((m) => ({ value: m, label: t(`App.detectMode.${m}`), hint: t(`Settings.detectMode.${m}`), checked: m === setting(SETTINGS.detectMode) })),
+      // Переключатели розыгрыша — общие настройки мира прямо на вкладке сцены.
+      modes: [
+        ["detectMode", DETECT_MODES],
+        ["saveRolls", SAVE_ROLLS],
+        ["damageMode", DAMAGE_MODES],
+      ].map(([key, values]) => ({
+        key,
+        label: t(`App.${key}Label`),
+        options: values.map((m) => ({ value: m, label: t(`App.${key}.${m}`), hint: t(`Settings.${key}.${m}`), checked: m === setting(SETTINGS[key]) })),
+      })),
     };
   }
 
@@ -155,8 +175,8 @@ export class TrapApp extends HandlebarsApplicationMixin(ApplicationV2) {
     super._onRender?.(context, options);
     const root = this.element;
     // Что делать с замеченной ловушкой — общая настройка мира, переключается прямо здесь.
-    for (const el of root.querySelectorAll('input[name="detectMode"]')) {
-      el.addEventListener("change", () => el.checked && setSetting(SETTINGS.detectMode, el.value));
+    for (const el of root.querySelectorAll("input[data-setting]")) {
+      el.addEventListener("change", () => el.checked && setSetting(SETTINGS[el.dataset.setting], el.value));
     }
     // Фильтры библиотеки — без перерисовки: прячем карточки, фокус остаётся в поле поиска.
     for (const el of root.querySelectorAll("[data-filter]")) {
@@ -268,9 +288,24 @@ export class TrapApp extends HandlebarsApplicationMixin(ApplicationV2) {
     await attemptDisarm(found.region, found.behavior, token);
   }
 
+  /** Ловушку со сцены — в «Мои ловушки»: спросить название; поставленную из своей — обновить или новой. */
   static async #onSave(event, target) {
     const found = this.#row(target);
-    if (found) await saveToLibrary(found.region, found.behavior);
+    if (!found) return;
+    const own = sourceCustom(found.behavior);
+    const answer = await askName({ value: found.behavior.name || found.region.name, overwrite: own?.name ?? null });
+    if (!answer) return;
+    await saveToLibrary(found.region, found.behavior, { name: answer.name, asNew: answer.mode === "new" });
+  }
+
+  static async #onRenameCustom(event, target) {
+    const id = target.closest("[data-trap]")?.dataset.trap;
+    const entry = id && getEntry(id);
+    if (!entry?.custom) return;
+    const answer = await askName({ value: entry.name, title: t("Name.renameTitle") });
+    if (!answer || answer.name === entry.name) return;
+    await saveCustom({ ...entry.trap, id: entry.id, name: answer.name, text: entry.text, flavor: entry.flavor });
+    ui.notifications.info(t("Notify.renamed", { name: answer.name }));
   }
 
   static async #onDelete(event, target) {
