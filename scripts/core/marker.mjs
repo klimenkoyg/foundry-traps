@@ -304,6 +304,15 @@ function drawTellMarker(ctx, o, { x, y, w, h, cell, state, ghost, reveal, pop, s
     ctx.stroke();
     ctx.restore();
   }
+  // outline — бирюзовый контур триггера у ведущего: сразу видно, что это триггер, а не ловушка.
+  if (Array.isArray(o.outline)) {
+    ctx.save();
+    ctx.setLineDash([cell * 0.08, cell * 0.06]);
+    ctx.strokeStyle = rgba(o.outline, 0.95);
+    ctx.lineWidth = Math.max(1.5, cell * 0.03);
+    ctx.strokeRect(x + cell * 0.04, y + cell * 0.04, w - cell * 0.08, h - cell * 0.08);
+    ctx.restore();
+  }
   // badge: false — метка триггера: рамка опасности и значок состояния — у метки самой ловушки.
   if (!ghost && o.badge !== false) frame(ctx, { x, y, w, h, cell, live, tone, pArea: pFrame, pFrame });
   if (o.badge !== false) drawBadge(ctx, { x, y, r: cell * 0.15, cell, state, ghost, sev, glyph: o.badgeGlyph, pop, device: o.device, ghostBadge: o.ghostBadge });

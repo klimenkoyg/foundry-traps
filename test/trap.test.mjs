@@ -12,7 +12,7 @@ import {
   scaleTrap,
   tierFactor,
   activation,
-  ACTIVATORS,
+  MAX_ACTIVATORS,
   toBehaviorData,
   trapMode,
 } from "../scripts/core/trap.mjs";
@@ -143,19 +143,22 @@ test("срабатывание: вручную, от триггера или о�
   assert.equal(activation({ manual: true }, 3), "manual");
   assert.equal(activation({ manual: false }, 2), "activator");
   assert.equal(activation({ manual: false }, 0), "area");
-  const clean = normalizeTrap({ activator: "lava", manual: "yes" });
-  assert.equal(clean.activator, "");
+  const clean = normalizeTrap({ activators: 9, manual: "yes" });
+  assert.equal(clean.activators, MAX_ACTIVATORS);
   assert.equal(clean.manual, true);
   assert.equal(normalizeTrap({}).manual, false);
+  assert.equal(normalizeTrap({}).activators, 0);
+  assert.equal(normalizeTrap({ activators: -1 }).activators, 0);
+  // Ловушки 0.2.4: «плита» или «растяжка» — это один триггер.
+  assert.equal(normalizeTrap({ activator: "wire" }).activators, 1);
+  assert.equal(normalizeTrap({ activator: "" }).activators, 0);
   const byId = Object.fromEntries(CATALOG.map((e) => [e.id, normalizeTrap(e)]));
-  for (const t of Object.values(byId)) assert.ok(ACTIVATORS.includes(t.activator), t.id);
-  assert.equal(byId.poisonGas.activator, "plate");
-  assert.equal(byId.rollingBoulder.activator, "wire");
-  assert.equal(byId.pit.activator, "");
-  assert.equal(byId.fireJet.activator, "");
+  for (const id of ["arrowVolley", "fallingNet", "collapsingRoof", "rollingBoulder", "poisonGas", "sleepGas"]) assert.equal(byId[id].activators, 1, id);
+  assert.equal(byId.pit.activators, 0);
+  assert.equal(byId.fireJet.activators, 0);
   // В поведение области и обратно.
-  const system = toBehaviorData({ ...byId.arrowVolley, manual: true });
-  assert.equal(system.activator, "wire");
+  const system = toBehaviorData({ ...byId.arrowVolley, activators: 2, manual: true });
+  assert.equal(system.activators, 2);
   assert.equal(system.manual, true);
-  assert.equal(fromBehaviorData(system, { id: "x" }).activator, "wire");
+  assert.equal(fromBehaviorData(system, { id: "x" }).activators, 2);
 });

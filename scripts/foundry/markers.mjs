@@ -8,7 +8,11 @@ import { ACTIVATOR_TELL, seedOf } from "../core/tells.mjs";
 import { MODULE_ID } from "./constants.mjs";
 import { mapButtonsOn } from "./gm-hud.mjs";
 import { regionElevation, sceneSprite } from "./layers.mjs";
-import { activatorBehavior, activatorsOf, isRevealed, regionBounds, sceneTraps } from "./scene.mjs";
+import { activatorLook } from "../core/geometry.mjs";
+import { activatorsOf, isRevealed, regionBounds, sceneTraps } from "./scene.mjs";
+
+/** Бирюзовый контур триггера у ведущего (как цвет области-триггера). */
+const TRIGGER_RGB = [47, 184, 200];
 
 /** Сторона холста метки не больше этого числа пикселей: дальше растягиваем спрайт. */
 const MAX_SIDE = 1024;
@@ -140,6 +144,7 @@ function render(entry, now = performance.now()) {
     ownTrigger: spec.view.ownTrigger,
     ghostBadge: spec.view.ghostBadge,
     badge: spec.view.badge,
+    outline: spec.view.outline,
     reveal,
     pop,
   });
@@ -226,7 +231,7 @@ export function refreshMarkers({ animate = true } = {}) {
     const glyph = readyGlyph(view.icon);
     const badge = view.badge === false ? null : badgeFor({ ...view, ghost: view.ghost && view.ghostBadge });
     const badgeGlyph = badge ? readyGlyph(badge.icon) : null;
-    const key = JSON.stringify([bounds.x, bounds.y, bounds.width, bounds.height, cell, regionElevation(region), view.severity, view.icon, view.state, view.ghost, view.device, view.options, view.fx, view.damageType, view.ghostBadge, view.badge, view.ownTrigger, Boolean(glyph), Boolean(badgeGlyph)]);
+    const key = JSON.stringify([bounds.x, bounds.y, bounds.width, bounds.height, cell, regionElevation(region), view.severity, view.icon, view.state, view.ghost, view.device, view.options, view.fx, view.damageType, view.ghostBadge, view.badge, view.outline, view.ownTrigger, Boolean(glyph), Boolean(badgeGlyph)]);
     const prev = markers.get(region.id);
     if (prev?.key === key) return;
 
@@ -244,12 +249,14 @@ export function refreshMarkers({ animate = true } = {}) {
     if (!view) continue;
     alive.add(region.id);
     place(region, view);
-    // Триггеры видны вместе с ловушкой: плита или растяжка, в том же состоянии, без значка.
+    // Триггеры видны вместе с ловушкой: плита (клетка) или растяжка (полоса), в том же состоянии,
+    // без значка; у ведущего — с бирюзовым контуром.
     for (const part of activatorsOf(region)) {
       if (alive.has(part.id)) continue;
       alive.add(part.id);
-      const kind = activatorBehavior(part)?.system?.kind === "wire" ? "wire" : "plate";
-      place(part, { ...view, device: ACTIVATOR_TELL, options: { kind }, icon: "", seed: seedOf(part.id), ghostBadge: false, badge: false });
+      const kind = activatorLook(regionBounds(part));
+      const outline = game.user.isGM ? TRIGGER_RGB : null;
+      place(part, { ...view, device: ACTIVATOR_TELL, options: { kind }, icon: "", seed: seedOf(part.id), ghostBadge: false, badge: false, outline });
     }
   }
 

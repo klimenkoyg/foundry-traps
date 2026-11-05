@@ -26,9 +26,13 @@ https://github.com/klimenkoyg/foundry-traps/releases/latest/download/module.json
 
 1. The left Foundry toolbar has its own **Traps** group with a skull (GM only). Click the skull
    and the Trap Library window opens. The group has Library, My traps and Traps on this scene (each
-   opens the window on that tab), a toggle for the reveal / hide buttons on traps on the map, and
-   Select and edit trap regions — it switches to the Regions group, where you select, move and
-   redraw a trap's region or its triggers. For quicker access, bind a key in the controls settings.
+   opens the window on that tab) and a toggle for the buttons on traps on the map. For quicker
+   access, bind a key in the controls settings.
+
+   Each trap on the map has two columns of buttons (GM only): the eye (reveal to players or hide),
+   the wrench (disarm with the selected token), ▶ (set it off now); ✥ (drag the trap — triggers
+   inside it move along), ⚙ (settings) and + (add a trigger). No need to switch to Regions to move
+   traps; that's only for redrawing a free-form shape.
 2. On the **Library** tab, drag a trap onto the map. It becomes a hidden
    region under the cursor; players don't see it. Click a trap to configure it first.
 3. A player character steps in — movement holds while the effect plays; a pit, bear trap, net or
@@ -104,20 +108,21 @@ Each trap uses one of three options — in the settings window, under Area and t
 
 1. **The area itself.** The trap fires when a character walks into its area. Pits, the bear trap,
    darts, the blade, runes and plates work this way.
-2. **A trigger** — a separate area someone has to step on: “Plate in the middle” or “Tripwire at
-   the edge”. It's placed with the trap; after that, move and resize it with the region tools like
-   any region. Step on the trigger and the trap fires, hitting everyone in its own area (the one who
-   stepped too, if they're in it). A trap can have several triggers: “Add trigger” (the footprints)
-   on the On this scene tab adds another. The arrow volley, net, collapsing roof and boulder come with
-   a tripwire at the entrance; poison and sleep gas come with a plate in the middle.
+2. **Triggers** — separate areas someone has to step on; the settings pick how many: one, two or
+   three. They appear in the trap's area, and the GM drags each one where it belongs with its teal
+   ✥ handle on the map (× next to it removes it). Step on a trigger and the trap fires, hitting
+   everyone in its own area (the one who stepped too, if they're in it). + next to the trap on the
+   map, or the footprints button on the On this scene tab, adds another. The arrow volley, net,
+   collapsing roof, boulder and gases come with one trigger.
 3. **Manual only.** The trap doesn't fire from footsteps — only from the ▶ button next to it on the
    map (everyone in its area) or Set off on the scene tab.
 
-The GM sees triggers as a faint plate or tripwire, with a dashed line to their trap; players see
-the triggers along with the trap. A trap can also be spotted from its trigger: the spot range
-counts from it too. Remove a trap and its triggers go with it; remove all its triggers and the trap
-fires from its own area again. In the settings of a trap on the scene, picking another Trigger
-option replaces the existing triggers with one new trigger.
+The GM sees triggers in teal — the region and the marker outline — with a dashed line to their
+trap; players see them along with the trap: as a plate, or as a tripwire if the trigger is
+stretched into a strip. A trap can also be spotted from its trigger: the spot range counts from it
+too. Remove a trap and its triggers go with it; remove all its triggers and the trap fires from its
+own area again. In the settings of a trap on the scene, the trigger count is how many are placed:
+raise it and the missing ones appear in the trap's area, lower it and the extras are removed.
 
 ## Triggering
 

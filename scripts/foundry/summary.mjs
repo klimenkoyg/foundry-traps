@@ -10,16 +10,16 @@ const damagePart = (formula, type) => `${formula} ${damageLabel(type).toLowerCas
 /**
  * Как срабатывает ловушка — подпись в подвале карточки; "" — от самой области (обычный случай).
  * count — сколько триггеров стоит на сцене (у ловушки на сцене); null — карточка из библиотеки,
- * тогда по предустановке «Триггер».
+ * тогда сколько их поставится вместе с ловушкой.
  */
 export function activationLabel(trap, count = null) {
   if (trap.manual) return t("Activation.manual");
-  if (count !== null) return count ? t("Activation.count", { n: count }) : "";
-  return trap.activator ? t(`Activation.${trap.activator}`) : "";
+  const n = count ?? trap.activators ?? 0;
+  return n ? t("Activation.count", { n }) : "";
 }
 
 /** На кого действует: с триггером — на всех в области, иначе как настроено. */
-export const affectsLabel = (trap, hasActivator = Boolean(trap.activator)) => t(`Affects.${hasActivator ? "area" : trap.affects}`);
+export const affectsLabel = (trap, hasActivator = (trap.activators ?? 0) > 0) => t(`Affects.${hasActivator ? "area" : trap.affects}`);
 
 /** Строки характеристик: заметить, обезвредить, проверка, урон, состояние, выбраться. */
 export function stats(trap) {

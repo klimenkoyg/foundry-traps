@@ -8,7 +8,7 @@
 
 import { FX_NAMES } from "../core/fx/presets.mjs";
 import { rectCenter, rectContains } from "../core/geometry.mjs";
-import { ACTIVATORS, SEVERITIES } from "../core/trap.mjs";
+import { MAX_ACTIVATORS, SEVERITIES } from "../core/trap.mjs";
 import { ACTIVATOR_TYPE, BEHAVIOR_TYPE, SETTINGS } from "./constants.mjs";
 import { choices } from "./dnd5e.mjs";
 import { t } from "./i18n.mjs";
@@ -63,7 +63,7 @@ export class TrapBehavior extends RegionBehaviorType {
       escapeDC: dc(0),
       escapeSkill: new f.StringField({ required: true, initial: "ath", choices: choices.skills }),
       manual: new f.BooleanField({ initial: false }),
-      activator: new f.StringField({ required: true, blank: true, initial: "", choices: labelled("TRAPS.Activator", ACTIVATORS.filter(Boolean)) }),
+      activators: new f.NumberField({ required: true, nullable: false, integer: true, min: 0, max: MAX_ACTIVATORS, initial: 0 }),
       flavor: new f.StringField({ required: true, blank: true, initial: "" }),
       notes: new f.StringField({ required: true, blank: true, initial: "" }),
       size: new f.NumberField({ required: true, nullable: false, integer: true, min: 1, max: 12, initial: 1 }),
@@ -98,7 +98,6 @@ export class ActivatorBehavior extends RegionBehaviorType {
   static defineSchema() {
     return {
       trap: new f.StringField({ required: true, blank: true, initial: "" }),
-      kind: new f.StringField({ required: true, initial: "plate", choices: labelled("TRAPS.ActivatorKind", ["plate", "wire"]) }),
     };
   }
 

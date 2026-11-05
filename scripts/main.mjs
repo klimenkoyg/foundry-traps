@@ -1,6 +1,6 @@
 /* Западня · Trap Library — ловушки с анимациями для D&D 5e в Foundry VTT v13–v14. */
 
-import { checkPassive, placeTrap, removeActivators } from "./foundry/actions.mjs";
+import { checkPassive, placeTrap, recolorActivators, removeActivators } from "./foundry/actions.mjs";
 import { onRenderCard, registerCardSocket } from "./foundry/card.mjs";
 import { addSceneControls, refreshSceneControls } from "./foundry/controls.mjs";
 import { onRenderChatMessage, syncChatButtons } from "./foundry/chat.mjs";
@@ -129,6 +129,7 @@ for (const hook of ["createRegion", "updateRegion", "deleteRegion", "createRegio
   });
 }
 Hooks.on("canvasReady", () => {
+  if (game.user.isActiveGM) recolorActivators(canvas.scene).catch((err) => console.warn(`${MODULE_ID} | цвет триггеров`, err));
   TrapApp.refresh();
   refreshMarkers({ animate: false });
   refreshHud();

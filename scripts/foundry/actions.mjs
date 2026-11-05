@@ -1,14 +1,15 @@
 /* Действия ведущего с ловушками: поставить, взвести, показать, обезвредить, искать, сохранить;
    триггеры ловушки — поставить, убрать. */
 
-import { activatorRect, placementRect, rangeCells, rectCells } from "../core/geometry.mjs";
-import { addNoticer, fromBehaviorData, knowsTrap, normalizeTrap, notices, resolveDisarm, toBehaviorData } from "../core/trap.mjs";
-import { ACTIVATOR_TYPE, BEHAVIOR_TYPE, MODULE_ID, SETTINGS, SEVERITY_COLOR, THEME_ATTR } from "./constants.mjs";
+import { activatorSpots, moveShape, placementRect, rangeCells, rectCells, rectCenter, rectContains } from "../core/geometry.mjs";
+import { addNoticer, fromBehaviorData, knowsTrap, MAX_ACTIVATORS, normalizeTrap, notices, resolveDisarm, toBehaviorData } from "../core/trap.mjs";
+import { ACTIVATOR_COLOR, ACTIVATOR_TYPE, BEHAVIOR_TYPE, MODULE_ID, SETTINGS, SEVERITY_COLOR, THEME_ATTR } from "./constants.mjs";
 import { passivePerception, rollCheck, skillLabel } from "./dnd5e.mjs";
 import { esc, t } from "./i18n.mjs";
 import { getEntry, saveCustom } from "./library.mjs";
 import { noticeCard, visButton } from "./chat.mjs";
 import {
+  activatorBehavior,
   activatorsOf,
   cellsBetween,
   hasLineOfSight,
@@ -47,11 +48,11 @@ export async function placeTrap(scene, source, point, tier = setting(SETTINGS.ti
   if (game.release.generation >= 14 && canvas.scene?.id === scene.id && canvas.level?.id) data.levels = [canvas.level.id];
   const [region] = await scene.createEmbeddedDocuments("Region", [data]);
   if (!region) return null;
-  // Триггер из предустановки ловушки: растяжка у входа, плита посередине. Не вышел (например,
-  // мир не перезапустили после обновления модуля) — ловушка остаётся и срабатывает от своей области.
-  if (trap.activator) {
+  // Триггеры из предустановки ловушки — в её области, дальше ведущий их передвигает. Не вышли
+  // (например, мир не перезапустили после обновления модуля) — ловушка срабатывает от своей области.
+  if (trap.activators) {
     try {
-      await addActivator(region, trap.activator);
+      await addActivators(region, trap.activators);
     } catch (err) {
       console.warn(`${MODULE_ID} | триггер не поставился`, err);
       ui.notifications.warn(t("Notify.activatorFailed", { name }));
@@ -65,33 +66,48 @@ export async function placeTrap(scene, source, point, tier = setting(SETTINGS.ti
 const trapBehaviorOf = (region) => [...(region?.behaviors ?? [])].find((b) => b.type === BEHAVIOR_TYPE) ?? null;
 
 /**
- * Поставить ловушке триггер: kind "plate" — плита в клетку посередине области, "wire" — растяжка
- * поперёк у её начала. Это обычная область сцены: ведущий двигает и меняет её как любую другую.
+ * Поставить ловушке ещё count триггеров (не больше трёх всего). Они встают в клетки её области,
+ * свободные от других триггеров, бирюзовые; ведущий перетаскивает их за ручку на карте. Это обычные
+ * области сцены. → созданные области.
  */
-export async function addActivator(trapRegion, kind = "plate") {
+export async function addActivators(trapRegion, count = 1) {
   const scene = trapRegion?.parent;
-  if (!scene) return null;
+  if (!scene) return [];
+  const existing = activatorsOf(trapRegion);
+  const n = Math.max(0, Math.min(count, MAX_ACTIVATORS - existing.length));
+  if (!n) return [];
   const behavior = trapBehaviorOf(trapRegion);
-  const rect = activatorRect(regionBounds(trapRegion), kind === "wire" ? "wire" : "plate", scene.grid.size || 100);
-  const name = `${behavior?.name || trapRegion.name} · ${t(`ActivatorKind.${kind === "wire" ? "wire" : "plate"}`)}`;
-  const data = {
-    name,
-    color: SEVERITY_COLOR[behavior?.system?.severity] ?? SEVERITY_COLOR.dangerous,
-    shapes: [{ type: "rectangle", ...rect, rotation: 0, hole: false }],
-    visibility: CONST.REGION_VISIBILITY.GAMEMASTER,
-    behaviors: [{ type: ACTIVATOR_TYPE, name, system: { trap: trapRegion.id, kind: kind === "wire" ? "wire" : "plate" } }],
-  };
+  const spots = activatorSpots(regionBounds(trapRegion), n, scene.grid.size || 100, existing.map(regionBounds));
+  const name = `${behavior?.name || trapRegion.name} · ${t("ActivatorName")}`;
   // v14: на том же уровне сцены, что и ловушка.
   const levels = trapRegion.levels;
-  if (game.release?.generation >= 14 && (levels?.size || levels?.length)) data.levels = [...levels];
-  const [region] = await scene.createEmbeddedDocuments("Region", [data]);
-  return region ?? null;
+  const onLevels = game.release?.generation >= 14 && (levels?.size || levels?.length) ? { levels: [...levels] } : {};
+  const data = spots.map((rect) => ({
+    name,
+    color: ACTIVATOR_COLOR,
+    shapes: [{ type: "rectangle", ...rect, rotation: 0, hole: false }],
+    visibility: CONST.REGION_VISIBILITY.GAMEMASTER,
+    behaviors: [{ type: ACTIVATOR_TYPE, name, system: { trap: trapRegion.id } }],
+    ...onLevels,
+  }));
+  return (await scene.createEmbeddedDocuments("Region", data)) ?? [];
 }
 
-/** Убрать все триггеры ловушки. */
-export async function removeActivators(trapRegion) {
+/** Триггеры 0.2.4 были цвета опасности — перекрасить в бирюзовый (делает активный ведущий). */
+export async function recolorActivators(scene) {
+  if (!scene) return;
+  const css = (c) => String(c?.css ?? c ?? "").toLowerCase();
+  const updates = [...(scene.regions ?? [])]
+    .filter((r) => activatorBehavior(r) && css(r.color) !== ACTIVATOR_COLOR)
+    .map((r) => ({ _id: r.id, color: ACTIVATOR_COLOR }));
+  if (updates.length) await scene.updateEmbeddedDocuments("Region", updates);
+}
+
+/** Убрать триггеры ловушки: все или только последние, чтобы осталось keep. */
+export async function removeActivators(trapRegion, keep = 0) {
   const scene = trapRegion?.parent;
   const ids = activatorsOf(trapRegion)
+    .slice(Math.max(0, keep))
     .map((r) => r.id)
     .filter((id) => scene?.regions?.has?.(id) ?? true);
   if (!ids.length) return 0;
@@ -104,20 +120,36 @@ export async function removeActivators(trapRegion) {
   return ids.length;
 }
 
+/** Сколько у ловушки триггеров на сцене — ровно count: недостающие добавить, лишние (последние) убрать. */
+export async function setActivatorCount(trapRegion, count) {
+  const have = activatorsOf(trapRegion).length;
+  const want = Math.max(0, Math.min(MAX_ACTIVATORS, Number(count) || 0));
+  if (want > have) await addActivators(trapRegion, want - have);
+  else if (want < have) await removeActivators(trapRegion, want);
+  const behavior = trapBehaviorOf(trapRegion);
+  if (behavior && behavior.system.activators !== want) await behavior.update({ "system.activators": want });
+  return want;
+}
+
 /**
- * В окне настройки ловушки на сцене поменяли «Триггер»: «нет» — триггеры убираем; плита или
- * растяжка — ставим один такой вместо прежних. Не меняли — триггеры остаются, как их расставили.
+ * Сдвинуть область ловушки или триггера на (dx, dy) пикселей сцены. withInside — у ловушки: её
+ * триггеры, которые лежат внутри неё, едут вместе с ней (снаружи — остаются, где их поставили).
  */
-async function syncActivators(region, before, after) {
-  if (before === after) return;
-  await removeActivators(region);
-  if (after) await addActivator(region, after);
+export async function moveRegion(region, dx, dy, { withInside = false } = {}) {
+  const scene = region?.parent;
+  if (!scene || (!dx && !dy)) return;
+  const shifted = (r) => ({ _id: r.id, shapes: r.shapes.map((sh) => moveShape(sh.toObject?.() ?? { ...sh }, dx, dy)) });
+  const updates = [shifted(region)];
+  if (withInside) {
+    const b = regionBounds(region);
+    for (const part of activatorsOf(region)) if (rectContains(b, rectCenter(regionBounds(part)))) updates.push(shifted(part));
+  }
+  await scene.updateEmbeddedDocuments("Region", updates);
 }
 
 /** Ловушку на сцене поправили в окне настройки: поведение, имя, цвет и размер области, триггеры. */
 export async function updatePlaced(region, behavior, trap) {
   const t0 = normalizeTrap(trap);
-  const activatorBefore = behavior.system.activator ?? "";
   const system = toBehaviorData(t0, { tier: 1, flavor: t0.flavor, text: t0.text });
   system.trapId = behavior.system.trapId || system.trapId;
   const change = { name: t0.name };
@@ -133,7 +165,8 @@ export async function updatePlaced(region, behavior, trap) {
     regionChange.shapes = [{ type: "rectangle", ...rect, rotation: 0, hole: false }];
   }
   await region.update(regionChange);
-  await syncActivators(region, activatorBefore, t0.activator);
+  // Триггеров ровно столько, сколько выбрано в окне (оно открывается с их числом на сцене).
+  await setActivatorCount(region, t0.activators);
 }
 
 /** Взвести / выключить. Взведённая заново больше не «обезврежена» и для игроков. */
@@ -308,6 +341,7 @@ export async function saveToLibrary(region, behavior, { name, asNew = false } = 
   const tier = Number(region.getFlag(MODULE_ID, "tier") ?? 1);
   const id = !asNew ? sourceCustom(behavior)?.id : undefined;
   const trap = fromBehaviorData(system, { id, name: name || behavior.name || region.name, width, height, tier });
+  trap.activators = Math.min(MAX_ACTIVATORS, activatorsOf(region).length);
   const entry = await saveCustom(trap);
   ui.notifications.info(t("Notify.saved", { name: entry.name }));
   return entry;

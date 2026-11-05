@@ -112,18 +112,56 @@ export const chebyshevCells = (p, q, cell) => Math.round(Math.max(Math.abs(p.x -
 export const rangeCells = (feet) => Math.max(0, Number(feet) || 0) / 5;
 
 /**
- * Где встаёт триггер ловушки (в пикселях): plate — плита в клетку посередине области;
- * wire — растяжка поперёк области у её начала (у левого края, если область шире, чем выше,
- * иначе у верхнего). Ведущий потом двигает триггер инструментами регионов.
+ * Куда поставить count новых триггеров ловушки (клетки 1×1 в пикселях). Сначала — клетки самой
+ * области: один — посередине, несколько — по краям вдоль области и посередине; потом, если области
+ * мало (ловушка в одну клетку), — клетки вокруг неё. taken — где триггеры уже стоят. Ведущий потом
+ * перетаскивает их, куда нужно.
  */
-export function activatorRect(rect, kind, gridSize) {
+export function activatorSpots(rect, count, gridSize, taken = []) {
   const cell = gridSize || 100;
   const w = Math.max(1, Math.round(rect.width / cell));
   const h = Math.max(1, Math.round(rect.height / cell));
-  if (kind === "wire") {
-    return w >= h
-      ? { x: rect.x, y: rect.y, width: cell, height: h * cell }
-      : { x: rect.x, y: rect.y, width: w * cell, height: cell };
+  const at = ([c, r]) => ({ x: rect.x + c * cell, y: rect.y + r * cell, width: cell, height: cell });
+  const mid = [Math.floor((w - 1) / 2), Math.floor((h - 1) / 2)];
+  const ends = [
+    [0, 0],
+    [w - 1, h - 1],
+  ];
+  const inside = count >= 2 ? [...ends, mid] : [mid, ...ends];
+  for (let r = 0; r < h; r++) for (let c = 0; c < w; c++) inside.push([c, r]);
+  const ring = [
+    [-1, mid[1]],
+    [w, mid[1]],
+    [mid[0], -1],
+    [mid[0], h],
+    [-1, -1],
+    [w, -1],
+    [-1, h],
+    [w, h],
+  ];
+  const used = new Set(taken.map((t) => `${Math.round(t.x)},${Math.round(t.y)}`));
+  const out = [];
+  for (const spot of [...inside, ...ring].map(at)) {
+    if (out.length >= count) break;
+    const key = `${Math.round(spot.x)},${Math.round(spot.y)}`;
+    if (used.has(key)) continue;
+    used.add(key);
+    out.push(spot);
   }
-  return { x: rect.x + Math.floor((w - 1) / 2) * cell, y: rect.y + Math.floor((h - 1) / 2) * cell, width: cell, height: cell };
+  return out;
 }
+
+/** Фигура области, сдвинутая на (dx, dy): прямоугольник, круг, эллипс — по x, y; многоугольник — по точкам. */
+export function moveShape(shape, dx, dy) {
+  const s = { ...shape };
+  if (Array.isArray(s.points)) s.points = s.points.map((v, i) => v + (i % 2 ? dy : dx));
+  if (Number.isFinite(s.x)) s.x += dx;
+  if (Number.isFinite(s.y)) s.y += dy;
+  return s;
+}
+
+/** Сдвиг перетаскиванием → целое число клеток (в пикселях). */
+export const snapDelta = (d, gridSize) => Math.round(d / (gridSize || 100)) * (gridSize || 100);
+
+/** Растяжка, если триггер вытянут (полоса), иначе плита. */
+export const activatorLook = (rect) => (Math.abs(rect.width - rect.height) > 1 ? "wire" : "plate");

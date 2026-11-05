@@ -13,7 +13,6 @@
       "title": "Trap Library",
       "open": "Open Trap Library",
       "group": "Traps",
-      "select": "Select and edit trap regions",
       "library": "Library",
       "mine": "My traps",
       "scene": "Traps on this scene",
@@ -48,32 +47,24 @@
       "auto": "Resets automatically",
       "once": "Single use"
     },
-    "Activator": {
+    "Activators": {
       "none": "None — the area itself triggers it",
-      "plate": "Plate in the middle",
-      "wire": "Tripwire at the edge"
+      "1": "One",
+      "2": "Two",
+      "3": "Three"
     },
-    "ActivatorKind": {
-      "plate": "plate",
-      "wire": "tripwire"
-    },
+    "ActivatorName": "trigger",
     "ActivatorBehavior": {
       "label": "Trap trigger (Trap Library)",
       "FIELDS": {
         "trap": {
           "label": "Trap",
           "hint": "ID of the trap's region on this scene. The module sets it — when placing the trap or with “Add trigger”."
-        },
-        "kind": {
-          "label": "Look",
-          "hint": "How the trigger looks on the map once the trap is spotted."
         }
       }
     },
     "Activation": {
       "manual": "Manual",
-      "plate": "Plate",
-      "wire": "Tripwire",
       "count": "Triggers: {n}"
     },
     "OnSave": {
@@ -276,7 +267,7 @@
       "idea": "Suggest an idea",
       "ideaHint": "Opens a form in your browser",
       "addActivator": "Add trigger",
-      "addActivatorHint": "Give the trap a trigger — a plate or a tripwire. It appears in the trap's area; move it with the region tools."
+      "addActivatorHint": "Give the trap a trigger (up to three). It appears in the trap's area; move it on the map with the ✥ handle."
     },
     "Hud": {
       "reveal": "“{name}” is hidden from players. Click to reveal.",
@@ -284,7 +275,12 @@
       "noticed": "“{name}” was spotted by {who}. Players can’t see it yet — click to reveal.",
       "disarm": "Disarm “{name}” with the selected token ({skill}, DC {dc}). Failing by 5 or more sets it off.",
       "fire": "Set off “{name}” now — on everyone in its area.",
-      "fireManual": "“{name}” only fires manually. Click to set it off on everyone in its area."
+      "fireManual": "“{name}” only fires manually. Click to set it off on everyone in its area.",
+      "move": "Move “{name}” — drag. Triggers inside it move along.",
+      "config": "Configure “{name}”",
+      "addTrigger": "Add a trigger to “{name}” (up to three)",
+      "moveTrigger": "Move this trigger of “{name}” — drag",
+      "removeTrigger": "Remove this trigger of “{name}”"
     },
     "Stat": {
       "detect": "Spot",
@@ -379,9 +375,10 @@
       "noticed": "{name} spotted “{trap}”. Players can’t see it yet — decide in chat or with the button on the map.",
       "otherScene": "This trap is on another scene.",
       "renamed": "Renamed: “{name}”.",
-      "activatorAdded": "“{name}”: trigger added. Move it with the region tools.",
+      "activatorAdded": "“{name}”: trigger added. Move it on the map with the teal ✥ handle.",
       "activatorAddedManual": "“{name}”: trigger added, but the trap only fires manually — untick that in its settings.",
-      "activatorFailed": "“{name}”: the trigger couldn't be placed — the trap fires from its own area. If you just updated the module, relaunch the world."
+      "activatorFailed": "“{name}”: the trigger couldn't be placed — the trap fires from its own area. If you just updated the module, relaunch the world.",
+      "activatorMax": "“{name}” already has {n} triggers — that's the limit."
     },
     "Behavior": {
       "FIELDS": {
@@ -507,9 +504,9 @@
           "label": "Manual only",
           "hint": "Doesn't fire from footsteps — only from the ▶ button on the map or Set off on the scene tab."
         },
-        "activator": {
-          "label": "Trigger",
-          "hint": "A separate area someone has to step on. Without one, the trap's own area sets it off."
+        "activators": {
+          "label": "Triggers",
+          "hint": "How many separate areas someone has to step on. With none, the trap's own area sets it off."
         }
       },
       "label": "Trap (Trap Library)"
@@ -758,8 +755,7 @@
       "saveCopy": "Save as new…",
       "play": "Preview animation",
       "reset": "Reset",
-      "activatorHint": "With a trigger, the trap fires when someone steps on it and hits everyone in its own area. The trigger is placed with the trap; on the scene, move it with the region tools.",
-      "activatorScene": "Triggers on the scene: {n}. Pick another option and they're replaced with one new trigger.",
+      "activatorHint": "Triggers appear in the trap's area and hit everyone in it. Move them on the map with the teal ✥ handle.",
       "manualHint": "Doesn't fire from footsteps — only from the ▶ button on the map or Set off on the scene tab."
     },
     "Name": {

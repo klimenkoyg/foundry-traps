@@ -181,6 +181,15 @@
       changed();
       return made;
     },
+    async updateEmbeddedDocuments(type, updates) {
+      if (type !== "Region") throw new Error(`стенд: ${type} не поддерживается`);
+      const done = [];
+      for (const { _id, ...change } of updates) {
+        const r = scene._regions.find((x) => x.id === _id);
+        if (r) done.push(await r.update(change));
+      }
+      return done;
+    },
     async deleteEmbeddedDocuments(type, ids) {
       if (type !== "Region") throw new Error(`стенд: ${type} не поддерживается`);
       const gone = scene._regions.filter((r) => ids.includes(r.id));

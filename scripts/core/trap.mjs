@@ -39,14 +39,14 @@ import { deriveDevice, DEVICES, normalizeOptions } from "./devices.mjs";
  * @property {number} escapeDC        Выбраться (из ямы, капкана, сети): Сл; 0 — не нужно
  * @property {string} escapeSkill     Чем выбираться: навык dnd5e
  * @property {boolean} manual         Срабатывает только по кнопке ведущего
- * @property {""|"plate"|"wire"} activator  Отдельный триггер, который ставится вместе с ловушкой:
- *                                    "" — нет, срабатывает сама область; plate — плита в центре;
- *                                    wire — растяжка с края. Триггеров на сцене может быть несколько.
+ * @property {number} activators      Сколько триггеров ставить вместе с ловушкой: 0 — ни одного,
+ *                                    срабатывает сама область; 1–3 — столько триггеров, их потом
+ *                                    расставляет ведущий. Старое activator ("plate"/"wire") — один.
  */
 
 export const SEVERITIES = ["setback", "dangerous", "deadly"];
-/** Какой триггер ставить вместе с ловушкой: "" — без него, срабатывает сама область. */
-export const ACTIVATORS = ["", "plate", "wire"];
+/** Больше триггеров у одной ловушки не ставим. */
+export const MAX_ACTIVATORS = 3;
 export const TIERS = [1, 2, 3, 4];
 export const TIER_LEVELS = { 1: "1–4", 2: "5–10", 3: "11–16", 4: "17–20" };
 export const ABILITIES = ["str", "dex", "con", "int", "wis", "cha"];
@@ -105,7 +105,7 @@ const DEFAULTS = {
   escapeDC: 0,
   escapeSkill: "ath",
   manual: false,
-  activator: "",
+  activators: 0,
 };
 
 const int = (v, fallback, min = -Infinity, max = Infinity) => {
@@ -157,7 +157,8 @@ export function normalizeTrap(raw = {}) {
     escapeDC: int(t.escapeDC, 0, 0, 40),
     escapeSkill: str(t.escapeSkill) || DEFAULTS.escapeSkill,
     manual: Boolean(t.manual),
-    activator: oneOf(t.activator, ACTIVATORS, ""),
+    // У ловушек 0.2.4 было activator: "plate" | "wire" — это один триггер.
+    activators: int(raw.activators ?? (raw.activator ? 1 : 0), 0, 0, MAX_ACTIVATORS),
   };
 }
 
@@ -334,7 +335,7 @@ export function toBehaviorData(trap, { tier = 1, flavor = "", text = "" } = {}) 
     escapeDC: t.escapeDC,
     escapeSkill: t.escapeSkill,
     manual: t.manual,
-    activator: t.activator,
+    activators: t.activators,
     flavor: flavor || t.flavor,
     notes: text || t.text,
     size: t.size,

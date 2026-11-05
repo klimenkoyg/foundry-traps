@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { activatorRect, distanceToRect, placementRect, rectCenter, shapesBounds, tokenCenter } from "../scripts/core/geometry.mjs";
+import { activatorLook, activatorSpots, distanceToRect, moveShape, snapDelta, placementRect, rectCenter, shapesBounds, tokenCenter } from "../scripts/core/geometry.mjs";
 
 test("ловушка встаёт под курсор по клеткам", () => {
   assert.deepEqual(placementRect({ x: 250, y: 130 }, 1, 100), { x: 200, y: 100, width: 100, height: 100 });
@@ -68,18 +68,45 @@ test("прямоугольная ловушка под курсором: шир�
   assert.deepEqual(rectCells({ x: 0, y: 0, width: 10, height: 10 }, G), { width: 1, height: 1 }, "не меньше клетки");
 });
 
-test("триггер: плита в клетку посередине, растяжка поперёк у начала области", () => {
+test("триггеры: куда встают по умолчанию — в области, потом вокруг неё", () => {
   const cell = 100;
   const gas = { x: 300, y: 200, width: 300, height: 300 };
-  assert.deepEqual(activatorRect(gas, "plate", cell), { x: 400, y: 300, width: 100, height: 100 });
-  // Коридор вдоль x — растяжка поперёк, у левого края.
-  const hall = { x: 0, y: 0, width: 400, height: 100 };
-  assert.deepEqual(activatorRect(hall, "wire", cell), { x: 0, y: 0, width: 100, height: 100 });
-  // Квадрат 2×2 — растяжка во всю высоту у левого края.
-  assert.deepEqual(activatorRect({ x: 0, y: 0, width: 200, height: 200 }, "wire", cell), { x: 0, y: 0, width: 100, height: 200 });
-  // Коридор вдоль y — растяжка поперёк, у верхнего края.
-  assert.deepEqual(activatorRect({ x: 100, y: 0, width: 200, height: 500 }, "wire", cell), { x: 100, y: 0, width: 200, height: 100 });
-  // Плита в чётной области — в клетке левее и выше середины; в 1×1 — та же клетка.
-  assert.deepEqual(activatorRect({ x: 0, y: 0, width: 200, height: 200 }, "plate", cell), { x: 0, y: 0, width: 100, height: 100 });
-  assert.deepEqual(activatorRect({ x: 50, y: 50, width: 100, height: 100 }, "plate", cell), { x: 50, y: 50, width: 100, height: 100 });
+  // Один — посередине области.
+  assert.deepEqual(activatorSpots(gas, 1, cell), [{ x: 400, y: 300, width: 100, height: 100 }]);
+  // Несколько — по краям вдоль области и посередине.
+  assert.deepEqual(
+    activatorSpots(gas, 3, cell).map((r) => [r.x, r.y]),
+    [
+      [300, 200],
+      [500, 400],
+      [400, 300],
+    ],
+  );
+  // Занятые клетки пропускаются.
+  assert.deepEqual(activatorSpots(gas, 1, cell, [{ x: 400, y: 300 }]).map((r) => [r.x, r.y]), [[300, 200]]);
+  // Ловушка в одну клетку: первый — в ней, остальные — рядом.
+  assert.deepEqual(
+    activatorSpots({ x: 600, y: 100, width: 100, height: 100 }, 3, cell).map((r) => [r.x, r.y]),
+    [
+      [600, 100],
+      [500, 100],
+      [700, 100],
+    ],
+  );
+  assert.equal(activatorSpots(gas, 0, cell).length, 0);
+});
+
+test("сдвиг области: по клеткам, фигуры любого вида", () => {
+  assert.equal(snapDelta(140, 100), 100);
+  assert.equal(snapDelta(-160, 100), -200);
+  assert.equal(snapDelta(40, 100), 0);
+  assert.deepEqual(moveShape({ type: "rectangle", x: 100, y: 200, width: 100, height: 100 }, 100, -100), { type: "rectangle", x: 200, y: 100, width: 100, height: 100 });
+  assert.deepEqual(moveShape({ type: "polygon", points: [0, 0, 100, 0, 100, 100] }, 50, 10).points, [50, 10, 150, 10, 150, 110]);
+  assert.deepEqual(moveShape({ type: "circle", x: 0, y: 0, radius: 50 }, 100, 100), { type: "circle", x: 100, y: 100, radius: 50 });
+});
+
+test("вид триггера по форме: полоса — растяжка, квадрат — плита", () => {
+  assert.equal(activatorLook({ width: 100, height: 100 }), "plate");
+  assert.equal(activatorLook({ width: 100, height: 300 }), "wire");
+  assert.equal(activatorLook({ width: 300, height: 100 }), "wire");
 });

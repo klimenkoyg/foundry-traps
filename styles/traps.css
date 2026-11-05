@@ -1542,14 +1542,68 @@
   pointer-events: none;
 }
 
-/* Стопка кнопок одной ловушки: верхняя — по центру угла области, следующие — под ней. */
+/* Кнопки одной ловушки: два столбика у правого верхнего угла области. Первый — розыгрыш (глаз,
+   ключ, ▶; верхняя кнопка — по центру угла), второй — устройство (✥ перетащить, ⚙ настроить,
+   + триггер). */
 .ssl-traps.st-map-hud .st-map-trap {
   position: absolute;
   display: flex;
-  flex-direction: column;
   gap: 5px;
   transform: scale(var(--st-inv, 1)) translate(-15px, -15px);
   transform-origin: 0 0;
+}
+
+.ssl-traps.st-map-hud .st-map-col {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.ssl-traps.st-map-hud .st-map-col.is-setup .st-map-btn {
+  border-color: color-mix(in srgb, var(--st-ink-3) 60%, transparent);
+}
+
+.ssl-traps.st-map-hud .st-map-btn.is-move {
+  cursor: grab;
+  touch-action: none;
+}
+
+.ssl-traps.st-map-hud .st-map-btn.is-move:active {
+  cursor: grabbing;
+}
+
+/* Триггер: две маленькие бирюзовые ручки посередине него — перетащить и убрать. */
+.ssl-traps.st-map-hud .st-map-trap.is-trigger {
+  gap: 4px;
+  transform: scale(var(--st-inv, 1)) translate(-26px, -12px);
+}
+
+.ssl-traps.st-map-hud .st-map-btn.is-trigger {
+  width: 24px;
+  height: 24px;
+  border-color: color-mix(in srgb, #2fb8c8 75%, transparent);
+  color: #7fdbe6;
+  font-size: 11px;
+}
+
+.ssl-traps.st-map-hud .st-map-btn.is-trigger:hover {
+  border-color: #2fb8c8;
+  color: #c9f3f8;
+}
+
+/* Рамка, которая бежит по клеткам, пока тянешь ловушку или триггер. */
+.ssl-traps.st-map-hud .st-map-ghost {
+  position: absolute;
+  box-sizing: border-box;
+  border: calc(2px * var(--st-inv, 1)) dashed var(--st-accent);
+  border-radius: calc(4px * var(--st-inv, 1));
+  background: color-mix(in srgb, var(--st-accent) 14%, transparent);
+  pointer-events: none;
+}
+
+.ssl-traps.st-map-hud .st-map-ghost.is-trigger {
+  border-color: #2fb8c8;
+  background: color-mix(in srgb, #2fb8c8 16%, transparent);
 }
 
 .ssl-traps.st-map-hud .st-map-btn {

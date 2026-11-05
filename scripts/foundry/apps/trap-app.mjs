@@ -4,7 +4,7 @@ import { rectCells } from "../../core/geometry.mjs";
 import { DAMAGE_MODES, SAVE_ROLLS } from "../../core/resolve.mjs";
 import { DAMAGE_TYPES, DETECT_MODES, SEVERITIES, TIERS, filterTraps, scaleTrap } from "../../core/trap.mjs";
 import {
-  addActivator,
+  addActivators,
   attemptDisarm,
   noticedBy,
   saveToLibrary,
@@ -15,6 +15,7 @@ import {
   setRevealed,
   triggerNow,
 } from "../actions.mjs";
+import { addTriggerNotified } from "../activators.mjs";
 import { DRAG_TYPE, IDEAS_URL, SETTINGS, THEME, tpl } from "../constants.mjs";
 import { damageLabel } from "../dnd5e.mjs";
 import { t } from "../i18n.mjs";
@@ -298,14 +299,10 @@ export class TrapApp extends HandlebarsApplicationMixin(ApplicationV2) {
     await triggerNow(found.behavior, controlledTokens());
   }
 
-  /** Ещё один триггер ловушке: плита (или растяжка, если так задано) — дальше ведущий двигает её сам. */
+  /** Ещё один триггер ловушке (не больше трёх) — в её области; ведущий перетаскивает его на карте. */
   static async #onAddActivator(event, target) {
     const found = this.#row(target);
-    if (!found) return;
-    const kind = found.behavior.system.activator || "plate";
-    const region = await addActivator(found.region, kind);
-    if (!region) return;
-    ui.notifications.info(t(found.behavior.system.manual ? "Notify.activatorAddedManual" : "Notify.activatorAdded", { name: found.behavior.name }));
+    if (found) await addTriggerNotified(found.region, found.behavior);
   }
 
   static async #onAttempt(event, target) {

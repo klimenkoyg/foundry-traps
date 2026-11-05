@@ -2,8 +2,8 @@
    пересчитывается по таблице опасности (см. trap.mjs). Названия и описания — в lang/*.json:
    TRAPS.Trap.<id>.name / .text / .flavor. device и options — устройство (devices.mjs): числа здесь
    совпадают с тем, что устройство даёт при этих параметрах (проверяет тест).
-   activator — триггер, который ставится вместе с ловушкой: растяжка у входа для залпа, сети,
-   обвала и валуна, плита посередине для газа. Остальные срабатывают от самой области. */
+   activators — сколько триггеров ставится вместе с ловушкой: по одному у залпа, сети, обвала,
+   валуна и газов (ведущий передвигает их, куда нужно). Остальные срабатывают от самой области. */
 
 /** @typedef {import("./trap.mjs").TrapDef} TrapDef */
 
@@ -104,7 +104,7 @@ export const CATALOG = [
   },
   {
     id: "arrowVolley",
-    activator: "wire",
+    activators: 1,
     device: "arrows",
     options: { count: 2, tips: "plain" },
     icon: "fa-solid fa-arrows-to-dot",
@@ -140,7 +140,7 @@ export const CATALOG = [
   },
   {
     id: "fallingNet",
-    activator: "wire",
+    activators: 1,
     device: "net",
     options: { net: "rope" },
     escapeDC: 10,
@@ -163,7 +163,7 @@ export const CATALOG = [
   },
   {
     id: "collapsingRoof",
-    activator: "wire",
+    activators: 1,
     device: "roof",
     options: { debris: "stones", buried: false },
     icon: "fa-solid fa-house-crack",
@@ -184,7 +184,7 @@ export const CATALOG = [
   },
   {
     id: "rollingBoulder",
-    activator: "wire",
+    activators: 1,
     device: "boulder",
     options: { boulder: "large", knockdown: true },
     icon: "fa-solid fa-bowling-ball",
@@ -244,7 +244,7 @@ export const CATALOG = [
   },
   {
     id: "poisonGas",
-    activator: "plate",
+    activators: 1,
     device: "gas",
     options: { toxin: "choking", density: "dense" },
     icon: "fa-solid fa-skull-crossbones",
@@ -266,7 +266,7 @@ export const CATALOG = [
   },
   {
     id: "sleepGas",
-    activator: "plate",
+    activators: 1,
     device: "gas",
     options: { toxin: "sleep", density: "thin" },
     damageType: "poison",

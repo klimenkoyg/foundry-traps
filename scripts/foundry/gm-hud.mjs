@@ -1,16 +1,21 @@
-/* Кнопки ведущего прямо на карте, у правого верхнего угла каждой ловушки:
-   - «глаз» — одним щелчком показать ловушку игрокам или спрятать;
-   - «ключ» (у взведённой) — попробовать обезвредить её выделенным токеном;
-   - «▶» (у взведённой) — сработать сейчас по всем в её области (так срабатывает «только вручную»).
-   От каждого триггера к его ловушке — пунктирная линия, чтобы было видно, что с чем связано.
-   Кнопки живут в #hud Foundry — HTML-слое поверх холста, который двигается и масштабируется вместе
-   с картой (там же кнопки токенов). Видны только ведущему. */
+/* Кнопки ведущего прямо на карте. У правого верхнего угла каждой ловушки — два столбика:
+   - «глаз» — показать ловушку игрокам или спрятать; «ключ» (у взведённой) — попробовать обезвредить
+     выделенным токеном; «▶» (у взведённой) — сработать сейчас по всем в её области;
+   - «✥» — перетащить ловушку (триггеры внутри неё едут вместе с ней); «⚙» — окно её настройки;
+     «+» — добавить триггер (до трёх).
+   У каждого триггера посередине — «✥» (перетащить) и «×» (убрать); от триггера к ловушке — пунктир.
+   Двигать ловушки и триггеры можно, не уходя в «Регионы»: тянешь ручку — бежит рамка по клеткам,
+   отпустил — область переехала. Кнопки живут в #hud Foundry — HTML-слое поверх холста, который
+   двигается и масштабируется вместе с картой (там же кнопки токенов). Видны только ведущему. */
 
-import { attemptDisarm, noticedBy, setRevealed, triggerNow } from "./actions.mjs";
+import { snapDelta } from "../core/geometry.mjs";
+import { attemptDisarm, moveRegion, noticedBy, setRevealed, triggerNow } from "./actions.mjs";
+import { addTriggerNotified } from "./activators.mjs";
+import { TrapEditor } from "./apps/trap-editor.mjs";
 import { skillLabel } from "./dnd5e.mjs";
 import { SETTINGS, THEME } from "./constants.mjs";
 import { esc, t } from "./i18n.mjs";
-import { activatorsOf, isRevealed, regionBounds, sceneTraps } from "./scene.mjs";
+import { activatorsOf, isRevealed, regionBounds, sceneTraps, trapOfActivator } from "./scene.mjs";
 import { setting } from "./settings.mjs";
 
 const ROOT_ID = "ssl-traps-hud";
@@ -18,6 +23,8 @@ let timer = null;
 /** Ловушки, которые уже были замечены, когда сцена открылась или при прошлой перерисовке. */
 const seenNoticed = new Set();
 let primed = false;
+/** Идёт перетаскивание: перерисовку кнопок откладываем, чтобы не потерять ручку под пальцем. */
+let dragging = null;
 
 /** Включены ли кнопки на карте у этого пользователя. */
 export const mapButtonsOn = () => Boolean(game.user?.isGM && setting(SETTINGS.mapButtons) !== false);
@@ -36,8 +43,8 @@ function container() {
     el.className = "ssl-traps st-map-hud";
     el.dataset.stTheme = THEME;
     el.addEventListener("click", onClick);
+    el.addEventListener("pointerdown", onPointerDown);
     // Не отдавать щелчок холсту под кнопкой (иначе снимется выделение токенов).
-    el.addEventListener("pointerdown", (event) => event.target.closest(".st-map-btn") && event.stopPropagation());
     el.addEventListener("mousedown", (event) => event.target.closest(".st-map-btn") && event.stopPropagation());
     hud.append(el);
   }
@@ -51,35 +58,44 @@ export function syncHudZoom() {
   el?.style.setProperty("--st-inv", String(1 / scale));
 }
 
-function button(region, behavior) {
+const btn = (act, cls, ids, tip, icon, extra = "") =>
+  `<button type="button" class="st-map-btn ${cls}" data-act="${act}" ${ids} aria-label="${tip}" data-tooltip="${tip}" ${extra}><i class="fa-solid ${icon}" inert></i></button>`;
+
+function trapButtons(region, behavior) {
   const b = regionBounds(region);
   const shown = isRevealed(region);
-  const name = esc(behavior.name || region.name);
+  const label = behavior.name || region.name;
   // Заметили, но игрокам ещё не показана: ведущий должен решить. Свежая отметка — с пульсом.
   const who = shown ? [] : noticedBy(region).map((n) => n.name).filter(Boolean);
   const fresh = who.length && primed && !seenNoticed.has(region.id);
   if (who.length) seenNoticed.add(region.id);
   else seenNoticed.delete(region.id);
-  const tip = esc(
-    who.length
-      ? t("Hud.noticed", { name: behavior.name || region.name, who: who.join(", ") })
-      : t(shown ? "Hud.hide" : "Hud.reveal", { name: behavior.name || region.name }),
-  );
+  const eyeTip = esc(who.length ? t("Hud.noticed", { name: label, who: who.join(", ") }) : t(shown ? "Hud.hide" : "Hud.reveal", { name: label }));
   const state = `${shown ? "is-shown" : "is-hidden"}${who.length ? " is-noticed" : ""}${fresh ? " is-new" : ""}`;
   const ids = `data-region="${region.id}" data-behavior="${behavior.id}"`;
-  const eye = `<button type="button" class="st-map-btn ${state}" data-act="vis" ${ids} aria-pressed="${shown}" aria-label="${tip}" data-tooltip="${tip}" data-name="${name}">
-    <i class="fa-solid ${shown ? "fa-eye" : "fa-eye-slash"}" inert></i></button>`;
-  // Обезвредить — только взведённую.
   const s = behavior.system;
-  const disarmTip = esc(t("Hud.disarm", { name: behavior.name || region.name, skill: skillLabel(s.disarmSkill), dc: s.disarmDC }));
-  const key = behavior.disabled
-    ? ""
-    : `<button type="button" class="st-map-btn is-disarm" data-act="disarm" ${ids} aria-label="${disarmTip}" data-tooltip="${disarmTip}"><i class="fa-solid fa-screwdriver-wrench" inert></i></button>`;
-  const fireTip = esc(t(s.manual ? "Hud.fireManual" : "Hud.fire", { name: behavior.name || region.name }));
-  const fire = behavior.disabled
-    ? ""
-    : `<button type="button" class="st-map-btn is-fire${s.manual ? " is-manual" : ""}" data-act="fire" ${ids} aria-label="${fireTip}" data-tooltip="${fireTip}"><i class="fa-solid fa-play" inert></i></button>`;
-  return `<div class="st-map-trap" style="left:${b.x + b.width}px;top:${b.y}px">${eye}${key}${fire}</div>`;
+  const armed = !behavior.disabled;
+  const play = [
+    btn("vis", state, ids, eyeTip, shown ? "fa-eye" : "fa-eye-slash", `aria-pressed="${shown}" data-name="${esc(label)}"`),
+    armed ? btn("disarm", "is-disarm", ids, esc(t("Hud.disarm", { name: label, skill: skillLabel(s.disarmSkill), dc: s.disarmDC })), "fa-screwdriver-wrench") : "",
+    armed ? btn("fire", `is-fire${s.manual ? " is-manual" : ""}`, ids, esc(t(s.manual ? "Hud.fireManual" : "Hud.fire", { name: label })), "fa-play") : "",
+  ].join("");
+  const setup = [
+    btn("move", "is-move", ids, esc(t("Hud.move", { name: label })), "fa-up-down-left-right"),
+    btn("config", "is-config", ids, esc(t("Hud.config", { name: label })), "fa-sliders"),
+    btn("addTrigger", "is-add", ids, esc(t("Hud.addTrigger", { name: label })), "fa-shoe-prints"),
+  ].join("");
+  return `<div class="st-map-trap" style="left:${b.x + b.width}px;top:${b.y}px"><div class="st-map-col">${play}</div><div class="st-map-col is-setup">${setup}</div></div>`;
+}
+
+/** Ручки триггера — посередине него: «взять плиту» — и кнопки ловушки их не закрывают. */
+function triggerButtons(part, trapName) {
+  const a = regionBounds(part);
+  const ids = `data-region="${part.id}" data-trigger="1"`;
+  return `<div class="st-map-trap is-trigger" style="left:${a.x + a.width / 2}px;top:${a.y + a.height / 2}px">
+    ${btn("move", "is-move is-trigger", ids, esc(t("Hud.moveTrigger", { name: trapName })), "fa-up-down-left-right")}
+    ${btn("removeTrigger", "is-remove is-trigger", ids, esc(t("Hud.removeTrigger", { name: trapName })), "fa-xmark")}
+  </div>`;
 }
 
 /** Пунктир от середины каждого триггера к середине его ловушки (в пикселях сцены). */
@@ -99,6 +115,7 @@ function links(traps) {
 
 /** Перерисовать кнопки текущей сцены. */
 export function refreshHud() {
+  if (dragging) return void (dragging.stale = true);
   const on = mapButtonsOn() && canvas?.ready && canvas.scene;
   if (!on) {
     document.getElementById(ROOT_ID)?.replaceChildren();
@@ -113,7 +130,8 @@ export function refreshHud() {
     seen.add(found.region.id);
     traps.push(found);
   }
-  el.innerHTML = links(traps) + traps.map(({ region, behavior }) => button(region, behavior)).join("");
+  const parts = traps.flatMap(({ region, behavior }) => activatorsOf(region).map((part) => triggerButtons(part, behavior.name || region.name)));
+  el.innerHTML = links(traps) + parts.join("") + traps.map(({ region, behavior }) => trapButtons(region, behavior)).join("");
   primed = true;
   syncHudZoom();
 }
@@ -133,45 +151,112 @@ export function clearHud() {
   document.getElementById(ROOT_ID)?.replaceChildren();
   seenNoticed.clear();
   primed = false;
+  dragging = null;
 }
 
+/* ---------------------------------------------------------------- перетаскивание */
+
+/**
+ * Взялись за «✥»: рамка области бежит за указателем по клеткам; отпустили — область переехала.
+ * Ловушка едет вместе с триггерами, которые внутри неё.
+ */
+function onPointerDown(event) {
+  const handle = event.target.closest(".st-map-btn");
+  if (!handle) return;
+  // Не отдавать нажатие холсту под кнопкой (иначе снимется выделение токенов).
+  event.stopPropagation();
+  if (handle.dataset.act !== "move" || event.button !== 0 || !game.user.isGM) return;
+  const region = canvas.scene?.regions.get(handle.dataset.region);
+  if (!region) return;
+  event.preventDefault();
+  const root = document.getElementById(ROOT_ID);
+  const b = regionBounds(region);
+  const ghost = document.createElement("div");
+  ghost.className = `st-map-ghost${handle.dataset.trigger ? " is-trigger" : ""}`;
+  Object.assign(ghost.style, { left: `${b.x}px`, top: `${b.y}px`, width: `${b.width}px`, height: `${b.height}px` });
+  root?.append(ghost);
+  try {
+    handle.setPointerCapture?.(event.pointerId);
+  } catch {
+    /* указатель уже отпущен — дотянем без захвата */
+  }
+  const grid = canvas.scene.grid.size || 100;
+  dragging = { region, trap: !handle.dataset.trigger, startX: event.clientX, startY: event.clientY, dx: 0, dy: 0, ghost, b, stale: false };
+
+  const move = (e) => {
+    const scale = Number(canvas?.stage?.scale?.x) || 1;
+    dragging.dx = snapDelta((e.clientX - dragging.startX) / scale, grid);
+    dragging.dy = snapDelta((e.clientY - dragging.startY) / scale, grid);
+    ghost.style.left = `${b.x + dragging.dx}px`;
+    ghost.style.top = `${b.y + dragging.dy}px`;
+  };
+  const up = async () => {
+    handle.removeEventListener("pointermove", move);
+    handle.removeEventListener("pointerup", up);
+    handle.removeEventListener("pointercancel", up);
+    const { dx, dy, trap } = dragging;
+    ghost.remove();
+    dragging = null;
+    try {
+      await moveRegion(region, dx, dy, { withInside: trap });
+    } catch (err) {
+      console.warn("ssl_traps | не удалось передвинуть область", err);
+    }
+    scheduleHud();
+  };
+  handle.addEventListener("pointermove", move);
+  handle.addEventListener("pointerup", up);
+  handle.addEventListener("pointercancel", up);
+}
+
+/* ---------------------------------------------------------------- щелчки */
+
 async function onClick(event) {
-  const btn = event.target.closest(".st-map-btn");
-  if (!btn || !game.user.isGM) return;
+  const button = event.target.closest(".st-map-btn");
+  if (!button || !game.user.isGM) return;
   event.preventDefault();
   event.stopPropagation();
-  const region = canvas.scene?.regions.get(btn.dataset.region);
-  const behavior = region?.behaviors.get(btn.dataset.behavior);
-  if (!region || !behavior) return;
-  if (btn.dataset.act === "disarm") return disarm(btn, region, behavior);
-  if (btn.dataset.act === "fire") return fire(btn, behavior);
-  btn.disabled = true;
+  const act = button.dataset.act;
+  if (act === "move") return; // ручка — только тянуть
+  const region = canvas.scene?.regions.get(button.dataset.region);
+  if (!region) return;
+  if (act === "removeTrigger") return removeTrigger(button, region);
+  const behavior = region.behaviors.get(button.dataset.behavior);
+  if (!behavior) return;
+  if (act === "disarm") return disarm(button, region, behavior);
+  if (act === "fire") return fire(button, behavior);
+  if (act === "config") return TrapEditor.openPlaced(region, behavior);
+  if (act === "addTrigger") return busy(button, () => addTriggerNotified(region, behavior));
+  return busy(button, () => setRevealed(region, behavior, !isRevealed(region)));
+}
+
+async function busy(button, fn) {
+  button.disabled = true;
   try {
-    await setRevealed(region, behavior, !isRevealed(region));
+    return await fn();
   } finally {
-    btn.disabled = false;
+    button.disabled = false;
   }
+}
+
+/** Убрать триггер; у ловушки — новое число триггеров. Не осталось — срабатывает её область. */
+function removeTrigger(button, part) {
+  const found = trapOfActivator(part);
+  return busy(button, async () => {
+    await part.delete();
+    if (found) await found.behavior.update({ "system.activators": activatorsOf(found.region).length });
+  });
 }
 
 /** Сработать сейчас — по всем в области ловушки. Разыгрывает активный ведущий. */
-async function fire(btn, behavior) {
+function fire(button, behavior) {
   if (!game.users.activeGM?.isSelf) return ui.notifications.warn(t("Notify.noGM"));
-  btn.disabled = true;
-  try {
-    await triggerNow(behavior, []);
-  } finally {
-    btn.disabled = false;
-  }
+  return busy(button, () => triggerNow(behavior, []));
 }
 
 /** Попытка обезвредить выделенным токеном: бросок навыка или воровских инструментов против Сл. */
-async function disarm(btn, region, behavior) {
+function disarm(button, region, behavior) {
   const [token] = (canvas.tokens?.controlled ?? []).map((tk) => tk.document ?? tk).filter((d) => d?.actor);
   if (!token) return ui.notifications.warn(t("Notify.selectToken"));
-  btn.disabled = true;
-  try {
-    await attemptDisarm(region, behavior, token);
-  } finally {
-    btn.disabled = false;
-  }
+  return busy(button, () => attemptDisarm(region, behavior, token));
 }

@@ -3,10 +3,10 @@
    группу (слой регионов — на «Регионы»), и кнопки «Западни» пропадали бы, едва появившись. Поэтому
    ведущий остаётся на том слое, где был (обычно токены), а группа — это кнопки модуля:
    - череп (выбран сразу) — открыть окно «Западни»;
-   - «Выбрать и поправить область ловушки» — перейти в «Регионы» с инструментом «Выбрать»: там
-     области ловушек и их триггеров выделяют, двигают и перерисовывают;
    - «Библиотека», «Мои ловушки», «Ловушки этой сцены» — окно сразу на нужной вкладке;
-   - переключатель кнопок «показать / скрыть» у ловушек на карте.
+   - переключатель кнопок у ловушек на карте.
+   Двигать ловушки и триггеры, настраивать и добавлять триггеры — кнопками у ловушек на карте
+   (foundry/gm-hud.mjs), без перехода в «Регионы». Фигуру произвольной формы — в «Регионах».
    На чужие панели (токены и другие) модуль кнопок не добавляет; быстро открыть окно — и клавишей. */
 
 import { TrapApp } from "./apps/trap-app.mjs";
@@ -16,15 +16,6 @@ import { setSetting, setting } from "./settings.mjs";
 const ICON = "fa-solid fa-skull-crossbones";
 const GROUP = "sslTraps";
 
-/** Перейти в группу «Регионы» с инструментом «Выбрать». */
-function toRegions() {
-  try {
-    ui.controls?.activate?.({ control: "regions", tool: "select" });
-  } catch (err) {
-    console.warn("ssl_traps | не удалось открыть «Регионы»", err);
-  }
-}
-
 /** Инструменты группы; run(active, event) — что сделать по нажатию. */
 function groupTools() {
   const open = (tab) => () => TrapApp.open(tab);
@@ -32,7 +23,6 @@ function groupTools() {
     // Выбранный инструмент группы: нажали на череп — открылось окно. Без события (панель
     // восстанавливается после перезагрузки) окно само не открывается.
     { name: "traps", title: "TRAPS.Controls.open", icon: ICON, run: (active, event) => active && event && TrapApp.open() },
-    { name: "select", title: "TRAPS.Controls.select", icon: "fa-solid fa-expand", button: true, run: toRegions },
     { name: "library", title: "TRAPS.Controls.library", icon: "fa-solid fa-book-skull", button: true, run: open("library") },
     { name: "mine", title: "TRAPS.Controls.mine", icon: "fa-solid fa-feather-pointed", button: true, run: open("mine") },
     { name: "scene", title: "TRAPS.Controls.scene", icon: "fa-solid fa-map-location-dot", button: true, run: open("scene") },

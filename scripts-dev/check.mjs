@@ -68,7 +68,7 @@ const [trapSrc, activatorSrc = ""] = behaviorSrc.split("export class ActivatorBe
 const fields = fieldsOf(trapSrc);
 const activatorFields = fieldsOf(activatorSrc);
 if (fields.length < 20) fail(`поля поведения не нашлись в behavior.mjs (${fields.length})`);
-if (activatorFields.length < 2) fail(`поля триггера не нашлись в behavior.mjs (${activatorFields.length})`);
+if (activatorFields.length < 1) fail(`поля триггера не нашлись в behavior.mjs (${activatorFields.length})`);
 const families = [
   ...CATALOG.flatMap((x) => ["name", "text", "flavor"].map((k) => `TRAPS.Trap.${x.id}.${k}`)),
   ...FX_NAMES.map((x) => `TRAPS.Fx.${x}`),
@@ -77,9 +77,9 @@ const families = [
   ...TIERS.map((x) => `TRAPS.Tier.${x}`),
   ...fields.map((x) => `TRAPS.Behavior.FIELDS.${x}.label`),
   ...activatorFields.map((x) => `TRAPS.ActivatorBehavior.FIELDS.${x}.label`),
-  ...["none", "plate", "wire"].map((x) => `TRAPS.Activator.${x}`),
-  ...["plate", "wire"].map((x) => `TRAPS.ActivatorKind.${x}`),
-  ...["manual", "plate", "wire", "count"].map((x) => `TRAPS.Activation.${x}`),
+  ...["none", "1", "2", "3"].map((x) => `TRAPS.Activators.${x}`),
+  "TRAPS.ActivatorName",
+  ...["manual", "count"].map((x) => `TRAPS.Activation.${x}`),
   ...["trigger", "area"].map((x) => `TRAPS.Affects.${x}`),
   ...["auto", "once"].map((x) => `TRAPS.Rearm.${x}`),
   ...["half", "none"].map((x) => `TRAPS.OnSave.${x}`),

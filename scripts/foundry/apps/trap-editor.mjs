@@ -31,7 +31,7 @@ import { activationLabel, affectsLabel, fieldChips, stats } from "../summary.mjs
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 /** Поля, которые правятся в окне, и то, как читать их из формы. */
-const NUMBER_FIELDS = new Set(["detectDC", "detectRange", "disarmDC", "saveDC", "attackBonus", "escapeDC", "width", "height"]);
+const NUMBER_FIELDS = new Set(["detectDC", "detectRange", "disarmDC", "saveDC", "attackBonus", "escapeDC", "width", "height", "activators"]);
 const CHECK_FIELDS = new Set(["magical", "stops", "fixedDamage", "manual"]);
 const FORMULA_FIELDS = new Set(["damage", "damage2"]);
 
@@ -106,6 +106,8 @@ export class TrapEditor extends HandlebarsApplicationMixin(ApplicationV2) {
         name: src.behavior.name || src.region.name,
         text: system.notes,
         ...cellsOf(src.region),
+        // Сколько триггеров на самом деле стоит на сцене — их ведущий мог добавить и на карте.
+        activators: activatorsOf(src.region).length,
       });
     } else {
       const { entry } = src;
@@ -282,9 +284,9 @@ export class TrapEditor extends HandlebarsApplicationMixin(ApplicationV2) {
           field("affects", "select", { choices: { trigger: t("Affects.trigger"), area: t("Affects.area") } }),
           field("rearm", "select", { choices: { auto: t("Rearm.auto"), once: t("Rearm.once") } }),
           field("stops", "check"),
-          field("activator", "select", {
-            choices: { "": t("Activator.none"), plate: t("Activator.plate"), wire: t("Activator.wire") },
-            hint: this.#activatorHint(),
+          field("activators", "select", {
+            choices: { 0: t("Activators.none"), 1: t("Activators.1"), 2: t("Activators.2"), 3: t("Activators.3") },
+            hint: t("Editor.activatorHint"),
             wide: true,
           }),
           field("manual", "check", { hint: t("Editor.manualHint"), wide: true }),
@@ -306,13 +308,6 @@ export class TrapEditor extends HandlebarsApplicationMixin(ApplicationV2) {
     const open = this._open ?? new Set(d.device ? ["checks", "damage"] : groups.map((g) => g.id));
     this._open = open;
     return groups.map((g) => ({ ...g, label: t(`Editor.${g.id}`), open: open.has(g.id) }));
-  }
-
-  /** Подсказка под «Триггер»: у ловушки на сцене — сколько триггеров уже стоит. */
-  #activatorHint() {
-    if (!this.isScene) return t("Editor.activatorHint");
-    const n = activatorsOf(this.source.region).length;
-    return n ? t("Editor.activatorScene", { n }) : t("Editor.activatorHint");
   }
 
   #previewCard(d) {

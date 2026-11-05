@@ -32,6 +32,9 @@ export const SETTINGS = {
   updateState: "updateState",
 };
 
+/** Цвет области-триггера: бирюзовый — ведущий сразу отличает триггер от самой ловушки. */
+export const ACTIVATOR_COLOR = "#2fb8c8";
+
 /** Цвет области по опасности. */
 export const SEVERITY_COLOR = { setback: "#d9a441", dangerous: "#e0702e", deadly: "#c0392b" };
 
