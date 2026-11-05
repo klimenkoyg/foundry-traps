@@ -1842,3 +1842,47 @@
 .ssl-traps-card .st-card-btn.is-damage i {
   color: var(--st-dangerous);
 }
+
+/* ---------------------------------------------------------------- предложить идею */
+
+/* Неброская ссылка на форму идей внизу окна (только у ведущего), как в «Таверне». */
+.ssl-traps .st-app-foot {
+  display: flex;
+  justify-content: flex-end;
+  flex: 0 0 auto;
+  margin-top: auto;
+  padding: 6px 12px 8px;
+  border-top: 1px solid var(--st-line-soft);
+}
+
+.ssl-traps .st-idea {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--st-ink-3);
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.ssl-traps .st-idea:hover,
+.ssl-traps .st-idea:focus-visible {
+  border-color: var(--st-line);
+  color: var(--st-ink);
+  text-shadow: none;
+}
+
+.ssl-traps .st-idea:focus-visible {
+  outline: 2px solid var(--st-accent);
+  outline-offset: 1px;
+}
+
+.ssl-traps .st-idea .fa-lightbulb {
+  color: var(--st-accent);
+}
+
+.ssl-traps .st-idea .fa-arrow-up-right-from-square {
+  font-size: 10px;
+}

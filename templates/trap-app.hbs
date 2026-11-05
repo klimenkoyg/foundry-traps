@@ -128,4 +128,10 @@
   {{/if}}
 
   {{/if}}
+
+  {{#if ideasUrl}}
+  <footer class="st-app-foot">
+    <a class="st-idea" href="{{ideasUrl}}" target="_blank" rel="noopener noreferrer" data-tooltip="{{localize "TRAPS.App.ideaHint"}}"><i class="fa-solid fa-lightbulb" inert></i><span>{{localize "TRAPS.App.idea"}}</span><i class="fa-solid fa-arrow-up-right-from-square" inert></i></a>
+  </footer>
+  {{/if}}
 </div>

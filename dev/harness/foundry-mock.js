@@ -96,7 +96,7 @@
       testUserPermission: (user) => user.isGM || owners.includes(user.playerAs ?? user.id),
       async rollSavingThrow({ ability }, dialog, message) {
         const r = await roll(actor.system.abilities[ability]?.save?.value ?? actor.system.abilities[ability]?.mod ?? 0);
-        if (message?.create) await r.toMessage({ flavor: `${name}: спасбросок ${ability}` });
+        if (message?.create) await r.toMessage({ flavor: EN ? `${name}: ${CONFIG.DND5E.abilities[ability]?.label ?? ability} save` : `${name}: спасбросок ${ability}` });
         return [r];
       },
       async rollSkill({ skill }, dialog, message) {
@@ -106,7 +106,7 @@
       },
       async rollToolCheck({ tool }, dialog, message) {
         const r = await roll(thief);
-        if (message?.create) await r.toMessage({ flavor: `${name}: воровские инструменты` });
+        if (message?.create) await r.toMessage({ flavor: EN ? `${name}: thieves’ tools` : `${name}: воровские инструменты` });
         return [r];
       },
       async applyDamage(list, { multiplier = 1 } = {}) {
@@ -345,16 +345,33 @@
   window.Hooks = Hooks;
   window.Roll = Roll;
   window.CONST = { REGION_EVENTS: { TOKEN_MOVE_IN: "tokenMoveIn" }, REGION_VISIBILITY: { LAYER: 0, GAMEMASTER: 1, ALWAYS: 2 } };
+  const EN = (params.get("lang") ?? "ru") === "en";
   const lab = (o) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, typeof v === "string" ? { label: v } : v]));
   window.CONFIG = {
     Canvas: { polygonBackends: { sight: { testCollision }, move: { testCollision } } },
     RegionBehavior: { dataModels: {}, typeIcons: {}, typeLabels: {} },
-    statusEffects: [
+    // Названия dnd5e на языке стенда (?lang=en) — в Foundry их даёт сама система.
+    statusEffects: (EN ? [
+      ["blinded", "Blinded"], ["deafened", "Deafened"], ["frightened", "Frightened"], ["grappled", "Grappled"],
+      ["incapacitated", "Incapacitated"], ["paralyzed", "Paralyzed"], ["poisoned", "Poisoned"], ["prone", "Prone"],
+      ["restrained", "Restrained"], ["stunned", "Stunned"], ["unconscious", "Unconscious"],
+    ] : [
       ["blinded", "Ослеплённый"], ["deafened", "Оглохший"], ["frightened", "Испуганный"], ["grappled", "Схваченный"],
       ["incapacitated", "Недееспособный"], ["paralyzed", "Парализованный"], ["poisoned", "Отравленный"], ["prone", "Лежащий"],
       ["restrained", "Опутанный"], ["stunned", "Ошеломлённый"], ["unconscious", "Бессознательный"],
-    ].map(([id, name]) => ({ id, name })),
-    DND5E: {
+    ]).map(([id, name]) => ({ id, name })),
+    DND5E: EN ? {
+      abilities: {
+        str: { label: "Strength", abbreviation: "STR" }, dex: { label: "Dexterity", abbreviation: "DEX" }, con: { label: "Constitution", abbreviation: "CON" },
+        int: { label: "Intelligence", abbreviation: "INT" }, wis: { label: "Wisdom", abbreviation: "WIS" }, cha: { label: "Charisma", abbreviation: "CHA" },
+      },
+      damageTypes: lab({
+        acid: "Acid", bludgeoning: "Bludgeoning", cold: "Cold", fire: "Fire", force: "Force", lightning: "Lightning",
+        necrotic: "Necrotic", piercing: "Piercing", poison: "Poison", psychic: "Psychic", radiant: "Radiant",
+        slashing: "Slashing", thunder: "Thunder",
+      }),
+      skills: lab({ acr: "Acrobatics", arc: "Arcana", ath: "Athletics", inv: "Investigation", prc: "Perception", slt: "Sleight of Hand", sur: "Survival" }),
+    } : {
       abilities: {
         str: { label: "Сила", abbreviation: "СИЛ" }, dex: { label: "Ловкость", abbreviation: "ЛВК" }, con: { label: "Телосложение", abbreviation: "ТЕЛ" },
         int: { label: "Интеллект", abbreviation: "ИНТ" }, wis: { label: "Мудрость", abbreviation: "МДР" }, cha: { label: "Харизма", abbreviation: "ХАР" },

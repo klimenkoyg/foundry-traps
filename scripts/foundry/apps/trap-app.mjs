@@ -14,7 +14,7 @@ import {
   setRevealed,
   triggerNow,
 } from "../actions.mjs";
-import { DRAG_TYPE, SETTINGS, THEME, tpl } from "../constants.mjs";
+import { DRAG_TYPE, IDEAS_URL, SETTINGS, THEME, tpl } from "../constants.mjs";
 import { damageLabel } from "../dnd5e.mjs";
 import { t } from "../i18n.mjs";
 import { deleteCustom, getEntry, listEntries, saveCustom } from "../library.mjs";
@@ -158,6 +158,7 @@ export class TrapApp extends HandlebarsApplicationMixin(ApplicationV2) {
       scene: scene ? { name: scene.name, traps, anyHidden: traps.some((x) => !x.visible), anyShown: traps.some((x) => x.visible) } : null,
       sceneCount: traps.length,
       searchHint: t("App.searchSelectedHint"),
+      ideasUrl: game.user.isGM ? IDEAS_URL : "",
       // Переключатели розыгрыша — общие настройки мира прямо на вкладке сцены.
       modes: [
         ["detectMode", DETECT_MODES],

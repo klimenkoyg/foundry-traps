@@ -31,3 +31,6 @@ export const SETTINGS = {
 export const SEVERITY_COLOR = { setback: "#d9a441", dangerous: "#e0702e", deadly: "#c0392b" };
 
 export const tpl = (path) => `modules/${MODULE_ID}/templates/${path}`;
+
+/** Форма для идей (Google Форма, та же, что в «Таверне»): кнопка «Предложить идею» у ведущего внизу окна. Пусто — кнопки нет. */
+export const IDEAS_URL = "https://forms.gle/FuMwJ2JzSn3DHCTc7";

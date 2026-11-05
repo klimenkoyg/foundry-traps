@@ -11,12 +11,12 @@
     "Controls": {
       "title": "Trap Library",
       "open": "Open Trap Library",
-      "group": "Trap Library: traps",
-      "select": "Select and adjust a trap region",
-      "library": "Trap library",
+      "group": "Traps",
+      "select": "Select and edit trap regions",
+      "library": "Library",
       "mine": "My traps",
       "scene": "Traps on this scene",
-      "mapButtons": "Reveal / hide buttons on traps on the map"
+      "mapButtons": "Trap buttons on the map"
     },
     "Keybinding": {
       "open": "Open the Trap Library"
@@ -27,7 +27,7 @@
       "deadly": "Deadly"
     },
     "Kind": {
-      "all": "All",
+      "all": "Any kind",
       "mechanical": "Mechanical",
       "magical": "Magical"
     },
@@ -37,22 +37,22 @@
       "2": "5–10",
       "3": "11–16",
       "4": "17–20",
-      "hint": "Damage scales with the SRD severity table; DCs stay as written."
+      "hint": "Damage scales with the SRD trap severity table; DCs stay as written."
     },
     "Affects": {
-      "trigger": "Only the one who stepped in",
+      "trigger": "Only whoever sets it off",
       "area": "Everyone in the area"
     },
     "Rearm": {
-      "auto": "Resets itself",
-      "once": "Fires once"
+      "auto": "Resets automatically",
+      "once": "Single use"
     },
     "OnSave": {
       "half": "Half damage",
       "none": "No damage"
     },
     "Skill": {
-      "thief": "Thieves' tools"
+      "thief": "Thieves’ tools"
     },
     "Fx": {
       "pit": "Pit",
@@ -85,7 +85,7 @@
       "zap": "Zap",
       "crack": "Ice crack",
       "boom": "Thunder",
-      "slash": "Blade ring",
+      "slash": "Blade swish",
       "rumble": "Rockfall",
       "alarm": "Bell",
       "sizzle": "Acid",
@@ -106,7 +106,7 @@
       },
       "bearTrap": {
         "name": "Bear Trap",
-        "text": "Steel jaws hidden under straw or leaves. A caught creature stays put until freed with Athletics or thieves' tools.",
+        "text": "Steel jaws hidden under straw or leaves. A caught creature is held in place until freed with Athletics or thieves’ tools.",
         "flavor": "Steel clangs underfoot — the jaws snap shut!"
       },
       "poisonDarts": {
@@ -117,7 +117,7 @@
       "arrowVolley": {
         "name": "Arrow Volley",
         "text": "A tripwire looses a volley from arrow slits. Everyone in the area is under fire.",
-        "flavor": "A click — and arrows rain from the slits!"
+        "flavor": "A click — arrows rain from the slits!"
       },
       "scythingBlade": {
         "name": "Scything Blade",
@@ -126,13 +126,13 @@
       },
       "fallingNet": {
         "name": "Falling Net",
-        "text": "A net hangs under the ceiling; a tripwire drops it. Those caught stay put until they work free.",
+        "text": "A net hangs under the ceiling; a tripwire drops it. Anyone caught is held until they work free.",
         "flavor": "A heavy net drops from the ceiling!"
       },
       "collapsingRoof": {
         "name": "Collapsing Roof",
         "text": "The supports are sawn through, and a tripwire brings the ceiling down. Cracks and fresh dust on the floor are the warning.",
-        "flavor": "The vault groans — and stones rain down!"
+        "flavor": "The ceiling groans — stones rain down!"
       },
       "rollingBoulder": {
         "name": "Rolling Boulder",
@@ -146,8 +146,8 @@
       },
       "acidSpray": {
         "name": "Acid Spray",
-        "text": "A pressurised vessel sprays acid on whoever steps on the plate. The floor around is pitted with burns.",
-        "flavor": "A hiss — and acid splashes in your face!"
+        "text": "A pressurized vessel sprays acid on whoever steps on the plate. The floor around it is pitted with burns.",
+        "flavor": "A hiss — acid sprays into your face!"
       },
       "poisonGas": {
         "name": "Poison Gas",
@@ -156,12 +156,12 @@
       },
       "sleepGas": {
         "name": "Sleep Gas",
-        "text": "A sweetish gas puts everyone in the area to sleep. A sleeper wakes when damaged or shaken awake.",
+        "text": "A sweet-smelling gas puts everyone in the area to sleep. A sleeper wakes when damaged or shaken awake.",
         "flavor": "The air turns sweet, eyelids grow heavy…"
       },
       "lightningRune": {
         "name": "Lightning Rune",
-        "text": "An invisible glyph on the floor strikes whoever steps on it with lightning. Arcana or dispelling disables it.",
+        "text": "An invisible glyph on the floor strikes whoever steps on it with lightning. Arcana or dispel magic disables it.",
         "flavor": "A rune flares underfoot — lightning strikes!"
       },
       "frostRune": {
@@ -171,7 +171,7 @@
       },
       "thunderPlate": {
         "name": "Thunder Plate",
-        "text": "A plate carved with a glyph answers a step with a thunderclap that knocks everyone nearby off their feet. It can be heard far away.",
+        "text": "A plate carved with a glyph answers a footstep with a thunderclap that knocks everyone nearby off their feet. It can be heard far away.",
         "flavor": "A thunderclap shakes the hall!"
       },
       "witheringSigil": {
@@ -191,39 +191,39 @@
       "search": "Search traps",
       "allSeverities": "Any severity",
       "allDamage": "Any damage",
-      "dragHint": "Click a trap to configure it, or drag it onto the map — it is placed as a hidden region under the cursor.",
+      "dragHint": "Click a trap to configure it, or drag it onto the map to place it there as a hidden region.",
       "empty": "Nothing found. Try another search or filter.",
       "custom": "Custom",
-      "deleteCustom": "Remove from My traps",
+      "deleteCustom": "Delete from My traps",
       "sceneEmpty": "No traps on this scene yet. Drag one from the library onto the map.",
       "noScene": "No scene is open.",
       "searchSelected": "Search with selected tokens",
-      "searchSelectedHint": "Selected tokens roll Perception against traps no farther than their “spot from” range (usually 10 ft) and in line of sight.",
+      "searchSelectedHint": "Selected tokens roll Perception against traps within their spot range (usually 10 ft) and in line of sight.",
       "pan": "Show on map",
       "configure": "Configure",
-      "arm": "Arm",
-      "disarm": "Disarm without a check",
+      "arm": "Re-arm",
+      "disarm": "Switch off (no check)",
       "reveal": "Reveal to players",
       "hide": "Hide from players",
-      "trigger": "Trigger",
-      "triggerHint": "Fires at the selected tokens, or at everyone in the area if none are selected.",
+      "trigger": "Set off",
+      "triggerHint": "Sets the trap off on the selected tokens, or on everyone in the area if none are selected.",
       "attempt": "Try to disarm with the selected token",
-      "save": "To my traps…",
-      "delete": "Remove trap from scene",
+      "save": "Save to My traps…",
+      "delete": "Remove from the scene",
       "armed": "Armed",
-      "disarmed": "Disarmed",
+      "disarmed": "Off",
       "revealed": "Visible to players",
       "hidden": "Hidden",
       "detected": "Spotted",
-      "triggered": "Triggered: {n}",
+      "triggered": "Triggered {n}×",
       "confirmDelete": "Remove the trap “{name}” from the scene?",
-      "confirmDeleteCustom": "Delete your trap “{name}” from the library?",
+      "confirmDeleteCustom": "Delete your trap “{name}” from My traps?",
       "visibility": "Players:",
       "revealAll": "Reveal all",
       "hideAll": "Hide all",
       "revealAllHint": "Reveal every trap on this scene to players",
       "hideAllHint": "Hide every trap on this scene from players",
-      "detectModeLabel": "Trap spotted:",
+      "detectModeLabel": "When spotted:",
       "detectMode": {
         "reveal": "Reveal right away",
         "gm": "Tell me"
@@ -235,21 +235,23 @@
       },
       "damageModeLabel": "Damage:",
       "damageMode": {
-        "button": "On click",
-        "auto": "Right away"
+        "button": "GM applies",
+        "auto": "Automatic"
       },
       "tabMine": "My traps",
       "mineEmptyTitle": "Nothing here yet",
-      "mineEmpty": "Traps you configure and save collect here. Open any trap from the library or on the scene, change what you need and press “To my traps…” — the module will ask what to call it.",
+      "mineEmpty": "Traps you configure and save show up here. Open any trap in the library or on the scene, change what you need and press “Save to My traps…” — you’ll be asked to name it.",
       "toLibrary": "Open the library",
-      "mineHint": "Click a trap to configure it, or drag it onto the map. The pencil renames it.",
-      "renameCustom": "Rename"
+      "mineHint": "Click a trap to configure it, or drag it onto the map. Use the pencil to rename it.",
+      "renameCustom": "Rename",
+      "idea": "Suggest an idea",
+      "ideaHint": "Opens a form in your browser"
     },
     "Hud": {
       "reveal": "“{name}” is hidden from players. Click to reveal.",
       "hide": "“{name}” is visible to players. Click to hide.",
-      "noticed": "“{name}” spotted by: {who}. Players don’t see it yet. Click to reveal.",
-      "disarm": "Disarm “{name}” with the selected token: {skill}, DC {dc}. Failing by 5 or more sets it off."
+      "noticed": "“{name}” was spotted by {who}. Players can’t see it yet — click to reveal.",
+      "disarm": "Disarm “{name}” with the selected token ({skill}, DC {dc}). Failing by 5 or more sets it off."
     },
     "Stat": {
       "detect": "Spot",
@@ -277,21 +279,21 @@
       "took": "damage: {n}",
       "tookNone": "no damage",
       "half": "half",
-      "condition": "becomes: {condition}",
+      "condition": "now {condition}",
       "noTargets": "The trap went off, but nobody is in the area.",
       "disarmOk": "{name} disarms “{trap}” ({skill}: {total} vs DC {dc}).",
       "disarmFail": "{name} fails to disarm “{trap}” ({skill}: {total} vs DC {dc}). The trap didn’t go off — they can try again.",
       "disarmTriggered": "{name} slips ({skill}: {total} vs DC {dc}, failed by 5 or more) — “{trap}” goes off!",
-      "noticed": "{name} notices a trap: “{trap}”.",
+      "noticed": "{name} spots a trap: “{trap}”.",
       "searchNone": "{name} finds no traps nearby.",
       "alarmGm": "The alarm trap “{trap}” went off.",
       "escape": "Escape: {skill}, DC {dc}",
       "howPassive": "Passive Perception {value} vs DC {dc}",
-      "howSearch": "Search: {value} vs DC {dc}",
-      "hiddenYet": "Players don’t see it yet.",
+      "howSearch": "Search roll {value} vs DC {dc}",
+      "hiddenYet": "Players can’t see it yet.",
       "seenByAll": "Players can see it.",
-      "tell": "Tell only the player",
-      "told": "Player knows",
+      "tell": "Tell just this player",
+      "told": "Player told",
       "pan": "Show on map",
       "searchNoneGm": "{name} searches for traps and finds nothing (Perception {value}).",
       "searchNothingNew": "{name} finds nothing new.",
@@ -299,11 +301,11 @@
       "noCheckWhy": "no saving throw",
       "cause": {
         "trigger": "steps on the trap",
-        "area": "in the trap area",
+        "area": "caught in the area",
         "manual": "hit by the trap",
-        "disarm": "slipped while disarming the trap"
+        "disarm": "slipped while disarming"
       },
-      "waitSave": "awaiting a save: {ability}, DC {dc}",
+      "waitSave": "needs a {ability} save, DC {dc}",
       "whySave": "{ability} save: {total} vs DC {dc} — {outcome}",
       "whyAttack": "attack {total} vs AC {ac} — {outcome}",
       "nat20": "natural 20",
@@ -311,44 +313,44 @@
       "halfDamage": "half damage",
       "noDamage": "no damage",
       "fullDamage": "full damage",
-      "waiting": "awaiting roll",
+      "waiting": "waiting for the roll",
       "willTake": "will take {n} damage",
       "takes": "takes {n} damage",
       "ofNominal": "of {n}",
-      "willCondition": "will be: {condition}",
+      "willCondition": "will be {condition}",
       "applied": "applied",
-      "rollSave": "{ability} save",
+      "rollSave": "Roll {ability} save",
       "saveFlavor": "{ability} save, DC {dc}",
       "apply": "Apply",
       "applyCondition": "Apply",
-      "rollAll": "Roll for everyone",
+      "rollAll": "Roll the rest",
       "applyAll": "Apply to all",
       "damageLater": "rolled after the saves",
-      "damageWait": "damage after all rolls",
+      "damageWait": "damage once everyone has rolled",
       "rollDamage": "Roll damage",
       "rollDamageHint": "Roll damage now without waiting for the remaining saves. It’s one roll for everyone.",
       "damageRolled": "Damage from “{trap}”:"
     },
     "Notify": {
       "gmOnly": "Only the GM can do this.",
-      "noGM": "A GM must be in the game: traps are resolved on the GM's client.",
+      "noGM": "A GM must be connected: traps are resolved on the GM’s side.",
       "selectToken": "Select a character token.",
       "noScene": "Open a scene first.",
       "placed": "Trap “{name}” placed.",
-      "saved": "“{name}” is in My traps.",
+      "saved": "Saved “{name}” to My traps.",
       "noActor": "This token has no actor.",
-      "notDnd5e": "Trap Library is made for D&D 5e: checks and damage won't work in another system.",
+      "notDnd5e": "Trap Library is made for D&D 5e: checks and damage won’t work in another system.",
       "updated": "Trap “{name}” updated.",
       "revealedAll": "Traps revealed to players: {n}.",
       "hiddenAll": "Traps hidden from players: {n}.",
-      "noticed": "{name} spots the trap “{trap}”. Players don’t see it yet: decide in chat or with the map button.",
+      "noticed": "{name} spotted “{trap}”. Players can’t see it yet — decide in chat or with the button on the map.",
       "otherScene": "This trap is on another scene.",
       "renamed": "Renamed: “{name}”."
     },
     "Behavior": {
       "FIELDS": {
         "trapId": {
-          "label": "From library",
+          "label": "Based on",
           "hint": "The built-in or custom trap this one was made from."
         },
         "icon": {
@@ -365,12 +367,12 @@
           "label": "Affects"
         },
         "detectDC": {
-          "label": "Detect DC",
-          "hint": "Against passive Perception and searching."
+          "label": "Spot DC",
+          "hint": "Against passive Perception and searches."
         },
         "detectRange": {
-          "label": "Spot from, ft",
-          "hint": "Passive Perception and searching work up to this far, counted in squares like the ruler: 10 ft is one empty square between."
+          "label": "Spot range, ft",
+          "hint": "Passive Perception and searches reach this far, counted in squares like the ruler: 10 ft means one empty square in between."
         },
         "disarmDC": {
           "label": "Disarm DC"
@@ -390,7 +392,7 @@
           "label": "Save DC"
         },
         "onSave": {
-          "label": "On a success"
+          "label": "On a successful save"
         },
         "damage": {
           "label": "Damage",
@@ -420,14 +422,14 @@
           "label": "After triggering"
         },
         "flavor": {
-          "label": "Trigger text",
-          "hint": "Players see it in chat."
+          "label": "Text for players",
+          "hint": "Shown to players in chat when the trap goes off."
         },
         "notes": {
           "label": "GM notes"
         },
         "size": {
-          "label": "Size in library"
+          "label": "Size, squares"
         },
         "width": {
           "label": "Width, squares"
@@ -446,7 +448,7 @@
         },
         "stops": {
           "label": "Stops movement",
-          "hint": "A token that steps in stops on the trap (pit, bear trap, net)."
+          "hint": "A token that steps in stops there (pit, bear trap, net)."
         },
         "device": {
           "label": "Device"
@@ -459,8 +461,8 @@
           "hint": "Like falling into a pit: 1d6 per 10 ft."
         },
         "escapeDC": {
-          "label": "DC to escape",
-          "hint": "0 — no need to escape."
+          "label": "Escape DC",
+          "hint": "0 — nothing to escape from."
         },
         "escapeSkill": {
           "label": "Escape with"
@@ -478,11 +480,11 @@
       },
       "volume": {
         "name": "Trap volume",
-        "hint": "0 — silent."
+        "hint": "0 mutes them."
       },
       "chatMode": {
-        "name": "Trigger card",
-        "hint": "Who sees the trap result in chat.",
+        "name": "Who sees the trigger card",
+        "hint": "With “GM only”, the owners of targets still get the card when they need to roll saves.",
         "public": "Everyone",
         "gm": "GM only"
       },
@@ -496,7 +498,7 @@
       },
       "triggerBy": {
         "name": "Who sets traps off",
-        "hint": "Traps can fire only on player characters, so the GM can move monsters freely.",
+        "hint": "Traps can fire on player characters only, so the GM can move monsters freely.",
         "players": "Player characters only",
         "all": "Everyone"
       },
@@ -506,27 +508,27 @@
       },
       "detectMode": {
         "name": "When a character spots a trap",
-        "hint": "What happens when a Perception check succeeds (passive or a search). Also switchable on the On this scene tab.",
-        "reveal": "Reveal it to players on the map right away; whisper the player",
-        "gm": "Tell the GM who spotted it; reveal to players by hand"
+        "hint": "What happens when a Perception check (passive or a search) succeeds. You can also switch this on the On this scene tab.",
+        "reveal": "Reveal it on the map to everyone and whisper the player",
+        "gm": "Tell the GM who spotted it; reveal it to players by hand"
       },
       "saveRolls": {
         "name": "Who rolls saves against traps",
-        "hint": "Players: each target in the trigger card has a save button for the character’s owner (the GM gets it too, plus “Roll for everyone”). Module: rolls right away. Characters without a player are always rolled by the module.",
+        "hint": "Players: each target in the trigger card has a save button for the character’s owner (the GM gets it too, plus “Roll the rest”). Module: rolls right away. Characters without a player are always rolled by the module.",
         "players": "Players roll with a button in the card",
         "module": "The module rolls right away"
       },
       "damageMode": {
-        "name": "When to apply trap damage",
+        "name": "When trap damage is applied",
         "hint": "On click: the GM sees in the card who takes how much and presses “Apply”. Right away: damage and conditions apply as soon as the check result is known.",
-        "button": "On the GM’s click in the card",
-        "auto": "Right away once the result is known"
+        "button": "When the GM clicks “Apply” in the card",
+        "auto": "Automatically, once the result is known"
       }
     },
     "Device": {
       "title": "Device",
-      "hint": "Describe the trap in the world's terms — damage, DCs and conditions follow on their own.",
-      "controlled": "Set by the device: changes when its settings change.",
+      "hint": "Describe the trap in-world — damage, DCs and conditions update to match.",
+      "controlled": "Set by the device: changes when you change its settings.",
       "yes": "Yes",
       "no": "No",
       "chip": {
@@ -555,7 +557,7 @@
       },
       "bearTrap": {
         "jaws": {
-          "label": "Trap",
+          "label": "Jaws",
           "small": "Hunting",
           "bear": "Bear",
           "giant": "Giant"
@@ -569,8 +571,8 @@
           "label": "Darts per target"
         },
         "poison": {
-          "label": "Tips",
-          "none": "Clean",
+          "label": "Coating",
+          "none": "None",
           "venom": "Venom",
           "sleep": "Sleeping draught"
         }
@@ -582,7 +584,7 @@
         "tips": {
           "label": "Arrowheads",
           "plain": "Plain",
-          "fire": "Burning",
+          "fire": "Flaming",
           "poison": "Poisoned"
         }
       },
@@ -597,7 +599,7 @@
           "label": "Speed",
           "slow": "Slow",
           "fast": "Fast",
-          "blur": "A blur"
+          "blur": "Blur"
         }
       },
       "net": {
@@ -617,7 +619,7 @@
           "slabs": "Slabs"
         },
         "buried": {
-          "label": "Buries"
+          "label": "Buries victims"
         }
       },
       "boulder": {
@@ -640,7 +642,7 @@
         },
         "nozzles": {
           "label": "Nozzles",
-          "one": "One, underfoot",
+          "one": "One, in the middle",
           "ring": "Ring around the area"
         }
       },
@@ -648,7 +650,7 @@
         "toxin": {
           "label": "Gas",
           "choking": "Choking",
-          "sleep": "Sleeping",
+          "sleep": "Sleep",
           "smoke": "Acrid smoke",
           "madness": "Maddening"
         },
@@ -692,30 +694,30 @@
       "check": "Resolved by",
       "checkSave": "Saving throw",
       "checkAttack": "Attack vs AC",
-      "checkAuto": "No roll",
+      "checkAuto": "No check",
       "width": "Width, squares",
       "height": "Height, squares",
       "escapeHint": "0 — no need to escape",
       "tierNote": "Damage is for a level {levels} party.",
       "tierFixed": "Damage is the same at any party level.",
       "dragHint": "You can drag the card onto the map.",
-      "playersSee": "Players will read",
+      "playersSee": "Players will see",
       "place": "Place on the map",
-      "placeHint": "Placed hidden at the centre of the screen.",
-      "apply": "Save trap",
-      "saveNew": "To my traps…",
+      "placeHint": "Places it hidden at the center of the view.",
+      "apply": "Save changes",
+      "saveNew": "Save to My traps…",
       "saveOver": "Save",
       "saveCopy": "Save as new…",
-      "play": "Animation",
+      "play": "Preview animation",
       "reset": "Reset"
     },
     "Name": {
-      "title": "What should this trap be called?",
+      "title": "Name your trap",
       "renameTitle": "New name",
       "label": "Name",
       "hint": "This is the trap’s name in My traps and on the map.",
       "overHint": "This trap was placed from your “{name}”. Update it or save as a new one?",
-      "overwrite": "Update mine",
+      "overwrite": "Update existing",
       "asNew": "Save as new",
       "save": "Save",
       "cancel": "Cancel",
