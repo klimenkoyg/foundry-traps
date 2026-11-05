@@ -248,7 +248,8 @@
     "Hud": {
       "reveal": "“{name}” is hidden from players. Click to reveal.",
       "hide": "“{name}” is visible to players. Click to hide.",
-      "noticed": "“{name}” spotted by: {who}. Players don’t see it yet. Click to reveal."
+      "noticed": "“{name}” spotted by: {who}. Players don’t see it yet. Click to reveal.",
+      "disarm": "Disarm “{name}” with the selected token: {skill}, DC {dc}. Failing by 5 or more sets it off."
     },
     "Stat": {
       "detect": "Spot",
@@ -278,9 +279,9 @@
       "half": "half",
       "condition": "becomes: {condition}",
       "noTargets": "The trap went off, but nobody is in the area.",
-      "disarmOk": "{name} disarms the trap “{trap}”.",
-      "disarmFail": "{name} fails to disarm the trap “{trap}”.",
-      "disarmTriggered": "{name} slips — the trap “{trap}” goes off!",
+      "disarmOk": "{name} disarms “{trap}” ({skill}: {total} vs DC {dc}).",
+      "disarmFail": "{name} fails to disarm “{trap}” ({skill}: {total} vs DC {dc}). The trap didn’t go off — they can try again.",
+      "disarmTriggered": "{name} slips ({skill}: {total} vs DC {dc}, failed by 5 or more) — “{trap}” goes off!",
       "noticed": "{name} notices a trap: “{trap}”.",
       "searchNone": "{name} finds no traps nearby.",
       "alarmGm": "The alarm trap “{trap}” went off.",
@@ -299,7 +300,8 @@
       "cause": {
         "trigger": "steps on the trap",
         "area": "in the trap area",
-        "manual": "hit by the trap"
+        "manual": "hit by the trap",
+        "disarm": "slipped while disarming the trap"
       },
       "waitSave": "awaiting a save: {ability}, DC {dc}",
       "whySave": "{ability} save: {total} vs DC {dc} — {outcome}",
@@ -320,7 +322,12 @@
       "apply": "Apply",
       "applyCondition": "Apply",
       "rollAll": "Roll for everyone",
-      "applyAll": "Apply to all"
+      "applyAll": "Apply to all",
+      "damageLater": "rolled after the saves",
+      "damageWait": "damage after all rolls",
+      "rollDamage": "Roll damage",
+      "rollDamageHint": "Roll damage now without waiting for the remaining saves. It’s one roll for everyone.",
+      "damageRolled": "Damage from “{trap}”:"
     },
     "Notify": {
       "gmOnly": "Only the GM can do this.",

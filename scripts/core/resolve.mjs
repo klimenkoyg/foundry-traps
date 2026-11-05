@@ -5,7 +5,8 @@
    state = {
      sceneId, name,
      trap: снимок нужных полей ловушки (trapSnapshot),
-     parts: [{ value, type, formula }]   — урон, брошенный один раз на всех,
+     parts: [{ value, type, formula }]   — урон один раз на всех; value null, пока не брошен,
+     rolled — урон брошен (сам — когда пришли все проверки, или кнопкой ведущего),
      targets: [{ id, actorId, name, img, cause, check, by, res, applied, dealt, conditioned }],
      saves: "players" | "module", damage: "button" | "auto"
    }
@@ -60,8 +61,31 @@ export function settle(trap, target, check = null, by = null) {
 
 export const totalDamage = (parts = []) => parts.reduce((sum, p) => sum + (Number(p.value) || 0), 0);
 
-/** Сколько урона получит цель до сопротивлений (половина — с округлением вниз). */
-export const nominal = (state, target) => (target.res ? Math.floor(totalDamage(state.parts) * target.res.multiplier) : 0);
+/** Урон ещё не брошен (есть что бросать). */
+export const needsDamageRoll = (state) => state.parts.length > 0 && !state.rolled;
+
+/** Все проверки пришли: ни одна цель не ждёт спасброска. */
+export const allChecked = (state) => state.targets.every((t) => t.res);
+
+/** Пора бросать урон сам: проверки все, а урон ещё не брошен. */
+export const damageDue = (state) => needsDamageRoll(state) && allChecked(state);
+
+/** Записать брошенный урон: values — числа по порядку частей. */
+export function setDamage(state, values) {
+  state.parts = state.parts.map((p, i) => ({ ...p, value: Number(values[i]) || 0 }));
+  state.rolled = true;
+  return state;
+}
+
+/** Получит ли цель урон (а не только состояние). */
+const takesDamage = (state, target) => state.parts.length > 0 && target.res.multiplier > 0;
+
+/** Сколько урона получит цель до сопротивлений (половина — с округлением вниз); null — урон не брошен. */
+export function nominal(state, target) {
+  if (!target.res) return 0;
+  if (takesDamage(state, target) && needsDamageRoll(state)) return null;
+  return Math.floor(totalDamage(state.parts) * target.res.multiplier);
+}
 
 /** Есть ли что применить к цели: урон или состояние. */
 export function hasEffect(state, target) {
@@ -70,18 +94,19 @@ export function hasEffect(state, target) {
 }
 
 /**
- * Стадия цели: "roll" — ждёт спасброска; "ready" — итог есть, урон ещё не нанесён;
- * "applied" — нанесено; "clear" — обошлось (промах, успех без урона).
+ * Стадия цели: "roll" — ждёт спасброска; "damage" — итог есть, ждёт броска урона;
+ * "ready" — можно наносить; "applied" — нанесено; "clear" — обошлось (промах, успех без урона).
  */
 export function stage(state, target) {
   if (!target.res) return "roll";
   if (target.applied) return "applied";
-  return hasEffect(state, target) ? "ready" : "clear";
+  if (!hasEffect(state, target)) return "clear";
+  return takesDamage(state, target) && needsDamageRoll(state) ? "damage" : "ready";
 }
 
 /** Сколько целей на каждой стадии. */
 export function counts(state) {
-  const c = { roll: 0, ready: 0, applied: 0, clear: 0 };
+  const c = { roll: 0, damage: 0, ready: 0, applied: 0, clear: 0 };
   for (const t of state.targets) c[stage(state, t)]++;
   return c;
 }

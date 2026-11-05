@@ -19,19 +19,19 @@ const busy = new Set();
  * trigger — токен, который наступил (для «только наступивший»);
  * targets — явный список токенов (ручной запуск из окна).
  */
-export async function fireTrap(behavior, { trigger = null, targets = null } = {}) {
+export async function fireTrap(behavior, { trigger = null, targets = null, cause = null } = {}) {
   const region = behavior.region ?? behavior.parent;
   const scene = region?.parent;
   if (!region || !scene || busy.has(behavior.uuid)) return null;
   busy.add(behavior.uuid);
   try {
-    return await resolve(behavior, region, scene, { trigger, targets });
+    return await resolve(behavior, region, scene, { trigger, targets, cause });
   } finally {
     busy.delete(behavior.uuid);
   }
 }
 
-async function resolve(behavior, region, scene, { trigger, targets }) {
+async function resolve(behavior, region, scene, { trigger, targets, cause }) {
   const trap = normalizeTrap(behavior.system.toObject());
   const name = behavior.name || region.name || t("Title");
   const bounds = regionBounds(region);
@@ -52,26 +52,21 @@ async function resolve(behavior, region, scene, { trigger, targets }) {
     elevation: regionElevation(region),
   });
 
-  // Урон бросается один раз на всех, как у заклинаний по области.
-  const rolls = [];
-  const parts = [];
-  for (const [formula, type] of [[trap.damage, trap.damageType], [trap.damage2, trap.damage2Type || trap.damageType]]) {
-    if (!formula) continue;
-    try {
-      const roll = await new Roll(formula).evaluate();
-      rolls.push(roll);
-      parts.push({ value: roll.total, type, formula, roll });
-    } catch (err) {
-      console.warn(`ssl_traps | неверная формула урона «${formula}»`, err);
-    }
-  }
+  // Урон один раз на всех, как у заклинаний по области. Бросается после проверок (foundry/card.mjs):
+  // сразу, если ждать нечего, иначе — когда придёт последний спасбросок или ведущий нажмёт «Бросить урон».
+  const parts = [
+    [trap.damage, trap.damageType],
+    [trap.damage2, trap.damage2Type || trap.damageType],
+  ]
+    .filter(([formula]) => formula)
+    .map(([formula, type]) => ({ formula, type, value: null }));
 
   // Пусть эффект «долетит», прежде чем у персонажей поменяются хиты.
   if (duration) await sleep(Math.min(700, duration * 0.35));
 
   // Карточка розыгрыша: цели, почему они под ударом, спасброски (игроков или модуля), урон —
   // сразу или по кнопке ведущего (foundry/card.mjs).
-  const message = await startCard({ scene, trap, name, tokens, trigger, manual: Boolean(targets), parts, rolls });
+  const message = await startCard({ scene, trap, name, tokens, trigger, manual: Boolean(targets), cause, parts });
 
   // Сработавшую ловушку видно всем; одноразовая больше не срабатывает.
   const update = { "system.triggers": (behavior.system.triggers ?? 0) + 1, "system.detected": true };

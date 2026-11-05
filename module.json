@@ -2,7 +2,7 @@
   "id": "ssl_traps",
   "title": "Западня · Trap Library",
   "description": "<p>Библиотека ловушек для D&D 5e с анимациями и звуками. Ведущий перетаскивает ловушку на карту — она встаёт скрытой областью и срабатывает, когда на неё наступает персонаж: эффект, спасбросок или атака, урон с сопротивлениями, состояние и карточка в чате. Пассивная Внимательность, поиск и обезвреживание, урон под уровень партии, свои ловушки в библиотеке. Свои анимации и звуки работают без сторонних модулей; с Sequencer и JB2A — их эффекты.</p><p>A trap library for D&D 5e with animations and sounds. The GM drags a trap onto the map — it becomes a hidden region that fires when a character steps in: an effect, a saving throw or an attack, damage with resistances, a condition and a chat card. Passive Perception, searching and disarming, damage scaled to party level, custom traps in the library. Built-in animations and sounds need no other modules; with Sequencer and JB2A, their effects are used. Russian and English.</p>",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "authors": [
     {
       "name": "Yuriy Klimenko",
@@ -64,7 +64,7 @@
   },
   "url": "https://github.com/klimenkoyg/foundry-traps",
   "manifest": "https://github.com/klimenkoyg/foundry-traps/releases/latest/download/module.json",
-  "download": "https://github.com/klimenkoyg/foundry-traps/releases/download/v0.2.0/module.zip",
+  "download": "https://github.com/klimenkoyg/foundry-traps/releases/download/v0.2.1/module.zip",
   "readme": "https://github.com/klimenkoyg/foundry-traps/blob/main/README.md",
   "bugs": "https://github.com/klimenkoyg/foundry-traps/issues",
   "changelog": "https://github.com/klimenkoyg/foundry-traps/blob/main/CHANGELOG.md",

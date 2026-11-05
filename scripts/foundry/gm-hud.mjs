@@ -1,8 +1,11 @@
-/* Кнопки ведущего прямо на карте: у каждой ловушки сцены — «глаз», чтобы одним щелчком показать её
-   игрокам или спрятать. Кнопки живут в #hud Foundry — HTML-слое поверх холста, который двигается и
-   масштабируется вместе с картой (там же кнопки токенов). Видны только ведущему. */
+/* Кнопки ведущего прямо на карте, у правого верхнего угла каждой ловушки:
+   - «глаз» — одним щелчком показать ловушку игрокам или спрятать;
+   - «ключ» (у взведённой) — попробовать обезвредить её выделенным токеном.
+   Кнопки живут в #hud Foundry — HTML-слое поверх холста, который двигается и масштабируется вместе
+   с картой (там же кнопки токенов). Видны только ведущему. */
 
-import { noticedBy, setRevealed } from "./actions.mjs";
+import { attemptDisarm, noticedBy, setRevealed } from "./actions.mjs";
+import { skillLabel } from "./dnd5e.mjs";
 import { SETTINGS, THEME } from "./constants.mjs";
 import { esc, t } from "./i18n.mjs";
 import { isRevealed, regionBounds, sceneTraps } from "./scene.mjs";
@@ -33,6 +36,7 @@ function container() {
     el.addEventListener("click", onClick);
     // Не отдавать щелчок холсту под кнопкой (иначе снимется выделение токенов).
     el.addEventListener("pointerdown", (event) => event.target.closest(".st-map-btn") && event.stopPropagation());
+    el.addEventListener("mousedown", (event) => event.target.closest(".st-map-btn") && event.stopPropagation());
     hud.append(el);
   }
   return el;
@@ -60,9 +64,16 @@ function button(region, behavior) {
       : t(shown ? "Hud.hide" : "Hud.reveal", { name: behavior.name || region.name }),
   );
   const state = `${shown ? "is-shown" : "is-hidden"}${who.length ? " is-noticed" : ""}${fresh ? " is-new" : ""}`;
-  return `<button type="button" class="st-map-btn ${state}" data-region="${region.id}" data-behavior="${behavior.id}"
-    style="left:${b.x + b.width}px;top:${b.y}px" aria-pressed="${shown}" aria-label="${tip}" data-tooltip="${tip}" data-name="${name}">
+  const ids = `data-region="${region.id}" data-behavior="${behavior.id}"`;
+  const eye = `<button type="button" class="st-map-btn ${state}" data-act="vis" ${ids} aria-pressed="${shown}" aria-label="${tip}" data-tooltip="${tip}" data-name="${name}">
     <i class="fa-solid ${shown ? "fa-eye" : "fa-eye-slash"}" inert></i></button>`;
+  // Обезвредить — только взведённую.
+  const s = behavior.system;
+  const disarmTip = esc(t("Hud.disarm", { name: behavior.name || region.name, skill: skillLabel(s.disarmSkill), dc: s.disarmDC }));
+  const key = behavior.disabled
+    ? ""
+    : `<button type="button" class="st-map-btn is-disarm" data-act="disarm" ${ids} aria-label="${disarmTip}" data-tooltip="${disarmTip}"><i class="fa-solid fa-screwdriver-wrench" inert></i></button>`;
+  return `<div class="st-map-trap" style="left:${b.x + b.width}px;top:${b.y}px">${eye}${key}</div>`;
 }
 
 /** Перерисовать кнопки текущей сцены. */
@@ -111,9 +122,22 @@ async function onClick(event) {
   const region = canvas.scene?.regions.get(btn.dataset.region);
   const behavior = region?.behaviors.get(btn.dataset.behavior);
   if (!region || !behavior) return;
+  if (btn.dataset.act === "disarm") return disarm(btn, region, behavior);
   btn.disabled = true;
   try {
     await setRevealed(region, behavior, !isRevealed(region));
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+/** Попытка обезвредить выделенным токеном: бросок навыка или воровских инструментов против Сл. */
+async function disarm(btn, region, behavior) {
+  const [token] = (canvas.tokens?.controlled ?? []).map((tk) => tk.document ?? tk).filter((d) => d?.actor);
+  if (!token) return ui.notifications.warn(t("Notify.selectToken"));
+  btn.disabled = true;
+  try {
+    await attemptDisarm(region, behavior, token);
   } finally {
     btn.disabled = false;
   }

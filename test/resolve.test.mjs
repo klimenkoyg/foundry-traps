@@ -1,11 +1,12 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { CATALOG } from "../scripts/core/catalog.mjs";
-import { anyHit, counts, hasEffect, newTarget, nominal, settle, stage, totalDamage, trapSnapshot } from "../scripts/core/resolve.mjs";
+import { allChecked, anyHit, counts, damageDue, hasEffect, needsDamageRoll, newTarget, nominal, setDamage, settle, stage, totalDamage, trapSnapshot } from "../scripts/core/resolve.mjs";
 import { normalizeTrap } from "../scripts/core/trap.mjs";
 
 const byId = (id) => normalizeTrap((CATALOG.find((e) => (e.trap ?? e).id === id).trap ?? CATALOG.find((e) => (e.trap ?? e).id === id)));
-const state = (trap, parts, targets) => ({ trap: trapSnapshot(trap), parts, targets });
+// rolled: true — урон уже брошен (как будто все проверки пришли).
+const state = (trap, parts, targets, rolled = true) => ({ trap: trapSnapshot(trap), parts, targets, rolled });
 
 test("спасбросок: цель ждёт броска, потом успех — половина, провал — полный урон и состояние", () => {
   const trap = { ...byId("poisonDarts"), attackBonus: null, saveAbility: "con", saveDC: 13, onSave: "half", condition: "poisoned" };
@@ -14,7 +15,7 @@ test("спасбросок: цель ждёт броска, потом успе�
   let brom = newTarget({ id: "t2", actorId: "a2", name: "Бром" });
   let s = state(trap, parts, [mira, brom]);
   assert.equal(stage(s, mira), "roll");
-  assert.deepEqual(counts(s), { roll: 2, ready: 0, applied: 0, clear: 0 });
+  assert.deepEqual(counts(s), { roll: 2, damage: 0, ready: 0, applied: 0, clear: 0 });
 
   mira = settle(s.trap, mira, { total: 15 }, "player");
   brom = settle(s.trap, brom, { total: 8 }, "module");
@@ -25,7 +26,7 @@ test("спасбросок: цель ждёт броска, потом успе�
   assert.equal(mira.res.condition, false);
   assert.equal(brom.res.condition, true);
   assert.equal(mira.by, "player");
-  assert.deepEqual(counts(s), { roll: 0, ready: 2, applied: 0, clear: 0 });
+  assert.deepEqual(counts(s), { roll: 0, damage: 0, ready: 2, applied: 0, clear: 0 });
   assert.equal(anyHit(s), true);
 
   s.targets[1] = { ...brom, applied: true, dealt: 9, conditioned: true };
@@ -61,4 +62,39 @@ test("только состояние (сеть): применять есть ч
   const s = state(net, [], []);
   const t = settle(s.trap, newTarget({ id: "t", name: "Мира" }), s.trap.mode === "save" ? { total: 1 } : null);
   assert.equal(hasEffect(s, t), Boolean(s.trap.condition));
+});
+
+test("урон бросается после проверок: ждёт последнего спасброска, потом один на всех", () => {
+  const trap = { ...byId("poisonGas") };
+  const parts = [{ formula: "2d10", type: "poison", value: null }];
+  let a = newTarget({ id: "t1", name: "Мира" });
+  let b = newTarget({ id: "t2", name: "Бром" });
+  const s = state(trap, parts, [a, b], false);
+  assert.equal(needsDamageRoll(s), true);
+  assert.equal(damageDue(s), false, "спасброски ещё не пришли");
+
+  s.targets[0] = settle(s.trap, a, { total: 20 }, "player");
+  assert.equal(stage(s, s.targets[0]), "damage", "итог есть — ждёт урона");
+  assert.equal(nominal(s, s.targets[0]), null, "числа ещё нет");
+  assert.equal(allChecked(s), false);
+  assert.equal(damageDue(s), false);
+
+  s.targets[1] = settle(s.trap, b, { total: 3 }, "module");
+  assert.equal(damageDue(s), true, "все проверки пришли — пора бросать");
+
+  setDamage(s, [11]);
+  assert.equal(s.rolled, true);
+  assert.equal(needsDamageRoll(s), false);
+  assert.equal(stage(s, s.targets[0]), "ready");
+  assert.equal(nominal(s, s.targets[0]), 5, "успех — половина 11 вниз");
+  assert.equal(nominal(s, s.targets[1]), 11);
+  assert.deepEqual(counts(s), { roll: 0, damage: 0, ready: 2, applied: 0, clear: 0 });
+});
+
+test("ловушка без урона (сеть): ждать урона нечего, состояние сразу", () => {
+  const net = { ...byId("fallingNet"), damage: "", damage2: "" };
+  const s = state(net, [], [], false);
+  assert.equal(needsDamageRoll(s), false);
+  const t = settle(s.trap, newTarget({ id: "t", name: "Мира" }), { total: 1 });
+  assert.equal(stage(s, t), s.trap.condition ? "ready" : "clear");
 });

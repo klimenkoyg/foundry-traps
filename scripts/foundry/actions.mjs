@@ -3,7 +3,7 @@
 import { placementRect, rangeCells, rectCells } from "../core/geometry.mjs";
 import { addNoticer, fromBehaviorData, knowsTrap, normalizeTrap, notices, resolveDisarm, toBehaviorData } from "../core/trap.mjs";
 import { BEHAVIOR_TYPE, MODULE_ID, SETTINGS, SEVERITY_COLOR, THEME_ATTR } from "./constants.mjs";
-import { passivePerception, rollCheck } from "./dnd5e.mjs";
+import { passivePerception, rollCheck, skillLabel } from "./dnd5e.mjs";
 import { esc, t } from "./i18n.mjs";
 import { getEntry, saveCustom } from "./library.mjs";
 import { noticeCard, visButton } from "./chat.mjs";
@@ -178,21 +178,32 @@ export async function searchWith(tokens) {
 }
 
 /** Попытка обезвредить: успех — ловушка выключена; провал на 5 и больше — срабатывает. */
+/**
+ * Попытка обезвредить (правила DMG): не ниже Сл — ловушка выключена и видна всем как обезвреженная;
+ * не хватило меньше 5 — ничего не происходит, можно пробовать ещё; не хватило 5 и больше —
+ * ловушка срабатывает на того, кто копался (ловушка по области — на всех в области).
+ * В сообщении — бросок против Сл и что дальше. Кто копался, тот о ловушке знает.
+ */
 export async function attemptDisarm(region, behavior, token) {
   const trap = normalizeTrap(behavior.system.toObject());
   const roll = await rollCheck(token.actor, trap.disarmSkill, trap.disarmDC);
   const outcome = resolveDisarm(roll.total, trap.disarmDC);
   const key = { success: "Chat.disarmOk", fail: "Chat.disarmFail", triggered: "Chat.disarmTriggered" }[outcome];
   const icon = { success: "fa-shield-halved", fail: "fa-hand", triggered: "fa-burst" }[outcome];
+  const data = { name: esc(token.name), trap: esc(behavior.name), skill: esc(skillLabel(trap.disarmSkill)), total: roll.total, dc: trap.disarmDC };
   await postMessage({
     alias: t("Title"),
-    content: `<p ${THEME_ATTR} class="ssl-traps-note is-${outcome}"><i class="fa-solid ${icon}" inert></i> ${t(key, { name: esc(token.name), trap: esc(behavior.name) })}</p>`,
+    content: `<p ${THEME_ATTR} class="ssl-traps-note is-${outcome}"><i class="fa-solid ${icon}" inert></i> ${t(key, data)}</p>`,
   });
+  const who = { id: token.actor?.id ?? token.id, name: token.name };
+  await region.update({ [`flags.${MODULE_ID}.noticedBy`]: addNoticer(noticedBy(region), who) });
   if (outcome === "success") {
     await behavior.update({ disabled: true, "system.detected": true, "system.disarmed": true });
     await setVisible(region, true);
   } else if (outcome === "triggered") {
-    await fireTrap(behavior, { trigger: token, targets: trap.affects === "area" ? null : [token] });
+    await fireTrap(behavior, { trigger: token, targets: trap.affects === "area" ? null : [token], cause: "disarm" });
+  } else if (!behavior.system.detected) {
+    await behavior.update({ "system.detected": true });
   }
   return outcome;
 }

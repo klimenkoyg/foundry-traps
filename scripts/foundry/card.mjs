@@ -4,7 +4,7 @@
    ведущий бросает за отсутствующих и наносит урон. Менять сообщение может только ведущий, поэтому
    броски игроков приходят ему по сокету модуля, а он дописывает их в карточку. */
 
-import { anyHit, counts, newTarget, nominal, settle, stage, trapSnapshot } from "../core/resolve.mjs";
+import { allChecked, anyHit, counts, damageDue, needsDamageRoll, newTarget, nominal, setDamage, settle, stage, trapSnapshot } from "../core/resolve.mjs";
 import { MODULE_ID, SETTINGS, SOCKET, THEME_ATTR } from "./constants.mjs";
 import {
   abilityLabel,
@@ -77,7 +77,10 @@ function effects(state, tg, st) {
   if (st === "roll") return `<span class="st-chip is-wait"><i class="fa-solid fa-dice-d20" inert></i> ${esc(t("Chat.waiting"))}</span>`;
   if (st === "clear") return `<span class="st-chip is-good">${esc(t("Chat.tookNone"))}</span>`;
   const done = st === "applied";
-  if (state.parts.length && tg.res.multiplier > 0) {
+  if (st === "damage") {
+    const half = tg.res.multiplier > 0 && tg.res.multiplier < 1 ? ` · ${t("Chat.halfDamage")}` : "";
+    bits.push(`<span class="st-chip is-wait"><i class="fa-solid fa-hourglass-half" inert></i> ${esc(t("Chat.damageWait"))}${esc(half)}</span>`);
+  } else if (state.parts.length && tg.res.multiplier > 0) {
     const n = nominal(state, tg);
     const dealt = done && Number.isFinite(tg.dealt) ? tg.dealt : n;
     const types = [...new Set(state.parts.map((p) => damageLabel(p.type)))].join(", ");
@@ -111,7 +114,9 @@ function targetHtml(state, tg, i) {
 export function cardHtml(state) {
   const { trap } = state;
   const sev = t(`Severity.${trap.severity}`);
-  const dmg = state.parts.map((p) => `<span><b>${p.value}</b> ${esc(damageLabel(p.type))} <small>${esc(p.formula)}</small></span>`).join(" + ");
+  const dmg = needsDamageRoll(state)
+    ? `${state.parts.map((p) => `<span>${esc(p.formula)} ${esc(damageLabel(p.type))}</span>`).join(" + ")} <small>· ${esc(t("Chat.damageLater"))}</small>`
+    : state.parts.map((p) => `<span><b>${p.value}</b> ${esc(damageLabel(p.type))} <small>${esc(p.formula)}</small></span>`).join(" + ");
   const escape = trap.escapeDC && anyHit(state) ? t("Chat.escape", { skill: skillLabel(trap.escapeSkill), dc: trap.escapeDC }) : "";
   const list = state.targets.length
     ? `<ul class="st-targets">${state.targets.map((tg, i) => targetHtml(state, tg, i)).join("")}</ul>`
@@ -119,6 +124,7 @@ export function cardHtml(state) {
   const c = counts(state);
   const footer = [];
   if (c.roll > 0) footer.push(`<button type="button" class="st-card-btn" data-ssl-traps-roll-all><i class="fa-solid fa-dice" inert></i> ${esc(t("Chat.rollAll"))}</button>`);
+  if (needsDamageRoll(state)) footer.push(`<button type="button" class="st-card-btn is-damage" data-ssl-traps-damage data-tooltip="${esc(t("Chat.rollDamageHint"))}"><i class="fa-solid fa-burst" inert></i> ${esc(t("Chat.rollDamage"))}</button>`);
   if (c.ready > 1 || (c.ready === 1 && c.roll > 0)) footer.push(`<button type="button" class="st-card-btn is-apply" data-ssl-traps-apply-all><i class="fa-solid fa-heart-crack" inert></i> ${esc(t("Chat.applyAll"))}</button>`);
   return `<div class="ssl-traps-card" ${THEME_ATTR} data-severity="${trap.severity}">
   <header><i class="${esc(trap.icon)}" inert></i><div><h3>${esc(state.name)}</h3><small>${esc(sev)}</small></div></header>
@@ -153,6 +159,41 @@ async function applyTarget(state, i) {
     }
   }
   tg.applied = true;
+}
+
+/** Бросить урон один раз на всех (мутирует state). → броски. */
+async function rollDamage(state) {
+  const rolls = [];
+  const values = [];
+  for (const p of state.parts) {
+    try {
+      const roll = await new Roll(p.formula).evaluate();
+      rolls.push(roll);
+      values.push(roll.total);
+    } catch (err) {
+      console.warn(`ssl_traps | неверная формула урона «${p.formula}»`, err);
+      values.push(0);
+    }
+  }
+  setDamage(state, values);
+  return rolls;
+}
+
+/** Урон, брошенный позже карточки, — отдельным сообщением: кубики видят все, кто видит карточку. */
+async function postDamage(state, rolls) {
+  const parts = state.parts.map((p) => `<b>${p.value}</b> ${esc(damageLabel(p.type))} <small>${esc(p.formula)}</small>`).join(" + ");
+  await postMessage({
+    alias: state.name,
+    rolls,
+    audience: state.audience ?? "auto",
+    content: `<p ${THEME_ATTR} class="ssl-traps-note"><i class="fa-solid fa-burst" inert></i> ${t("Chat.damageRolled", { trap: esc(state.name) })} ${parts}</p>`,
+  });
+}
+
+/** Все проверки пришли — бросить урон сам. force — ведущий нажал «Бросить урон», не дожидаясь. */
+async function settleDamage(state, force = false) {
+  if (!(force ? needsDamageRoll(state) : damageDue(state))) return;
+  await postDamage(state, await rollDamage(state));
 }
 
 /** Урон «сразу»: применить всем, у кого итог уже есть. */
@@ -191,14 +232,16 @@ function mutate(messageId, fn) {
  * Начать розыгрыш (активный ведущий): цели, атаки и спасброски модуля, карточка в чате.
  * tokens — кто под ударом; trigger — кто наступил; manual — ловушку запустил ведущий.
  */
-export async function startCard({ scene, trap, name, tokens, trigger, manual, parts, rolls }) {
+export async function startCard({ scene, trap, name, tokens, trigger, manual, cause: forced = null, parts, rolls = [] }) {
   const saves = setting(SETTINGS.saveRolls) === "module" ? "module" : "players";
   const damage = setting(SETTINGS.damageMode) === "auto" ? "auto" : "button";
   const snapshot = trapSnapshot(trap);
-  const state = { v: 1, sceneId: scene.id, name, trap: snapshot, parts: parts.map(({ value, type, formula }) => ({ value, type, formula })), targets: [], saves, damage };
+  const state = { v: 1, sceneId: scene.id, name, trap: snapshot, parts: parts.map(({ type, formula }) => ({ value: null, type, formula })), rolled: false, targets: [], saves, damage };
   const allRolls = [...rolls];
   for (const token of tokens) {
-    const cause = manual ? "manual" : trigger && token.id === trigger.id ? "trigger" : "area";
+    // forced — особая причина для того, кто запустил ловушку (например, «ошибается, обезвреживая»).
+    const own = trigger && token.id === trigger.id;
+    const cause = own && forced ? forced : manual ? "manual" : own ? "trigger" : "area";
     let tg = newTarget({ id: token.id, actorId: token.actor?.id, name: token.name, img: token.texture?.src ?? "", cause });
     if (snapshot.mode === "attack") {
       const { roll, natural } = await rollAttack(trap.attackBonus);
@@ -218,6 +261,8 @@ export async function startCard({ scene, trap, name, tokens, trigger, manual, pa
     }
     state.targets.push(tg);
   }
+  // Ждать нечего (атака, без проверки, спасброски модуля, никого нет) — урон сразу, кубики в карточке.
+  if (state.parts.length && (allChecked(state) || !state.targets.length)) allRolls.push(...(await rollDamage(state)));
   await autoApply(state);
 
   // Карточка видна всем или только ведущим; бросать свои спасброски — владельцам целей.
@@ -226,6 +271,7 @@ export async function startCard({ scene, trap, name, tokens, trigger, manual, pa
     const owners = state.targets.filter((tg) => !tg.res).flatMap((tg) => ownerIds(actorOf(state, tg)));
     audience = owners.length ? [...new Set(owners)] : "gm";
   }
+  state.audience = audience;
   return postMessage({ alias: name, rolls: allRolls, content: cardHtml(state), audience, flags: { [FLAG]: state } });
 }
 
@@ -237,6 +283,7 @@ async function receiveSave({ messageId, index, total, userId }) {
     const tg = state.targets[index];
     if (!tg || stage(state, tg) !== "roll" || !user || !canRoll(state, tg, user)) return false;
     state.targets[index] = settle(state.trap, tg, { total: Number(total) || 0 }, user.isGM ? "gm" : "player");
+    await settleDamage(state);
     await autoApply(state);
   });
 }
@@ -261,6 +308,7 @@ async function onRoll(message, index) {
     await mutate(message.id, async (s) => {
       if (stage(s, s.targets[index]) !== "roll") return false;
       s.targets[index] = settle(s.trap, s.targets[index], { total: roll.total }, "gm");
+      await settleDamage(s);
       await autoApply(s);
     });
   } else {
@@ -277,6 +325,16 @@ function onRollAll(message) {
       any = true;
     }
     if (!any) return false;
+    await settleDamage(state);
+    await autoApply(state);
+  });
+}
+
+/** «Бросить урон» — не дожидаясь отстающих спасбросков. */
+function onRollDamage(message) {
+  return mutate(message.id, async (state) => {
+    if (!needsDamageRoll(state)) return false;
+    await settleDamage(state, true);
     await autoApply(state);
   });
 }
@@ -326,13 +384,14 @@ export function onRenderCard(message, html) {
     if (!canRoll(state, state.targets[index] ?? {})) el.remove();
     else bind(el, () => onRoll(message, index));
   }
-  for (const el of root.querySelectorAll("[data-ssl-traps-apply], [data-ssl-traps-apply-all], [data-ssl-traps-roll-all]")) {
+  for (const el of root.querySelectorAll("[data-ssl-traps-apply], [data-ssl-traps-apply-all], [data-ssl-traps-roll-all], [data-ssl-traps-damage]")) {
     if (!game.user.isGM) {
       el.remove();
       continue;
     }
     if (el.hasAttribute("data-ssl-traps-apply")) bind(el, () => onApply(message, Number(el.dataset.sslTrapsApply)));
     else if (el.hasAttribute("data-ssl-traps-apply-all")) bind(el, () => onApplyAll(message));
+    else if (el.hasAttribute("data-ssl-traps-damage")) bind(el, () => onRollDamage(message));
     else bind(el, () => onRollAll(message));
   }
   // Пустые ряды кнопок (у игрока) не оставляем.

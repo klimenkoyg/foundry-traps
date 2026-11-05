@@ -1444,8 +1444,18 @@
   pointer-events: none;
 }
 
-.ssl-traps.st-map-hud .st-map-btn {
+/* Стопка кнопок одной ловушки: верхняя — по центру угла области, следующие — под ней. */
+.ssl-traps.st-map-hud .st-map-trap {
   position: absolute;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  transform: scale(var(--st-inv, 1)) translate(-15px, -15px);
+  transform-origin: 0 0;
+}
+
+.ssl-traps.st-map-hud .st-map-btn {
+  position: relative;
   display: grid;
   place-items: center;
   width: 30px;
@@ -1460,7 +1470,6 @@
   font-size: 13px;
   line-height: 1;
   box-shadow: 0 2px 8px rgb(0 0 0 / 0.55);
-  transform: translate(-50%, -50%) scale(var(--st-inv, 1));
   pointer-events: auto;
   cursor: pointer;
   transition: background-color 180ms cubic-bezier(0.22, 1, 0.36, 1), color 180ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 180ms cubic-bezier(0.22, 1, 0.36, 1);
@@ -1820,4 +1829,16 @@
   width: 26px;
   height: 26px;
   font-size: 12px;
+}
+
+.ssl-traps.st-map-hud .st-map-btn.is-disarm {
+  color: var(--st-ink-2);
+}
+
+.ssl-traps.st-map-hud .st-map-btn.is-disarm:hover {
+  color: var(--st-accent);
+}
+
+.ssl-traps-card .st-card-btn.is-damage i {
+  color: var(--st-dangerous);
 }

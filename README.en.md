@@ -95,7 +95,14 @@ Frost Rune, Thunder Plate, Withering Sigil and Alarm Plate. The numbers are for 
 
 The chat card shows every target: why it's hit (“steps on the trap”, “in the trap area”), how it
 was checked and what it takes — for example, “Dex save: 8 vs DC 13 — failure, full damage · will
-take 9 damage · will be: Prone”. Damage is rolled once for everyone.
+take 9 damage · will be: Prone”.
+
+**Damage is rolled once for everyone — after the checks,** like at the table: saves first, then
+damage. Until the saves are in, the card shows only the formula (“2d10 poison · rolled after the
+saves”). When the last save arrives (or the GM presses “Roll for everyone”), damage rolls on its
+own — as a separate roll in chat, so everyone sees the dice — and each target shows what it takes.
+Don't want to wait for stragglers — the GM has “Roll damage”. Where there's nothing to wait for (an
+attack, a trap with no check, the module rolling saves), damage rolls right away.
 
 Two switches, in the module settings and right on the On this scene tab:
 
@@ -133,8 +140,15 @@ check says “no saving throw” and how much each target takes.
     shows who has spotted it. A search that finds nothing is reported to the GM only, so the
     player can't guess from the answer.
   - **Reveal right away.** A marker appears on everyone's map; the player and the GM get a whisper.
-- **Disarming.** Select a token and press the wrench next to the trap: a skill or thieves' tools
-  check against the DC. Failing by 5 or more sets the trap off on whoever was tinkering with it.
+- **Disarming.** Select a token and press the wrench next to the trap — right on the map (under
+  the eye of every armed trap) or on the On this scene tab. A skill or thieves' tools check is
+  rolled against the disarm DC; the chat shows the roll vs the DC and what happens next:
+  - **meets the DC** — the trap switches off and everyone sees it as disarmed (green check);
+  - **fails by less than 5** — nothing happens, the trap stays armed and hidden, try again;
+  - **fails by 5 or more** — the trap goes off on whoever was tinkering (an area trap hits everyone
+    in the area); the card says “slipped while disarming the trap”.
+
+  Whoever tried to disarm a trap knows about it: they show up under “Spotted by” on the scene tab.
 
 ### What players see
 
@@ -165,7 +179,8 @@ The GM also sees a faint illustration on traps the players haven't spotted yet.
 The GM decides whether players see a trap — with one click from three places:
 
 - **On the map.** An eye button sits at the top-right corner of every trap: gold means players
-  see it, dark with a crossed-out eye means they don't. Click to toggle. Only the GM sees these;
+  see it, dark with a crossed-out eye means they don't. Click to toggle. Under the eye of an armed
+  trap there's a wrench: try to disarm it with the selected token. Only the GM sees these buttons;
   turn them off with the “Trap buttons on the map” setting.
 - **On the On this scene tab.** The “Visible to players / Hidden” label on each trap is a toggle.
   Above the list: “Reveal all” and “Hide all”.

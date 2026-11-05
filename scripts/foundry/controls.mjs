@@ -11,12 +11,32 @@ import { setSetting, setting } from "./settings.mjs";
 const ICON = "fa-solid fa-skull-crossbones";
 const GROUP = "sslTraps";
 
+/**
+ * Включить слой регионов. В v13–v14 слой включает не поле layer группы, а её обработчик —
+ * так делает и сама группа «Регионы». Не вышло — переключаемся на неё: там выбор областей точно работает.
+ */
+function activateRegions() {
+  const layer = canvas?.regions;
+  try {
+    if (layer && !layer.active) layer.activate({ tool: "select" });
+  } catch (err) {
+    console.warn("ssl_traps | слой регионов не включился", err);
+  }
+  if (layer && !layer.active) {
+    try {
+      ui.controls?.activate?.({ control: "regions", tool: "select" });
+    } catch {
+      /* старая панель */
+    }
+  }
+}
+
 /** Инструменты группы; run(active) — что сделать по нажатию. */
 function groupTools() {
   const open = (tab) => () => TrapApp.open(tab);
   return [
     // Обычный режим слоя регионов: выбрать область ловушки и поправить её.
-    { name: "select", title: "TRAPS.Controls.select", icon: "fa-solid fa-expand" },
+    { name: "select", title: "TRAPS.Controls.select", icon: "fa-solid fa-expand", run: (active) => active && activateRegions() },
     { name: "library", title: "TRAPS.Controls.library", icon: "fa-solid fa-book-skull", button: true, run: open("library") },
     { name: "mine", title: "TRAPS.Controls.mine", icon: "fa-solid fa-feather-pointed", button: true, run: open("mine") },
     { name: "scene", title: "TRAPS.Controls.scene", icon: "fa-solid fa-map-location-dot", button: true, run: open("scene") },
@@ -46,7 +66,7 @@ export function addSceneControls(controls) {
       layer: "regions",
       visible: true,
       activeTool: "select",
-      tools: tools.map(({ run, ...tool }) => ({ ...tool, visible: true, ...(run ? { onClick: run } : {}) })),
+      tools: tools.map(({ run, ...tool }) => ({ ...tool, visible: true, ...(run && tool.name !== "select" ? { onClick: run } : {}) })),
     });
     return;
   }
@@ -63,6 +83,11 @@ export function addSceneControls(controls) {
     order: after + 0.5,
     visible: true,
     activeTool: "select",
+    // Как у группы «Регионы»: выбрали группу — включили слой, сменили инструмент — перерисовали области.
+    onChange: (event, active) => {
+      if (active) activateRegions();
+    },
+    onToolChange: () => canvas?.regions?.setAllRenderFlags?.({ refreshState: true }),
     tools: Object.fromEntries(
       tools.map(({ run, ...tool }, i) => [tool.name, { ...tool, order: i, visible: true, ...(run ? { onChange: (event, active) => run(active) } : {}) }]),
     ),

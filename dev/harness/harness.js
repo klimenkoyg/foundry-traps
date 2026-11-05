@@ -342,8 +342,8 @@ map.addEventListener("drop", (event) => {
 let activeGroup = "tokens";
 function sceneControls() {
   const controls = {
-    tokens: { name: "tokens", title: "Токены", icon: "fa-solid fa-user-large", order: 1, layer: "tokens", activeTool: "select", tools: { select: { name: "select", title: "Выбрать токены", icon: "fa-solid fa-expand", order: 0 } } },
-    regions: { name: "regions", title: "Регионы", icon: "fa-solid fa-vector-square", order: 8, layer: "regions", activeTool: "select", tools: { select: { name: "select", title: "Выбрать регионы", icon: "fa-solid fa-expand", order: 0 } } },
+    tokens: { name: "tokens", title: "Токены", icon: "fa-solid fa-user-large", order: 1, layer: "tokens", activeTool: "select", onChange: (e, on) => on && canvas.tokens.activate(), tools: { select: { name: "select", title: "Выбрать токены", icon: "fa-solid fa-expand", order: 0 } } },
+    regions: { name: "regions", title: "Регионы", icon: "fa-solid fa-vector-square", order: 8, layer: "regions", activeTool: "select", onChange: (e, on) => on && canvas.regions.activate(), tools: { select: { name: "select", title: "Выбрать регионы", icon: "fa-solid fa-expand", order: 0 } } },
   };
   if (game.user.isGM) Hooks.callAll("getSceneControlButtons", controls);
   return controls;
@@ -362,8 +362,15 @@ function renderControls() {
 $("#controls").addEventListener("click", (event) => {
   const g = event.target.closest("[data-group]");
   if (g) {
+    // Как SceneControls v13: старой группе onChange(false), новой — onChange(true) и её инструменту.
+    const all = sceneControls();
+    all[activeGroup]?.onChange?.(event, false);
     activeGroup = g.dataset.group;
-    toast("info", `Слой: ${game.i18n.localize(sceneControls()[activeGroup].title)}`);
+    const group = all[activeGroup];
+    group?.onChange?.(event, true);
+    group?.tools?.[group.activeTool]?.onChange?.(event, true);
+    const layer = canvas.regions.active ? "регионы" : canvas.tokens.active ? "токены" : "—";
+    toast("info", `${game.i18n.localize(group.title)} · слой: ${layer}`);
     return renderControls();
   }
   const el = event.target.closest("[data-tool]");

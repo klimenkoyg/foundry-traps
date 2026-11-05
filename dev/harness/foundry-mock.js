@@ -335,7 +335,9 @@
     // Зрение токенов считает стенд (harness.js): глазами игрока видно только то, что видят его токены.
     visibility: { tokenVision: true, testVisibility: (point) => window.__harness?.isVisiblePoint?.(point) ?? true },
     app: { ticker: { add: (fn) => tickers.add(fn), remove: (fn) => tickers.delete(fn) } },
-    tokens: { get controlled() { return scene._tokens.filter((tk) => controlled.has(tk.id)).map((document) => ({ document })); } },
+    // Слои: как в v13, их включает обработчик группы панели (layer.activate()), а не поле layer.
+    tokens: { active: true, activate() { canvas.regions.active = false; canvas.tokens.active = true; }, get controlled() { return scene._tokens.filter((tk) => controlled.has(tk.id)).map((document) => ({ document })); } },
+    regions: { active: false, activate() { canvas.tokens.active = false; canvas.regions.active = true; }, setAllRenderFlags() {} },
     animatePan: () => window.__harness?.toast?.("info", "Камера перелетает к ловушке."),
   };
 
