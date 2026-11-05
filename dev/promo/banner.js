@@ -16,7 +16,7 @@ const TEXT = {
   },
   en: {
     h1: "Trap Library",
-    sub: "Западня",
+    sub: "",
     tag: "Traps for D&D 5e in Foundry VTT",
     lead: "Drag a trap onto the map — it does the rest: animation, sound, saving throws and damage.",
     meta: ["18 traps", "Foundry v13–v14", "free", "EN · RU"],
@@ -30,6 +30,7 @@ for (const node of document.querySelectorAll("[data-t]")) {
   const value = TEXT[lang][node.dataset.t];
   if (Array.isArray(value)) node.replaceChildren(...value.map((v) => Object.assign(document.createElement("span"), { textContent: v })));
   else node.textContent = value;
+  node.hidden = !String(value ?? "").length;
 }
 
 const W = 1600;
