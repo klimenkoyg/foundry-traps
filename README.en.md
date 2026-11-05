@@ -24,6 +24,11 @@ https://github.com/klimenkoyg/foundry-traps/releases/latest/download/module.json
 
 ## How to use
 
+**Where's the button:** in the left Foundry toolbar, click the **skull** — that's the Traps group
+(only the GM sees it). The Trap Library window opens.
+
+![The left Foundry toolbar: the Traps group with the skull and its buttons](docs/promo/toolbar-en.png)
+
 1. The left Foundry toolbar has its own **Traps** group with a skull (GM only). Click the skull
    and the Trap Library window opens. The group has Library, My traps and Traps on this scene (each
    opens the window on that tab) and a toggle for the buttons on traps on the map. For quicker
