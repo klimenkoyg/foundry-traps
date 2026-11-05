@@ -1,0 +1,639 @@
+{
+  "TYPES": {
+    "RegionBehavior": {
+      "ssl_traps": {
+        "trap": "Trap (Trap Library)"
+      }
+    }
+  },
+  "TRAPS": {
+    "Title": "Trap Library",
+    "Controls": {
+      "title": "Trap Library"
+    },
+    "Keybinding": {
+      "open": "Open the Trap Library"
+    },
+    "Severity": {
+      "setback": "Setback",
+      "dangerous": "Dangerous",
+      "deadly": "Deadly"
+    },
+    "Kind": {
+      "all": "All",
+      "mechanical": "Mechanical",
+      "magical": "Magical"
+    },
+    "Tier": {
+      "label": "Party level",
+      "1": "1–4",
+      "2": "5–10",
+      "3": "11–16",
+      "4": "17–20",
+      "hint": "Damage scales with the SRD severity table; DCs stay as written."
+    },
+    "Affects": {
+      "trigger": "Only the one who stepped in",
+      "area": "Everyone in the area"
+    },
+    "Rearm": {
+      "auto": "Resets itself",
+      "once": "Fires once"
+    },
+    "OnSave": {
+      "half": "Half damage",
+      "none": "No damage"
+    },
+    "Skill": {
+      "thief": "Thieves' tools"
+    },
+    "Fx": {
+      "pit": "Pit",
+      "spikes": "Spikes",
+      "jaws": "Bear trap",
+      "darts": "Darts",
+      "arrows": "Arrows",
+      "net": "Net",
+      "rocks": "Rockfall",
+      "boulder": "Boulder",
+      "fire": "Fire",
+      "gas": "Poison gas",
+      "sleep": "Sleep gas",
+      "lightning": "Lightning",
+      "frost": "Frost",
+      "acid": "Acid",
+      "thunder": "Thunder",
+      "necrotic": "Necrotic",
+      "blade": "Blade",
+      "alarm": "Alarm",
+      "burst": "Burst"
+    },
+    "Sound": {
+      "none": "No sound",
+      "click": "Click",
+      "thud": "Thud",
+      "whoosh": "Whoosh",
+      "hiss": "Gas hiss",
+      "fire": "Fire",
+      "zap": "Zap",
+      "crack": "Ice crack",
+      "boom": "Thunder",
+      "slash": "Blade ring",
+      "rumble": "Rockfall",
+      "alarm": "Bell",
+      "sizzle": "Acid",
+      "snap": "Clang",
+      "drone": "Drone",
+      "chime": "Rune chime"
+    },
+    "Trap": {
+      "pit": {
+        "name": "Hidden Pit",
+        "text": "A plank lid covered with dirt gives way under weight. A slightly sagging floor gives it away. Athletics wedges the lid shut.",
+        "flavor": "The floor gives way — a black pit opens beneath!"
+      },
+      "spikedPit": {
+        "name": "Spiked Pit",
+        "text": "A hidden pit with sharpened stakes at the bottom. The fall hurts twice: the impact and the spikes.",
+        "flavor": "The floor collapses — spikes glint below!"
+      },
+      "bearTrap": {
+        "name": "Bear Trap",
+        "text": "Steel jaws hidden under straw or leaves. A caught creature stays put until freed with Athletics or thieves' tools.",
+        "flavor": "Steel clangs underfoot — the jaws snap shut!"
+      },
+      "poisonDarts": {
+        "name": "Poison Darts",
+        "text": "A pressure plate fires darts from hidden tubes in the walls. Tiny holes in the masonry give it away; the tubes can be plugged.",
+        "flavor": "Darts whistle out of the walls!"
+      },
+      "arrowVolley": {
+        "name": "Arrow Volley",
+        "text": "A tripwire looses a volley from arrow slits. Everyone in the area is under fire.",
+        "flavor": "A click — and arrows rain from the slits!"
+      },
+      "scythingBlade": {
+        "name": "Scything Blade",
+        "text": "A heavy blade swings out of a slot in the ceiling and sweeps just above the floor. The slot and scratches on the walls give the mechanism away.",
+        "flavor": "A huge blade whistles down from above!"
+      },
+      "fallingNet": {
+        "name": "Falling Net",
+        "text": "A net hangs under the ceiling; a tripwire drops it. Those caught stay put until they work free.",
+        "flavor": "A heavy net drops from the ceiling!"
+      },
+      "collapsingRoof": {
+        "name": "Collapsing Roof",
+        "text": "The supports are sawn through, and a tripwire brings the ceiling down. Cracks and fresh dust on the floor are the warning.",
+        "flavor": "The vault groans — and stones rain down!"
+      },
+      "rollingBoulder": {
+        "name": "Rolling Boulder",
+        "text": "A pressure plate releases a stone ball that thunders through the corridor and knocks everyone down.",
+        "flavor": "A rumble grows — a boulder rolls down the corridor!"
+      },
+      "fireJet": {
+        "name": "Fire Jet",
+        "text": "Nozzles in the walls spray flaming alchemical oil. Soot around the holes and the smell of oil give it away.",
+        "flavor": "Flame roars out of the walls!"
+      },
+      "acidSpray": {
+        "name": "Acid Spray",
+        "text": "A pressurised vessel sprays acid on whoever steps on the plate. The floor around is pitted with burns.",
+        "flavor": "A hiss — and acid splashes in your face!"
+      },
+      "poisonGas": {
+        "name": "Poison Gas",
+        "text": "A plate opens valves and the room fills with caustic gas. The GM may have the door slam shut.",
+        "flavor": "Greenish smoke creeps out of the cracks!"
+      },
+      "sleepGas": {
+        "name": "Sleep Gas",
+        "text": "A sweetish gas puts everyone in the area to sleep. A sleeper wakes when damaged or shaken awake.",
+        "flavor": "The air turns sweet, eyelids grow heavy…"
+      },
+      "lightningRune": {
+        "name": "Lightning Rune",
+        "text": "An invisible glyph on the floor strikes whoever steps on it with lightning. Arcana or dispelling disables it.",
+        "flavor": "A rune flares underfoot — lightning strikes!"
+      },
+      "frostRune": {
+        "name": "Frost Rune",
+        "text": "A glyph of cold covers everyone nearby in rime. The floor near it is always a little colder.",
+        "flavor": "The rune flares blue and the air rings with frost!"
+      },
+      "thunderPlate": {
+        "name": "Thunder Plate",
+        "text": "A plate carved with a glyph answers a step with a thunderclap that knocks everyone nearby off their feet. It can be heard far away.",
+        "flavor": "A thunderclap shakes the hall!"
+      },
+      "witheringSigil": {
+        "name": "Withering Sigil",
+        "text": "A dark sigil drains life from everyone on it and fills them with dread. Dangerous even for seasoned heroes.",
+        "flavor": "Shadows reach out of the sigil and cold bites to the bone!"
+      },
+      "alarmPlate": {
+        "name": "Alarm Plate",
+        "text": "Harmless, but it rings loudly: guards and monsters learn they have guests. The GM gets a notice.",
+        "flavor": "Somewhere above, a bell starts ringing!"
+      }
+    },
+    "App": {
+      "tabLibrary": "Library",
+      "tabScene": "On this scene",
+      "search": "Search traps",
+      "allSeverities": "Any severity",
+      "allDamage": "Any damage",
+      "dragHint": "Click a trap to configure it, or drag it onto the map — it is placed as a hidden region under the cursor.",
+      "empty": "Nothing found. Try another search or filter.",
+      "custom": "Custom",
+      "deleteCustom": "Remove from library",
+      "sceneEmpty": "No traps on this scene yet. Drag one from the library onto the map.",
+      "noScene": "No scene is open.",
+      "searchSelected": "Search with selected tokens",
+      "searchSelectedHint": "Selected tokens roll Perception against traps within {range} ft.",
+      "pan": "Show on map",
+      "configure": "Configure",
+      "arm": "Arm",
+      "disarm": "Disarm without a check",
+      "reveal": "Reveal to players",
+      "hide": "Hide from players",
+      "trigger": "Trigger",
+      "triggerHint": "Fires at the selected tokens, or at everyone in the area if none are selected.",
+      "attempt": "Try to disarm with the selected token",
+      "save": "Save to library",
+      "delete": "Remove trap from scene",
+      "armed": "Armed",
+      "disarmed": "Disarmed",
+      "revealed": "Visible to players",
+      "hidden": "Hidden",
+      "detected": "Spotted",
+      "triggered": "Triggered: {n}",
+      "confirmDelete": "Remove the trap “{name}” from the scene?",
+      "confirmDeleteCustom": "Delete your trap “{name}” from the library?",
+      "visibility": "Players:",
+      "revealAll": "Reveal all",
+      "hideAll": "Hide all",
+      "revealAllHint": "Reveal every trap on this scene to players",
+      "hideAllHint": "Hide every trap on this scene from players",
+      "detectModeLabel": "When a character spots a trap:",
+      "detectMode": {
+        "reveal": "Reveal right away",
+        "gm": "Tell me"
+      }
+    },
+    "Hud": {
+      "reveal": "“{name}” is hidden from players. Click to reveal.",
+      "hide": "“{name}” is visible to players. Click to hide.",
+      "noticed": "“{name}” spotted by: {who}. Players don’t see it yet. Click to reveal."
+    },
+    "Stat": {
+      "detect": "Spot",
+      "disarm": "Disarm",
+      "save": "Save",
+      "attack": "Attack",
+      "damage": "Damage",
+      "condition": "Condition",
+      "area": "Area",
+      "areaValue": "{n}×{n} sq.",
+      "auto": "No check",
+      "dc": "DC {dc}",
+      "noDamage": "none",
+      "escape": "Escape",
+      "noDamageShort": "no damage"
+    },
+    "Chat": {
+      "save": "Saving throw: {ability}, DC {dc}",
+      "attack": "Attack: +{bonus} vs AC",
+      "saveOk": "success",
+      "saveFail": "failure",
+      "hit": "hit",
+      "miss": "miss",
+      "took": "damage: {n}",
+      "tookNone": "no damage",
+      "half": "half",
+      "condition": "becomes: {condition}",
+      "noTargets": "The trap went off, but nobody is in the area.",
+      "disarmOk": "{name} disarms the trap “{trap}”.",
+      "disarmFail": "{name} fails to disarm the trap “{trap}”.",
+      "disarmTriggered": "{name} slips — the trap “{trap}” goes off!",
+      "noticed": "{name} notices a trap: “{trap}”.",
+      "searchNone": "{name} finds no traps nearby.",
+      "alarmGm": "The alarm trap “{trap}” went off.",
+      "escape": "Escape: {skill}, DC {dc}",
+      "howPassive": "Passive Perception {value} vs DC {dc}",
+      "howSearch": "Search: {value} vs DC {dc}",
+      "hiddenYet": "Players don’t see it yet.",
+      "seenByAll": "Players can see it.",
+      "tell": "Tell only the player",
+      "told": "Player knows",
+      "pan": "Show on map",
+      "searchNoneGm": "{name} searches for traps and finds nothing (Perception {value}).",
+      "searchNothingNew": "{name} finds nothing new."
+    },
+    "Notify": {
+      "gmOnly": "Only the GM can do this.",
+      "noGM": "A GM must be in the game: traps are resolved on the GM's client.",
+      "selectToken": "Select a character token.",
+      "noScene": "Open a scene first.",
+      "placed": "Trap “{name}” placed.",
+      "saved": "Trap “{name}” saved to the library.",
+      "noActor": "This token has no actor.",
+      "notDnd5e": "Trap Library is made for D&D 5e: checks and damage won't work in another system.",
+      "updated": "Trap “{name}” updated.",
+      "revealedAll": "Traps revealed to players: {n}.",
+      "hiddenAll": "Traps hidden from players: {n}.",
+      "noticed": "{name} spots the trap “{trap}”. Players don’t see it yet: decide in chat or with the map button.",
+      "otherScene": "This trap is on another scene."
+    },
+    "Behavior": {
+      "FIELDS": {
+        "trapId": {
+          "label": "From library",
+          "hint": "The built-in or custom trap this one was made from."
+        },
+        "icon": {
+          "label": "Icon",
+          "hint": "Font Awesome icon class, e.g. fa-solid fa-fire."
+        },
+        "severity": {
+          "label": "Severity"
+        },
+        "magical": {
+          "label": "Magical"
+        },
+        "affects": {
+          "label": "Affects"
+        },
+        "detectDC": {
+          "label": "Detect DC",
+          "hint": "Against passive Perception and searching."
+        },
+        "disarmDC": {
+          "label": "Disarm DC"
+        },
+        "disarmSkill": {
+          "label": "Disarm with"
+        },
+        "attackBonus": {
+          "label": "Attack bonus",
+          "hint": "If set, the trap attacks against AC instead of forcing a save."
+        },
+        "saveAbility": {
+          "label": "Saving throw",
+          "hint": "Empty — no saving throw."
+        },
+        "saveDC": {
+          "label": "Save DC"
+        },
+        "onSave": {
+          "label": "On a success"
+        },
+        "damage": {
+          "label": "Damage",
+          "hint": "A formula such as 2d10. Empty — no damage."
+        },
+        "damageType": {
+          "label": "Damage type"
+        },
+        "damage2": {
+          "label": "Extra damage"
+        },
+        "damage2Type": {
+          "label": "Extra damage type"
+        },
+        "condition": {
+          "label": "Condition",
+          "hint": "Applied on a failed save or a hit."
+        },
+        "fx": {
+          "label": "Animation"
+        },
+        "sound": {
+          "label": "Sound",
+          "hint": "A built-in sound or a path to your own file."
+        },
+        "rearm": {
+          "label": "After triggering"
+        },
+        "flavor": {
+          "label": "Trigger text",
+          "hint": "Players see it in chat."
+        },
+        "notes": {
+          "label": "GM notes"
+        },
+        "size": {
+          "label": "Size in library"
+        },
+        "detected": {
+          "label": "Spotted by players"
+        },
+        "disarmed": {
+          "label": "Disarmed by a check"
+        },
+        "triggers": {
+          "label": "Times triggered"
+        },
+        "stops": {
+          "label": "Stops movement",
+          "hint": "A token that steps in stops on the trap (pit, bear trap, net)."
+        },
+        "device": {
+          "label": "Device"
+        },
+        "options": {
+          "label": "Device settings"
+        },
+        "fixedDamage": {
+          "label": "Damage ignores party level",
+          "hint": "Like falling into a pit: 1d6 per 10 ft."
+        },
+        "escapeDC": {
+          "label": "DC to escape",
+          "hint": "0 — no need to escape."
+        },
+        "escapeSkill": {
+          "label": "Escape with"
+        }
+      },
+      "label": "Trap (Trap Library)"
+    },
+    "Settings": {
+      "fxMode": {
+        "name": "Animations",
+        "hint": "Built-in animations always work. If Sequencer and JB2A are installed, their effects can be used instead.",
+        "auto": "JB2A if installed, otherwise built-in",
+        "builtin": "Built-in only",
+        "off": "No animations"
+      },
+      "volume": {
+        "name": "Trap volume",
+        "hint": "0 — silent."
+      },
+      "applyDamage": {
+        "name": "Apply damage automatically",
+        "hint": "Otherwise the chat card only reports the result and the GM applies damage."
+      },
+      "chatMode": {
+        "name": "Trigger card",
+        "hint": "Who sees the trap result in chat.",
+        "public": "Everyone",
+        "gm": "GM only"
+      },
+      "passiveDetect": {
+        "name": "Passive Perception",
+        "hint": "A player character coming near a trap notices it if their passive Perception meets the detect DC."
+      },
+      "detectRange": {
+        "name": "Detection range (ft)",
+        "hint": "How far from a trap passive Perception and searching work."
+      },
+      "detectSight": {
+        "name": "Spot only in line of sight",
+        "hint": "Walls that block sight and closed doors stop a character from spotting a trap — by passive Perception or a search."
+      },
+      "triggerBy": {
+        "name": "Who sets traps off",
+        "hint": "Traps can fire only on player characters, so the GM can move monsters freely.",
+        "players": "Player characters only",
+        "all": "Everyone"
+      },
+      "mapButtons": {
+        "name": "Trap buttons on the map",
+        "hint": "The GM sees an eye button on every trap: one click reveals it to players or hides it. Each GM has their own setting."
+      },
+      "detectMode": {
+        "name": "When a character spots a trap",
+        "hint": "What happens when a Perception check succeeds (passive or a search). Also switchable on the On this scene tab.",
+        "reveal": "Reveal it to players on the map right away; whisper the player",
+        "gm": "Tell the GM who spotted it; reveal to players by hand"
+      }
+    },
+    "Device": {
+      "title": "Device",
+      "hint": "Describe the trap in the world's terms — damage, DCs and conditions follow on their own.",
+      "controlled": "Set by the device: changes when its settings change.",
+      "yes": "Yes",
+      "no": "No",
+      "chip": {
+        "escape": "escape: DC {dc}",
+        "attack": "attack +{bonus}",
+        "save": "save DC {dc}",
+        "onSave": "on a success: {result}",
+        "fixed": "same at any level"
+      },
+      "pit": {
+        "depth": {
+          "label": "Depth"
+        },
+        "spikes": {
+          "label": "At the bottom",
+          "none": "Nothing",
+          "stakes": "Stakes",
+          "poisoned": "Poisoned stakes"
+        },
+        "walls": {
+          "label": "Walls",
+          "rough": "Rough",
+          "smooth": "Smooth",
+          "slick": "Slick"
+        }
+      },
+      "bearTrap": {
+        "jaws": {
+          "label": "Trap",
+          "small": "Hunting",
+          "bear": "Bear",
+          "giant": "Giant"
+        },
+        "venom": {
+          "label": "Poisoned teeth"
+        }
+      },
+      "darts": {
+        "count": {
+          "label": "Darts per target"
+        },
+        "poison": {
+          "label": "Tips",
+          "none": "Clean",
+          "venom": "Venom",
+          "sleep": "Sleeping draught"
+        }
+      },
+      "arrows": {
+        "count": {
+          "label": "Arrows per target"
+        },
+        "tips": {
+          "label": "Arrowheads",
+          "plain": "Plain",
+          "fire": "Burning",
+          "poison": "Poisoned"
+        }
+      },
+      "blade": {
+        "height": {
+          "label": "Strikes at",
+          "low": "Legs",
+          "waist": "Waist",
+          "high": "Head"
+        },
+        "speed": {
+          "label": "Speed",
+          "slow": "Slow",
+          "fast": "Fast",
+          "blur": "A blur"
+        }
+      },
+      "net": {
+        "net": {
+          "label": "Net",
+          "rope": "Rope",
+          "weighted": "Weighted",
+          "hooked": "Hooked",
+          "chain": "Chain"
+        }
+      },
+      "roof": {
+        "debris": {
+          "label": "What falls",
+          "gravel": "Gravel",
+          "stones": "Stones",
+          "slabs": "Slabs"
+        },
+        "buried": {
+          "label": "Buries"
+        }
+      },
+      "boulder": {
+        "boulder": {
+          "label": "Boulder",
+          "medium": "Medium",
+          "large": "Large",
+          "huge": "Huge"
+        },
+        "knockdown": {
+          "label": "Knocks prone"
+        }
+      },
+      "jet": {
+        "pressure": {
+          "label": "Pressure",
+          "weak": "Weak",
+          "normal": "Normal",
+          "strong": "Strong"
+        },
+        "nozzles": {
+          "label": "Nozzles",
+          "one": "One, underfoot",
+          "ring": "Ring around the area"
+        }
+      },
+      "gas": {
+        "toxin": {
+          "label": "Gas",
+          "choking": "Choking",
+          "sleep": "Sleeping",
+          "smoke": "Acrid smoke",
+          "madness": "Maddening"
+        },
+        "density": {
+          "label": "Density",
+          "thin": "Haze",
+          "dense": "Dense",
+          "thick": "Wall of fog"
+        }
+      },
+      "rune": {
+        "power": {
+          "label": "Power",
+          "weak": "Weak",
+          "normal": "Normal",
+          "strong": "Strong",
+          "devastating": "Devastating"
+        }
+      },
+      "alarm": {
+        "signal": {
+          "label": "Signal",
+          "bell": "Bell",
+          "gong": "Gong",
+          "chime": "Magic chime"
+        }
+      }
+    },
+    "Unit": {
+      "ft": "{n} ft"
+    },
+    "Editor": {
+      "title": "Configure: {name}",
+      "open": "Configure",
+      "name": "Name",
+      "checks": "Checks",
+      "damage": "Damage and effects",
+      "area": "Area and triggering",
+      "effects": "Animation and sound",
+      "texts": "Texts",
+      "check": "Resolved by",
+      "checkSave": "Saving throw",
+      "checkAttack": "Attack vs AC",
+      "checkAuto": "No roll",
+      "size": "Side, squares",
+      "escapeHint": "0 — no need to escape",
+      "tierNote": "Damage is for a level {levels} party.",
+      "tierFixed": "Damage is the same at any party level.",
+      "dragHint": "You can drag the card onto the map.",
+      "playersSee": "Players will read",
+      "place": "Place on the map",
+      "placeHint": "Placed hidden at the centre of the screen.",
+      "apply": "Save trap",
+      "saveNew": "Save to library as your own",
+      "saveOver": "Save in library",
+      "saveCopy": "Save as copy",
+      "play": "Animation",
+      "reset": "Reset"
+    }
+  }
+}
