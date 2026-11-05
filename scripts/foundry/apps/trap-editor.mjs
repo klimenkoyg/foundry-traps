@@ -5,6 +5,7 @@
 import { DEVICES, deviceFields } from "../../core/devices.mjs";
 import { FX_NAMES, SOUND_NAMES } from "../../core/fx/presets.mjs";
 import {
+  damageByTier,
   isFormula,
   normalizeTrap,
   scaleTrap,
@@ -13,6 +14,7 @@ import {
   trapMode,
   unscaleTrap,
   withDevice,
+  withFixedDamage,
 } from "../../core/trap.mjs";
 import { placeTrap, updatePlaced } from "../actions.mjs";
 import { DRAG_TYPE, MODULE_ID, SETTINGS, THEME, tpl } from "../constants.mjs";
@@ -161,7 +163,27 @@ export class TrapEditor extends HandlebarsApplicationMixin(ApplicationV2) {
       isCustom: this.isCustom,
       dirty: this.dirty,
       saveLabel: t(this.isCustom ? "Editor.saveOver" : "Editor.saveNew"),
-      tierNote: d.fixedDamage ? t("Editor.tierFixed") : t("Editor.tierNote", { levels: TIER_LEVELS[this.tier] }),
+      tiers: this.#tiers(d),
+    };
+  }
+
+  /**
+   * Справа под карточкой: сколько урона на каждом уровне партии. Галочка «не зависит от уровня» —
+   * одна строка; снята — таблица с множителем и кубиками, текущий уровень подсвечен.
+   */
+  #tiers(d) {
+    const sum = (x) => [x.damage, x.damage2].filter(Boolean).join(" + ");
+    if (!sum(d)) return null;
+    if (d.fixedDamage) return { fixed: true, text: t("Editor.tiersFixed", { damage: sum(d) }) };
+    const num = new Intl.NumberFormat(game.i18n.lang, { maximumFractionDigits: 1 });
+    return {
+      fixed: false,
+      rows: damageByTier(d, this.tier).map((r) => ({
+        levels: TIER_LEVELS[r.tier],
+        factor: `×${num.format(r.factor)}`,
+        damage: sum(r),
+        current: r.tier === this.tier,
+      })),
     };
   }
 
@@ -361,6 +383,12 @@ export class TrapEditor extends HandlebarsApplicationMixin(ApplicationV2) {
     else if (NUMBER_FIELDS.has(name)) value = el.value === "" ? (name === "attackBonus" ? null : 0) : Number(el.value);
     if (FORMULA_FIELDS.has(name)) el.classList.toggle("is-invalid", Boolean(value.trim()) && !isFormula(value));
     const before = this.draft;
+    if (name === "fixedDamage") {
+      // Урон в полях переходит между «как записан» и «под уровень партии» (на 1–4 уровне — тот же).
+      this.draft = withFixedDamage(before, value, this.tier);
+      this.#syncFields(before);
+      return this.#refresh();
+    }
     this.draft = { ...normalizeTrap({ ...this.draft, [name]: value }) };
     // Пока формула набирается, не стираем её: в черновик попадёт, когда станет верной.
     if (FORMULA_FIELDS.has(name) && value.trim() && !isFormula(value)) this.draft[name] = before[name];

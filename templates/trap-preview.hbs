@@ -7,7 +7,23 @@
       <blockquote>{{flavor}}</blockquote>
     </figure>
     {{/if}}
-    <p class="st-ed-note">{{tierNote}}{{#unless isScene}} {{localize "TRAPS.Editor.dragHint"}}{{/unless}}</p>
+    {{#if tiers}}
+    <section class="st-ed-tiers{{#if tiers.fixed}} is-fixed{{/if}}">
+      {{#if tiers.fixed}}
+      <p class="st-ed-tiers-fixed">{{tiers.text}}</p>
+      {{else}}
+      <h4>{{localize "TRAPS.Editor.tiersTitle"}}</h4>
+      <table>
+        <tbody>
+          {{#each tiers.rows}}
+          <tr{{#if current}} class="is-current" aria-current="true"{{/if}}><th scope="row">{{levels}}</th><td class="st-ed-tiers-x">{{factor}}</td><td>{{damage}}</td></tr>
+          {{/each}}
+        </tbody>
+      </table>
+      {{/if}}
+    </section>
+    {{/if}}
+    {{#unless isScene}}<p class="st-ed-note">{{localize "TRAPS.Editor.dragHint"}}</p>{{/unless}}
   </div>
   <div class="st-ed-actions">
     {{#if isScene}}

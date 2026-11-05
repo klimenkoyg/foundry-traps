@@ -35,7 +35,7 @@ import { deriveDevice, DEVICES, normalizeOptions } from "./devices.mjs";
  * @property {"auto"|"once"} rearm    Взводится снова или срабатывает один раз
  * @property {string} device          Устройство (devices.mjs): параметры на языке мира
  * @property {object} options         Параметры устройства: { depth: 30, spikes: "stakes", … }
- * @property {boolean} fixedDamage    Урон не пересчитывается по уровню (падение в яму)
+ * @property {boolean} fixedDamage    Урон не пересчитывается по уровню партии (по умолчанию — да)
  * @property {number} escapeDC        Выбраться (из ямы, капкана, сети): Сл; 0 — не нужно
  * @property {string} escapeSkill     Чем выбираться: навык dnd5e
  */
@@ -94,7 +94,8 @@ const DEFAULTS = {
   rearm: "auto",
   device: "",
   options: {},
-  fixedDamage: false,
+  // Урон как записан, на любом уровне: так прозрачнее. Рост с уровнем — по желанию, галочкой.
+  fixedDamage: true,
   escapeDC: 0,
   escapeSkill: "ath",
 };
@@ -144,7 +145,7 @@ export function normalizeTrap(raw = {}) {
     rearm: oneOf(t.rearm, ["auto", "once"], "auto"),
     device: str(t.device) in DEVICES ? str(t.device) : "",
     options: normalizeOptions(str(t.device), t.options),
-    fixedDamage: Boolean(t.fixedDamage),
+    fixedDamage: t.fixedDamage == null ? DEFAULTS.fixedDamage : Boolean(t.fixedDamage),
     escapeDC: int(t.escapeDC, 0, 0, 40),
     escapeSkill: str(t.escapeSkill) || DEFAULTS.escapeSkill,
   };
@@ -184,6 +185,32 @@ export function unscaleTrap(trap, tier = 1) {
   const factor = t.fixedDamage ? 1 : tierFactor(t.severity, tier);
   if (factor === 1) return t;
   return { ...t, damage: scaleFormula(t.damage, 1 / factor), damage2: scaleFormula(t.damage2, 1 / factor) };
+}
+
+/**
+ * Урон на каждом уровне партии — чтобы в окне настройки было видно, сколько получат персонажи,
+ * если урон растёт с уровнем. trap — уже под уровень tier (как в окне): на этом уровне урон как
+ * в поле, на остальных — как поставит модуль. → [{ tier, factor, damage, damage2 }]
+ */
+export function damageByTier(trap, tier = 1) {
+  const now = normalizeTrap({ ...trap, fixedDamage: false });
+  const base = unscaleTrap(now, tier);
+  return TIERS.map((k) => {
+    const at = k === tier ? now : scaleTrap(base, k);
+    return { tier: k, factor: tierFactor(now.severity, k), damage: at.damage, damage2: at.damage2 };
+  });
+}
+
+/**
+ * Включили или сняли «урон не зависит от уровня» у ловушки под уровень tier: урон в полях
+ * переходит между «как записан» и «под уровень». На 1–4 уровне ничего не меняется.
+ */
+export function withFixedDamage(trap, fixed, tier = 1) {
+  const t = normalizeTrap(trap);
+  if (t.fixedDamage === Boolean(fixed)) return t;
+  const free = { ...t, fixedDamage: false };
+  const next = fixed ? unscaleTrap(free, tier) : scaleTrap(free, tier);
+  return { ...t, damage: next.damage, damage2: next.damage2, fixedDamage: Boolean(fixed) };
 }
 
 /**

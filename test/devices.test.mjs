@@ -2,7 +2,16 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { CATALOG } from "../scripts/core/catalog.mjs";
 import { DEVICES, deriveDevice, deviceFields, normalizeOptions, normalizeParam } from "../scripts/core/devices.mjs";
-import { fromBehaviorData, normalizeTrap, scaleTrap, toBehaviorData, unscaleTrap, withDevice } from "../scripts/core/trap.mjs";
+import {
+  damageByTier,
+  fromBehaviorData,
+  normalizeTrap,
+  scaleTrap,
+  toBehaviorData,
+  unscaleTrap,
+  withDevice,
+  withFixedDamage,
+} from "../scripts/core/trap.mjs";
 import { FX_PRESETS, SOUND_NAMES } from "../scripts/core/fx/presets.mjs";
 
 test("у каждой встроенной ловушки есть устройство, и его числа совпадают с описанием", () => {
@@ -58,7 +67,7 @@ test("глубина ямы: 1d6 за 10 фт, не больше 20d6, от ур
 });
 
 test("параметры меняют только свои поля и учитывают уровень партии", () => {
-  const gas = scaleTrap(CATALOG.find((x) => x.id === "poisonGas"), 2);
+  const gas = scaleTrap({ ...CATALOG.find((x) => x.id === "poisonGas"), fixedDamage: false }, 2);
   assert.equal(gas.damage, "4d10");
   const custom = { ...gas, detectDC: 19, name: "Склеп" };
   const thick = withDevice(custom, { density: "thick" }, 2);
@@ -93,9 +102,50 @@ test("устройство и параметры доезжают до пове�
   assert.equal(back.damage, "5d6");
   assert.equal(back.options.depth, 50);
 
-  const dart = scaleTrap(CATALOG.find((x) => x.id === "poisonDarts"), 2);
+  const dart = scaleTrap({ ...CATALOG.find((x) => x.id === "poisonDarts"), fixedDamage: false }, 2);
   assert.equal(dart.damage, "2d4");
   assert.equal(unscaleTrap(dart, 2).damage, "1d4");
+});
+
+test("по умолчанию урон не зависит от уровня партии", () => {
+  const dart = CATALOG.find((x) => x.id === "poisonDarts");
+  assert.equal(normalizeTrap(dart).fixedDamage, true);
+  assert.equal(scaleTrap(dart, 3).damage, "1d4");
+  assert.equal(scaleTrap(dart, 3).damage2, "2d6");
+  // Сохранённые раньше ловушки со снятой галочкой продолжают расти с уровнем.
+  assert.equal(normalizeTrap({ ...dart, fixedDamage: false }).fixedDamage, false);
+  assert.equal(scaleTrap({ ...dart, fixedDamage: false }, 3).damage, "5d4");
+});
+
+test("урон по уровням для окна настройки: текущий — как в поле, остальные — как поставит модуль", () => {
+  const dart = scaleTrap({ ...CATALOG.find((x) => x.id === "poisonDarts"), fixedDamage: false }, 2);
+  const rows = damageByTier(dart, 2);
+  assert.deepEqual(
+    rows.map((r) => [r.tier, r.factor, r.damage, r.damage2]),
+    [
+      [1, 1, "1d4", "2d6"],
+      [2, 2, "2d4", "4d6"],
+      [3, 5, "5d4", "10d6"],
+      [4, 9, "9d4", "18d6"],
+    ],
+  );
+  // Поле поправили руками: на текущем уровне — ровно оно.
+  assert.equal(damageByTier({ ...dart, damage: "3d4" }, 2)[1].damage, "3d4");
+});
+
+test("галочка «не зависит от уровня»: урон в полях переходит между «как записан» и «под уровень»", () => {
+  const dart = scaleTrap(CATALOG.find((x) => x.id === "poisonDarts"), 3);
+  assert.equal(dart.damage, "1d4");
+  const grows = withFixedDamage(dart, false, 3);
+  assert.equal(grows.fixedDamage, false);
+  assert.equal(grows.damage, "5d4");
+  assert.equal(grows.damage2, "10d6");
+  const back = withFixedDamage(grows, true, 3);
+  assert.equal(back.fixedDamage, true);
+  assert.equal(back.damage, "1d4");
+  assert.equal(back.damage2, "2d6");
+  // На 1–4 уровне кубики не меняются.
+  assert.equal(withFixedDamage(scaleTrap(dart, 1), false, 1).damage, "1d4");
 });
 
 test("поля устройства известны заранее", () => {

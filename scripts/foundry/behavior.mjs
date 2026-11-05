@@ -53,7 +53,7 @@ export class TrapBehavior extends RegionBehaviorType {
       rearm: new f.StringField({ required: true, initial: "auto", choices: labelled("TRAPS.Rearm", ["auto", "once"]) }),
       device: new f.StringField({ required: true, blank: true, initial: "" }),
       options: new f.ObjectField({ required: true, initial: {} }),
-      fixedDamage: new f.BooleanField({ initial: false }),
+      fixedDamage: new f.BooleanField({ initial: true }),
       escapeDC: dc(0),
       escapeSkill: new f.StringField({ required: true, initial: "ath", choices: choices.skills }),
       flavor: new f.StringField({ required: true, blank: true, initial: "" }),

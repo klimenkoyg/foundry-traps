@@ -27,9 +27,9 @@ https://github.com/klimenkoyg/foundry-traps/releases/latest/download/module.json
 1. The left Foundry toolbar has its own **Traps** group with a skull (GM only). It works on the
    regions layer: trap outlines are visible and a region can be moved or redrawn. The group has
    Library, My traps and Traps on this scene (each opens the window on that tab) and a toggle for
-   the reveal / hide buttons on traps on the map. For quick access there's also a skull button
-   on the token controls, and you can bind a key in the controls settings.
-2. On the **Library** tab, pick the party level and drag a trap onto the map. It becomes a hidden
+   the reveal / hide buttons on traps on the map. For quicker access, bind a key in the controls
+   settings.
+2. On the **Library** tab, drag a trap onto the map. It becomes a hidden
    region under the cursor; players don't see it. Click a trap to configure it first.
 3. A player character steps in — movement holds while the effect plays; a pit, bear trap, net or
    sleep gas stops it altogether. A trigger card goes to chat: who is hit, how they're checked and
@@ -45,8 +45,8 @@ https://github.com/klimenkoyg/foundry-traps/releases/latest/download/module.json
 Any trap — from the library or already on the scene — can be changed and saved as your own. When
 saving, the module asks **what to call it** (the current name is filled in). Your traps live on
 their own My traps tab with the same search and filters: configure them, drag them onto the map,
-rename them (the pencil) or delete them. Their damage is stored for levels 1–4 and rescaled to the
-party level, like the built-in ones.
+rename them (the pencil) or delete them. Their damage is stored for levels 1–4; with “Damage ignores
+party level” unticked, it's rescaled to the party level, like the built-in ones.
 
 - In the configuration window of a built-in trap: “Save to My traps…”; of your own: “Save” (under
   the current name) and “Save as new…”.
@@ -91,8 +91,12 @@ spot range then use the rectangle around it.
 
 Hidden Pit, Spiked Pit, Bear Trap, Poison Darts, Arrow Volley, Scything Blade, Falling Net,
 Collapsing Roof, Rolling Boulder, Fire Jet, Acid Spray, Poison Gas, Sleep Gas, Lightning Rune,
-Frost Rune, Thunder Plate, Withering Sigil and Alarm Plate. The numbers are for levels 1–4; at
-5–10, 11–16 and 17–20 damage scales with the SRD 5.1 severity table, DCs stay as written.
+Frost Rune, Thunder Plate, Withering Sigil and Alarm Plate. The numbers are for levels 1–4.
+
+By default damage is the same at any party level. Untick “Damage ignores party level” in a trap's
+settings and damage grows at 5–10, 11–16 and 17–20 with the SRD 5.1 severity table (×2, ×5 and ×9
+for a dangerous trap); the right side of the settings window shows the damage for each level. The
+party level is picked in the library. DCs stay as written.
 
 ## Triggering
 

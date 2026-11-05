@@ -10,7 +10,6 @@
     "Title": "Trap Library",
     "Controls": {
       "title": "Trap Library",
-      "open": "Open Trap Library",
       "group": "Traps",
       "select": "Select and edit trap regions",
       "library": "Library",
@@ -37,7 +36,7 @@
       "2": "5–10",
       "3": "11–16",
       "4": "17–20",
-      "hint": "Damage scales with the SRD trap severity table; DCs stay as written."
+      "hint": "Changes damage for traps with “Damage ignores party level” unticked (SRD severity table). DCs stay as written."
     },
     "Affects": {
       "trigger": "Only whoever sets it off",
@@ -458,7 +457,7 @@
         },
         "fixedDamage": {
           "label": "Damage ignores party level",
-          "hint": "Like falling into a pit: 1d6 per 10 ft."
+          "hint": "Untick to make damage grow with party level — the table on the right shows how much."
         },
         "escapeDC": {
           "label": "Escape DC",
@@ -698,8 +697,8 @@
       "width": "Width, squares",
       "height": "Height, squares",
       "escapeHint": "0 — no need to escape",
-      "tierNote": "Damage is for a level {levels} party.",
-      "tierFixed": "Damage is the same at any party level.",
+      "tiersTitle": "Damage by party level",
+      "tiersFixed": "Same damage at any party level: {damage}.",
       "dragHint": "You can drag the card onto the map.",
       "playersSee": "Players will see",
       "place": "Place on the map",

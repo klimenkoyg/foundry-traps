@@ -60,7 +60,7 @@ test("пересчёт урона по уровню (SRD)", () => {
   assert.equal(scaleFormula("1d4+2", 9), "9d4+2");
   assert.equal(scaleFormula("d6", 3), "3d6");
   assert.equal(scaleFormula("2d10", 0.5), "1d10");
-  const t = scaleTrap({ severity: "dangerous", damage: "2d10", damage2: "1d6" }, 3);
+  const t = scaleTrap({ severity: "dangerous", damage: "2d10", damage2: "1d6", fixedDamage: false }, 3);
   assert.equal(t.damage, "10d10");
   assert.equal(t.damage2, "5d6");
 });
@@ -88,7 +88,7 @@ test("обезвреживание: провал на 5 и больше — ср
 });
 
 test("в поведение и обратно: урон снимается до 1–4 уровня", () => {
-  const raw = CATALOG.find((x) => x.id === "fireJet");
+  const raw = { ...CATALOG.find((x) => x.id === "fireJet"), fixedDamage: false };
   const system = toBehaviorData(raw, { tier: 2, flavor: "Пламя!" });
   assert.equal(system.damage, "4d10");
   assert.equal(system.flavor, "Пламя!");

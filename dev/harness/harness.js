@@ -342,8 +342,8 @@ map.addEventListener("drop", (event) => {
 let activeGroup = "tokens";
 function sceneControls() {
   const controls = {
-    tokens: { name: "tokens", title: "Токены", icon: "fa-solid fa-user-large", order: 1, layer: "tokens", activeTool: "select", onChange: (e, on) => on && canvas.tokens.activate(), tools: { select: { name: "select", title: "Выбрать токены", icon: "fa-solid fa-expand", order: 0 } } },
-    regions: { name: "regions", title: "Регионы", icon: "fa-solid fa-vector-square", order: 8, layer: "regions", activeTool: "select", onChange: (e, on) => on && canvas.regions.activate(), tools: { select: { name: "select", title: "Выбрать регионы", icon: "fa-solid fa-expand", order: 0 } } },
+    tokens: { name: "tokens", title: "Токены", icon: "fa-solid fa-user-large", order: 1, layer: "tokens", activeTool: "select", onChange: (e, on) => on && canvas.tokens.activate(), tools: { select: { name: "select", title: "Выбрать токены", icon: "fa-solid fa-expand", order: 0, interaction: true, control: true } } },
+    regions: { name: "regions", title: "Регионы", icon: "fa-solid fa-vector-square", order: 8, layer: "regions", activeTool: "select", onChange: (e, on) => on && canvas.regions.activate(), tools: { select: { name: "select", title: "Выбрать регионы", icon: "fa-solid fa-expand", order: 0, interaction: true, control: true } } },
   };
   if (game.user.isGM) Hooks.callAll("getSceneControlButtons", controls);
   return controls;
@@ -370,7 +370,7 @@ $("#controls").addEventListener("click", (event) => {
     group?.onChange?.(event, true);
     group?.tools?.[group.activeTool]?.onChange?.(event, true);
     const layer = canvas.regions.active ? "регионы" : canvas.tokens.active ? "токены" : "—";
-    toast("info", `${game.i18n.localize(group.title)} · слой: ${layer}`);
+    toast("info", `${game.i18n.localize(group.title)} · слой: ${layer} · области: ${regionsEditable() ? "можно выбрать" : "не выбираются"}`);
     return renderControls();
   }
   const el = event.target.closest("[data-tool]");
@@ -380,12 +380,27 @@ $("#controls").addEventListener("click", (event) => {
   else if (tool?.button) tool.onChange?.(event, true);
   setTimeout(renderControls, 50);
 });
-window.ui.controls = { render: () => renderControls() };
+window.ui.controls = {
+  render: () => renderControls(),
+  get control() {
+    return sceneControls()[activeGroup];
+  },
+  get tool() {
+    const group = sceneControls()[activeGroup];
+    return group?.tools?.[group.activeTool];
+  },
+};
+/** Как Region.isInteractable и PlaceableObject._canControl в v13–v14: нужен слой и флаги инструмента. */
+function regionsEditable() {
+  const tool = ui.controls.tool;
+  return Boolean(canvas.regions.active && tool?.interaction && tool?.control);
+}
+window.__harness = Object.assign(window.__harness ?? {}, { regionsEditable });
 renderControls();
 
 $("#open").addEventListener("click", () => {
   if (window.__mock.playerView) window.__harness.setView(false);
-  sceneControls().tokens.tools.sslTraps.onChange();
+  sceneControls().sslTraps.tools.library.onChange(null, true);
 });
 $("#reset").addEventListener("click", reset);
 function setView(player) {
