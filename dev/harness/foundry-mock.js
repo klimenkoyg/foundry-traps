@@ -148,7 +148,8 @@
     id: "dungeon",
     uuid: "Scene.dungeon",
     name: "Подземелье под часовней",
-    grid: { size: GRID, distance: 5 },
+    // Линейка как в Foundry с правилом 5e «каждая диагональ — 5 фт»: расстояние в единицах сцены.
+    grid: { size: GRID, distance: 5, measurePath: ([a, b]) => ({ distance: (Math.round(Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y)) / GRID)) * 5 }) },
     _regions: [],
     _tokens: [],
     // Стена между комнатами с дверью посередине (c — отрезок в px; door — дверь, ds — 1 открыта).
@@ -477,7 +478,16 @@
         const target = event.target.closest("[data-action]");
         if (!target || !el.contains(target)) return;
         const action = target.dataset.action;
+        // Как в ApplicationV2: «close», «tab» и «toggleControls» — встроенные действия, до своих
+        // обработчиков модуля они не доходят. «tab» без data-group Foundry переключить не может.
         if (action === "close") return this.close();
+        if (action === "tab") {
+          const msg = `ApplicationV2: встроенное действие «tab» требует data-group — обработчик модуля «tab» не вызывается`;
+          console.error(msg);
+          window.__harness?.toast?.("error", msg);
+          return;
+        }
+        if (action === "toggleControls") return;
         const handler = this.options.actions?.[action];
         if (!handler) return console.warn(`нет действия «${action}»`);
         Promise.resolve(handler.call(this, event, target)).catch((err) => {

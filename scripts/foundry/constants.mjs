@@ -21,7 +21,6 @@ export const SETTINGS = {
   chatMode: "chatMode",
   triggerBy: "triggerBy",
   passiveDetect: "passiveDetect",
-  detectRange: "detectRange",
   detectSight: "detectSight",
   detectMode: "detectMode",
   mapButtons: "mapButtons",

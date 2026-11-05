@@ -12,10 +12,13 @@ import { deriveDevice, DEVICES, normalizeOptions } from "./devices.mjs";
  * @property {string} icon            Значок Font Awesome
  * @property {"setback"|"dangerous"|"deadly"} severity
  * @property {boolean} magical
- * @property {number} size            Сторона области в клетках
+ * @property {number} width           Ширина области в клетках
+ * @property {number} height          Высота области в клетках
+ * @property {number} size            Большая сторона (для старых ловушек — сторона квадрата)
  * @property {"trigger"|"area"} affects  Только наступивший или все в области
  * @property {boolean} stops          Останавливает движение наступившего (яма, капкан, сеть)
  * @property {number} detectDC
+ * @property {number} detectRange   С какого расстояния её можно заметить, фт (по клеткам, как линейка)
  * @property {number} disarmDC
  * @property {string} disarmSkill     Навык dnd5e (ath, arc, slt, inv…) или "thief" — воровские инструменты
  * @property {number|null} attackBonus Ловушка с атакой: бонус к попаданию против КД
@@ -74,6 +77,7 @@ const DEFAULTS = {
   affects: "trigger",
   stops: false,
   detectDC: 15,
+  detectRange: 10,
   disarmDC: 15,
   disarmSkill: "thief",
   attackBonus: null,
@@ -105,6 +109,9 @@ const str = (v) => (typeof v === "string" ? v.trim() : "");
 /** Любые данные (из каталога, настроек, поведения области) → полная корректная ловушка. */
 export function normalizeTrap(raw = {}) {
   const t = { ...DEFAULTS, ...raw };
+  // Ширина и высота; у старых ловушек и в каталоге — только size, это квадрат.
+  const width = int(raw.width ?? raw.size, 1, 1, 12);
+  const height = int(raw.height ?? raw.size, 1, 1, 12);
   const attack = t.attackBonus === null || t.attackBonus === undefined || t.attackBonus === "" ? null : int(t.attackBonus, null, -5, 30);
   return {
     id: str(t.id),
@@ -114,10 +121,13 @@ export function normalizeTrap(raw = {}) {
     icon: str(t.icon) || DEFAULTS.icon,
     severity: oneOf(t.severity, SEVERITIES, DEFAULTS.severity),
     magical: Boolean(t.magical),
-    size: int(t.size, 1, 1, 12),
+    width,
+    height,
+    size: Math.max(width, height),
     affects: oneOf(t.affects, ["trigger", "area"], "trigger"),
     stops: Boolean(t.stops),
     detectDC: int(t.detectDC, DEFAULTS.detectDC, 0, 40),
+    detectRange: int(t.detectRange, DEFAULTS.detectRange, 5, 120),
     disarmDC: int(t.disarmDC, DEFAULTS.disarmDC, 0, 40),
     disarmSkill: str(t.disarmSkill) || DEFAULTS.disarmSkill,
     attackBonus: attack,
@@ -257,6 +267,7 @@ export function toBehaviorData(trap, { tier = 1, flavor = "", text = "" } = {}) 
     affects: t.affects,
     stops: t.stops,
     detectDC: t.detectDC,
+    detectRange: t.detectRange,
     disarmDC: t.disarmDC,
     disarmSkill: t.disarmSkill,
     attackBonus: t.attackBonus,
@@ -279,13 +290,17 @@ export function toBehaviorData(trap, { tier = 1, flavor = "", text = "" } = {}) 
     flavor: flavor || t.flavor,
     notes: text || t.text,
     size: t.size,
+    width: t.width,
+    height: t.height,
   };
 }
 
 /** Данные поведения → ловушка для библиотеки (сохранить расставленную как свою). */
-export function fromBehaviorData(system, { id, name, size, tier = 1 } = {}) {
+export function fromBehaviorData(system, { id, name, size, width, height, tier = 1 } = {}) {
   // В библиотеке урон хранится для 1–4 уровня: снимаем пересчёт, с которым ловушку ставили.
-  return unscaleTrap({ ...system, id, name, text: system.notes, size: size ?? system.size }, tier);
+  const w = width ?? size ?? system.width ?? system.size;
+  const h = height ?? size ?? system.height ?? system.size;
+  return unscaleTrap({ ...system, id, name, text: system.notes, width: w, height: h }, tier);
 }
 
 /** Поиск и фильтр библиотеки. entries: [{ trap, name, text }] */

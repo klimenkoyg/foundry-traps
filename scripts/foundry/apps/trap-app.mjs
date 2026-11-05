@@ -1,5 +1,6 @@
 /* Окно ведущего: библиотека ловушек (тащить на карту) и ловушки открытой сцены. */
 
+import { rectCells } from "../../core/geometry.mjs";
 import { DAMAGE_TYPES, DETECT_MODES, SEVERITIES, TIERS, filterTraps, scaleTrap } from "../../core/trap.mjs";
 import {
   attemptDisarm,
@@ -33,7 +34,8 @@ export class TrapApp extends HandlebarsApplicationMixin(ApplicationV2) {
     window: { icon: "fa-solid fa-skull-crossbones", resizable: true },
     position: { width: 780, height: 720 },
     actions: {
-      tab: TrapApp.#onTab,
+      // Не «tab»: это имя ApplicationV2 забирает себе (встроенное переключение вкладок по data-group).
+      switchTab: TrapApp.#onSwitchTab,
       edit: TrapApp.#onEdit,
       pan: TrapApp.#onPan,
       configure: TrapApp.#onConfigure,
@@ -101,7 +103,7 @@ export class TrapApp extends HandlebarsApplicationMixin(ApplicationV2) {
         severityLabel: t(`Severity.${trap.severity}`),
         magical: trap.magical,
         custom: e.custom,
-        area: t("Stat.areaValue", { n: trap.size }),
+        area: t("Stat.areaValue", { w: trap.width, h: trap.height }),
         affects: t(`Affects.${trap.affects}`),
         rearm: t(`Rearm.${trap.rearm}`),
         stats: stats(trap),
@@ -114,7 +116,7 @@ export class TrapApp extends HandlebarsApplicationMixin(ApplicationV2) {
     const traps = sceneTraps(scene).map(({ region, behavior }) => {
       const trap = behavior.system;
       const b = regionBounds(region);
-      const cells = Math.max(1, Math.round(Math.max(b.width, b.height) / (scene.grid.size || 100)));
+      const cells = rectCells(b, scene.grid.size || 100);
       return {
         regionId: region.id,
         behaviorId: behavior.id,
@@ -128,7 +130,7 @@ export class TrapApp extends HandlebarsApplicationMixin(ApplicationV2) {
         noticed: noticedBy(region).map((n) => n.name).filter(Boolean).join(", "),
         triggers: trap.triggers,
         triggersLabel: t("App.triggered", { n: trap.triggers }),
-        area: t("Stat.areaValue", { n: cells }),
+        area: t("Stat.areaValue", { w: cells.width, h: cells.height }),
         stats: stats(trap),
       };
     });
@@ -144,7 +146,7 @@ export class TrapApp extends HandlebarsApplicationMixin(ApplicationV2) {
       entries,
       scene: scene ? { name: scene.name, traps, anyHidden: traps.some((x) => !x.visible), anyShown: traps.some((x) => x.visible) } : null,
       sceneCount: traps.length,
-      searchHint: t("App.searchSelectedHint", { range: setting(SETTINGS.detectRange) }),
+      searchHint: t("App.searchSelectedHint"),
       detectModes: DETECT_MODES.map((m) => ({ value: m, label: t(`App.detectMode.${m}`), hint: t(`Settings.detectMode.${m}`), checked: m === setting(SETTINGS.detectMode) })),
     };
   }
@@ -200,7 +202,7 @@ export class TrapApp extends HandlebarsApplicationMixin(ApplicationV2) {
 
   /* ---------- действия ---------- */
 
-  static #onTab(event, target) {
+  static #onSwitchTab(event, target) {
     this._tab = target.dataset.tab;
     this.render();
   }

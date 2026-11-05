@@ -23,7 +23,7 @@ export function registerFxSocket() {
  * Показать ловушку на сцене (вызывает активный ведущий).
  * at: { x, y } центр, area — сторона области в px.
  */
-export async function playTrapFx(scene, { fx, sound, at, area, elevation = 0 }) {
+export async function playTrapFx(scene, { fx, sound, at, area, width = area, height = area, elevation = 0 }) {
   const mode = setting(SETTINGS.fxMode);
   const src = soundPath(sound || FX_PRESETS[fx]?.sound, MODULE_ID);
   if (src) playSound(scene, src);
@@ -34,28 +34,28 @@ export async function playTrapFx(scene, { fx, sound, at, area, elevation = 0 }) 
     const key = pickJb2a(fx, (k) => Sequencer.Database.entryExists(k));
     if (key) {
       try {
-        const side = Math.max(area, cell) * 1.25;
-        await new Sequence().effect().file(key).atLocation(at).size({ width: side, height: side }).play();
+        // Вытянутая область — эффект растягивается по её форме.
+        await new Sequence().effect().file(key).atLocation(at).size({ width: Math.max(width, cell) * 1.25, height: Math.max(height, cell) * 1.25 }).play();
         return 900;
       } catch (err) {
         console.warn(`${MODULE_ID} | Sequencer не сыграл ${key}, показываю свой эффект`, err);
       }
     }
   }
-  const payload = { sceneId: scene.id, fx, x: at.x, y: at.y, area, cell, elevation, seed: Math.floor(Math.random() * 1e9) };
+  const payload = { sceneId: scene.id, fx, x: at.x, y: at.y, area, width, height, cell, elevation, seed: Math.floor(Math.random() * 1e9) };
   game.socket.emit(SOCKET, { action: "fx", fx: payload });
   const duration = playLocal(payload);
   return duration;
 }
 
 /** Посмотреть анимацию и звук только у себя (окно настройки): игроки ничего не видят. */
-export function previewFx(scene, { fx, sound, at, area }) {
+export function previewFx(scene, { fx, sound, at, area, width = area, height = area }) {
   const src = soundPath(sound || FX_PRESETS[fx]?.sound, MODULE_ID);
   const volume = Number(setting(SETTINGS.volume) ?? 0.7);
   if (src && volume > 0) foundry.audio.AudioHelper.play({ src, volume, autoplay: true, loop: false }, false);
   if (setting(SETTINGS.fxMode) === "off") return 0;
   const cell = scene.grid.size;
-  return playLocal({ sceneId: scene.id, fx, x: at.x, y: at.y, area: Math.max(area, cell), cell, seed: Math.floor(Math.random() * 1e9) });
+  return playLocal({ sceneId: scene.id, fx, x: at.x, y: at.y, area: Math.max(area, cell), width, height, cell, seed: Math.floor(Math.random() * 1e9) });
 }
 
 function playSound(scene, src) {
@@ -88,6 +88,12 @@ export function playLocal(payload) {
   sprite.position.set(payload.x - effect.side / 2, payload.y - effect.side / 2);
   sprite.scale.set(1 / k);
 
+  // Вытянутая область (коридор): эффекты рисуются квадратом по большей стороне — обрезаем их по
+  // форме области с запасом в полклетки, чтобы не лезли в стены коридора.
+  const w = Number(payload.width) || payload.area;
+  const h = Number(payload.height) || payload.area;
+  const m = payload.cell * 0.5;
+  const clip = Math.abs(w - h) >= payload.cell * 0.5 ? { x: effect.side / 2 - w / 2 - m, y: effect.side / 2 - h / 2 - m, w: w + m * 2, h: h + m * 2 } : null;
   const ticker = canvas.app.ticker;
   const start = performance.now();
   const step = () => {
@@ -101,7 +107,14 @@ export function playLocal(payload) {
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, el.width, el.height);
     ctx.setTransform(k, 0, 0, k, 0, 0);
-    effect.frame(ctx, t);
+    if (clip) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(clip.x, clip.y, clip.w, clip.h);
+      ctx.clip();
+      effect.frame(ctx, t);
+      ctx.restore();
+    } else effect.frame(ctx, t);
     (texture.source ?? texture.baseTexture)?.update?.();
   };
   ticker.add(step);

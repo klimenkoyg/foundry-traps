@@ -1,14 +1,22 @@
 /* Геометрия сцены без Foundry: куда встаёт ловушка, её рамка, расстояния. */
 
 /**
- * Квадрат ловушки под курсором. Курсор — в центральной клетке (для чётного размера — левее и выше центра).
+ * Прямоугольник ловушки под курсором: width × height клеток (height не задана — квадрат).
+ * Курсор — в центральной клетке (для чётного размера — левее и выше центра).
  * → { x, y, width, height } в пикселях сцены.
  */
-export function placementRect(point, size, gridSize) {
-  const n = Math.max(1, Math.round(size));
-  const col = Math.floor(point.x / gridSize) - Math.floor((n - 1) / 2);
-  const row = Math.floor(point.y / gridSize) - Math.floor((n - 1) / 2);
-  return { x: col * gridSize, y: row * gridSize, width: n * gridSize, height: n * gridSize };
+export function placementRect(point, width, gridSize, height = width) {
+  const w = Math.max(1, Math.round(width));
+  const h = Math.max(1, Math.round(height));
+  const col = Math.floor(point.x / gridSize) - Math.floor((w - 1) / 2);
+  const row = Math.floor(point.y / gridSize) - Math.floor((h - 1) / 2);
+  return { x: col * gridSize, y: row * gridSize, width: w * gridSize, height: h * gridSize };
+}
+
+/** Сколько клеток по ширине и высоте занимает рамка области. */
+export function rectCells(rect, gridSize) {
+  const g = gridSize || 100;
+  return { width: Math.max(1, Math.round(rect.width / g)), height: Math.max(1, Math.round(rect.height / g)) };
 }
 
 /** Рамка по фигурам области (rectangle, ellipse, circle, polygon) без учёта поворота. */
@@ -80,3 +88,25 @@ export function sightPoints(r, inset = 2) {
   for (const y of ys) for (const x of xs) if (!(x === xs[1] && y === ys[1])) points.push({ x, y });
   return points;
 }
+
+/**
+ * Центры ближайших клеток двух прямоугольников на сетке (токен и область ловушки): от них Foundry
+ * меряет расстояние линейкой. По оси, где прямоугольники перекрываются, точки совпадают.
+ */
+export function nearestCellCenters(a, b, cell) {
+  const axis = (a0, a1, b0, b1) => {
+    if (a1 <= b0) return [a1 - cell / 2, b0 + cell / 2];
+    if (b1 <= a0) return [a0 + cell / 2, b1 - cell / 2];
+    const lo = Math.max(a0, b0);
+    return [lo + cell / 2, lo + cell / 2];
+  };
+  const [ax, bx] = axis(a.x, a.x + a.width, b.x, b.x + b.width);
+  const [ay, by] = axis(a.y, a.y + a.height, b.y, b.y + b.height);
+  return [{ x: ax, y: ay }, { x: bx, y: by }];
+}
+
+/** Клеток между точками по правилу D&D 5e «каждая диагональ — 5 фт» (если линейки Foundry нет). */
+export const chebyshevCells = (p, q, cell) => Math.round(Math.max(Math.abs(p.x - q.x), Math.abs(p.y - q.y)) / cell);
+
+/** Дальность ловушки в футах → в клетках (клетка — 5 фт, на метрической сетке тоже). */
+export const rangeCells = (feet) => Math.max(0, Number(feet) || 0) / 5;

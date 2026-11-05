@@ -57,6 +57,13 @@ animation, sound and texts. On the right is the card, updating as you go. Place 
 trap on the map (with the button, or by dragging the card), save it to the library as your own, or,
 for a trap on the scene, save it straight into the region.
 
+**Area size** is width and height in squares, 1 to 12 each: a square, a 1×4 corridor for a
+boulder or a blade, a 3×1 strip for a volley. The illustration follows the shape: the tripwire,
+the blade slot, the boulder grooves and the dart holes turn along the corridor, rune signs and gas
+vents repeat along its length, and the trigger effect stays inside the corridor walls. A trap
+also fires on a region of any shape if you redraw it with Foundry's region tools; the marker and
+“spot from” then use the rectangle around it.
+
 ## Traps
 
 Hidden Pit, Spiked Pit, Bear Trap, Poison Darts, Arrow Volley, Scything Blade, Falling Net,
@@ -66,11 +73,15 @@ Frost Rune, Thunder Plate, Withering Sigil and Alarm Plate. The numbers are for 
 
 ## Spotting and disarming
 
-- **Passive Perception.** A player character within the detection range (10 ft by default)
-  notices a trap if their passive Perception meets its detect DC and the trap is in line of
-  sight: walls that block sight and closed doors get in the way (the “Spot only in line of
-  sight” setting).
+- **Passive Perception.** A player character notices a trap if their passive Perception meets
+  its detect DC, the trap is within its “spot from” range and in line of sight: walls that block
+  sight and closed doors get in the way (the “Spot only in line of sight” setting).
 - **Searching.** “Search with selected tokens” — the selected tokens roll Perception.
+- **“Spot from”.** Each trap has its own range, 10 ft by default, set in the configuration
+  window next to the detect DC. It's counted in squares like the Foundry ruler: from the token's
+  edge to the trap's edge, using the scene's diagonal rule. 5 ft is the adjacent square, 10 ft is
+  one empty square between, diagonals included; a large token counts from its edge. On a metric
+  grid a square still counts as 5 ft.
 - **What happens next is up to the “When a character spots a trap” setting** (also switchable
   right on the On this scene tab):
   - **Tell me** (default). Players learn nothing. The GM gets a whisper: who spotted which trap and how
@@ -124,7 +135,7 @@ The GM decides whether players see a trap — with one click from three places:
 
 Animations (JB2A if Sequencer is installed, or built-in; built-in only; none), volume, who sets
 traps off (player characters only by default, or everyone), automatic damage, who sees the trigger
-card, passive Perception, detection range, spot only in line of sight, when a character spots a
+card, passive Perception, spot only in line of sight, when a character spots a
 trap (tell the GM or reveal right away), trap buttons on the map (per GM).
 
 ## For macros

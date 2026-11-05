@@ -101,6 +101,17 @@ for (const path of [...manifest.esmodules, ...manifest.styles, ...manifest.langu
 }
 if (!manifest.documentTypes?.RegionBehavior?.trap) fail("module.json: нет documentTypes.RegionBehavior.trap");
 
+// Действия окон: «tab» и «toggleControls» ApplicationV2 обрабатывает сам и до обработчика модуля
+// не пускает (так однажды перестали переключаться вкладки окна библиотеки).
+const RESERVED_ACTIONS = ["tab", "toggleControls"];
+for (const file of [...templates, ...scripts]) {
+  const text = readFileSync(join(root, file), "utf8");
+  for (const name of RESERVED_ACTIONS) {
+    if (text.includes(`data-action="${name}"`)) fail(`${file}: data-action="${name}" — это встроенное действие ApplicationV2, назовите своё иначе`);
+    if (new RegExp(`^\\s*${name}\\s*:\\s*\\w+\\.#`, "m").test(text)) fail(`${file}: действие «${name}» в actions — его перехватит ApplicationV2`);
+  }
+}
+
 // Шрифты: каждый файл из styles/fonts.css лежит в fonts/, лицензия на месте.
 const fontsCss = readFileSync(join(root, "styles/fonts.css"), "utf8");
 const fontFiles = [...fontsCss.matchAll(/url\("\.\.\/fonts\/([^"]+)"\)/g)].map((m) => m[1]);

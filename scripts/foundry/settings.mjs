@@ -51,14 +51,6 @@ export function registerSettings({ onLibrary, onMapButtons, onDetectMode }) {
     default: "public",
   });
   reg(SETTINGS.passiveDetect, { ...name("passiveDetect"), scope: "world", config: true, type: Boolean, default: true });
-  reg(SETTINGS.detectRange, {
-    ...name("detectRange"),
-    scope: "world",
-    config: true,
-    type: Number,
-    range: { min: 5, max: 60, step: 5 },
-    default: 10,
-  });
   reg(SETTINGS.detectSight, { ...name("detectSight"), scope: "world", config: true, type: Boolean, default: true });
   // Персонаж заметил ловушку: сразу показать её игрокам или сообщить ведущему, а показать вручную.
   reg(SETTINGS.detectMode, {

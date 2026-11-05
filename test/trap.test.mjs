@@ -121,3 +121,18 @@ test("кто заметил ловушку: каждый персонаж учи
   assert.equal(knowsTrap({ revealed: true }, "goblin"), true, "показанную видят все");
   assert.equal(knowsTrap({ noticedBy: "не список" }, "mira"), false);
 });
+
+test("ширина и высота ловушки: старый size — квадрат, туда и обратно через поведение", async () => {
+  const { fromBehaviorData, normalizeTrap, toBehaviorData } = await import("../scripts/core/trap.mjs");
+  const sq = normalizeTrap({ size: 3 });
+  assert.deepEqual([sq.width, sq.height, sq.size], [3, 3, 3]);
+  const corridor = normalizeTrap({ width: 1, height: 4 });
+  assert.deepEqual([corridor.width, corridor.height, corridor.size], [1, 4, 4]);
+  assert.deepEqual([normalizeTrap({ width: 0, height: 99 }).width, normalizeTrap({ width: 0, height: 99 }).height], [1, 12]);
+  const sys = toBehaviorData(corridor);
+  assert.deepEqual([sys.width, sys.height], [1, 4]);
+  const back = fromBehaviorData(sys, { width: 4, height: 1 });
+  assert.deepEqual([back.width, back.height], [4, 1], "размер берётся с области на сцене");
+  const old = fromBehaviorData({ ...sys, width: undefined, height: undefined, size: 2 });
+  assert.deepEqual([old.width, old.height], [2, 2], "старая ловушка без ширины — квадрат");
+});

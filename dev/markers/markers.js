@@ -44,30 +44,33 @@ function floor(ctx, w, h, seed) {
 
 /** Картинка: пол (size + 2 клетки) и метка ловушки посередине. */
 function canvasFor(trap, { state = "armed", ghost = false, seedText = trap.id }) {
-  const cells = Math.max(1, trap.size) + 2;
+  const tw = Math.max(1, trap.width ?? trap.size);
+  const th = Math.max(1, trap.height ?? trap.size);
+  const cols = tw + 2;
+  const rows = th + 2;
   const el = document.createElement("canvas");
   const dpr = Math.min(2, window.devicePixelRatio || 1);
-  el.width = cells * CELL * dpr;
-  el.height = cells * CELL * dpr;
+  el.width = cols * CELL * dpr;
+  el.height = rows * CELL * dpr;
   const ctx = el.getContext("2d");
   const badge = badgeFor({ state, ghost, device: trap.device });
   const icon = glyph(trap.icon);
   const badgeGlyph = badge ? glyph(badge.icon) : null;
   const paint = (reveal = 1) => {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    floor(ctx, cells * CELL, cells * CELL, seedOf(seedText) % 97);
+    floor(ctx, cols * CELL, rows * CELL, seedOf(seedText) % 97);
     if (ghost) {
       ctx.fillStyle = "rgba(224,112,46,0.2)";
-      ctx.fillRect(CELL, CELL, trap.size * CELL, trap.size * CELL);
+      ctx.fillRect(CELL, CELL, tw * CELL, th * CELL);
       ctx.strokeStyle = "rgba(224,112,46,0.7)";
       ctx.lineWidth = 2;
-      ctx.strokeRect(CELL + 1, CELL + 1, trap.size * CELL - 2, trap.size * CELL - 2);
+      ctx.strokeRect(CELL + 1, CELL + 1, tw * CELL - 2, th * CELL - 2);
     }
     drawMarker(ctx, {
       x: CELL,
       y: CELL,
-      width: trap.size * CELL,
-      height: trap.size * CELL,
+      width: tw * CELL,
+      height: th * CELL,
       cell: CELL,
       severity: trap.severity,
       state,
@@ -159,6 +162,28 @@ for (const v of variants) {
   cap.innerHTML = `<b>${v.label}</b>`;
   fig.append(cap);
   box.append(fig);
+}
+
+const rects = document.querySelector("#rects");
+for (const [id, w, h, state, label] of [
+  ["scythingBlade", 1, 3, "armed", "Маятник 1×3: щель поперёк коридора"],
+  ["scythingBlade", 3, 1, "spent", "Маятник 3×1 — сработал"],
+  ["rollingBoulder", 1, 4, "armed", "Валун 1×4: колея вдоль коридора"],
+  ["rollingBoulder", 4, 1, "spent", "Валун 4×1 — скатился"],
+  ["arrowVolley", 3, 1, "armed", "Залп 3×1: бойницы в торце"],
+  ["poisonDarts", 1, 3, "armed", "Дротики 1×3: отверстия по стенам"],
+  ["poisonGas", 1, 4, "armed", "Газ 1×4: решётки в ряд"],
+  ["frostRune", 1, 3, "armed", "Руна 1×3: ряд знаков"],
+  ["spikedPit", 1, 2, "spent", "Яма 1×2 — открыта"],
+  ["fallingNet", 2, 3, "armed", "Сеть 2×3"],
+]) {
+  if (ONLY && !ONLY.includes(id)) continue;
+  const fig = document.createElement("figure");
+  fig.append(canvasFor({ ...byId[id], width: w, height: h }, { state, seedText: label }));
+  const cap = document.createElement("figcaption");
+  cap.innerHTML = `<b>${label}</b>`;
+  fig.append(cap);
+  rects.append(fig);
 }
 
 const states = document.querySelector("#states");

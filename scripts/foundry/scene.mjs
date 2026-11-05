@@ -1,6 +1,6 @@
 /* Ловушки на сцене: найти, рамка области, видимость, сообщения в чат. */
 
-import { shapesBounds, sightPoints, tokenCenter } from "../core/geometry.mjs";
+import { chebyshevCells, distanceToRect, nearestCellCenters, shapesBounds, sightPoints, tokenCenter } from "../core/geometry.mjs";
 import { BEHAVIOR_TYPE, MODULE_ID, SETTINGS } from "./constants.mjs";
 import { setting } from "./settings.mjs";
 
@@ -27,6 +27,39 @@ export function regionBounds(region) {
 export function regionTokens(region) {
   if (region.tokens) return [...region.tokens];
   return region.parent.tokens.filter((t) => t.regions?.has?.(region));
+}
+
+/** Прямоугольник токена в пикселях сцены. */
+export function tokenRect(token, grid) {
+  return { x: token.x, y: token.y, width: (token.width ?? 1) * grid, height: (token.height ?? 1) * grid };
+}
+
+/**
+ * Сколько клеток от токена до области — как меряет линейка Foundry: от ближайшей клетки токена до
+ * ближайшей клетки области, с правилом диагоналей сцены. Соседняя клетка — 1, через одну пустую — 2,
+ * токен внутри области — 0. Без линейки — по правилу 5e «каждая диагональ — 5 фт».
+ */
+export function cellsBetween(token, region) {
+  const scene = token.parent;
+  const grid = scene?.grid ?? canvas.grid;
+  const size = grid?.size || 100;
+  const a = tokenRect(token, size);
+  const b = regionBounds(region);
+  if (grid?.isGridless || (CONST.GRID_TYPES && grid?.type === CONST.GRID_TYPES.GRIDLESS)) {
+    // Без сетки — от края до края; касание считаем соседней клеткой, как на сетке.
+    const gap = Math.max(0, Math.max(b.x - (a.x + a.width), a.x - (b.x + b.width)), Math.max(b.y - (a.y + a.height), a.y - (b.y + b.height)));
+    const inside = distanceToRect({ x: a.x + a.width / 2, y: a.y + a.height / 2 }, b) === 0;
+    return inside ? 0 : gap / size + 1;
+  }
+  const [p, q] = nearestCellCenters(a, b, size);
+  if (p.x === q.x && p.y === q.y) return 0;
+  try {
+    const path = grid?.measurePath?.([p, q]);
+    if (path && Number.isFinite(path.distance) && grid.distance > 0) return path.distance / grid.distance;
+  } catch {
+    /* старая линейка — посчитаем сами */
+  }
+  return chebyshevCells(p, q, size);
 }
 
 /**

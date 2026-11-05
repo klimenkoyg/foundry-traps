@@ -74,3 +74,22 @@ test("неизвестное устройство — рисунка нет, м�
   assert.deepEqual(ctx.bad, []);
   assert.ok(ctx.calls > 0);
 });
+
+test("коридор: рисунки поворачиваются по оси и рисуются без NaN", async () => {
+  const { turnsTell } = await import("../scripts/core/tells.mjs");
+  assert.equal(turnsTell("blade", 100, 300), false, "щель поперёк вертикального коридора — как нарисовано");
+  assert.equal(turnsTell("blade", 300, 100), true);
+  assert.equal(turnsTell("boulder", 100, 400), true, "колея вдоль вертикального коридора");
+  assert.equal(turnsTell("boulder", 400, 100), false);
+  assert.equal(turnsTell("pit", 100, 300), false, "у ямы направления нет");
+  assert.equal(turnsTell("blade", 200, 200), false, "квадрат не поворачиваем");
+  for (const device of TELL_DEVICES) {
+    for (const [w, h] of [[1, 3], [3, 1], [1, 4], [2, 5], [6, 1]]) {
+      for (const spent of [false, true]) {
+        const ctx = stubContext();
+        drawTell(ctx, { x: 0, y: 0, width: w * 100, height: h * 100, cell: 100, device, spent, seed: 5 });
+        assert.deepEqual(ctx.bad, [], `${device} ${w}×${h} spent=${spent}`);
+      }
+    }
+  }
+});

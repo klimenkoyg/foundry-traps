@@ -267,12 +267,14 @@ function drawTellMarker(ctx, o, { x, y, w, h, cell, state, ghost, reveal, pop, s
   const cy = y + h / 2;
   const pFrame = outQuart(seg(reveal, 0.1, 0.6));
   const pArt = outCubic(seg(reveal, 0.04, 0.78));
-  const reach = (Math.hypot(w, h) / 2) * 1.08;
+  // Проявляется эллипсом по форме области: и у квадрата, и у коридора доходит до углов.
+  const rx = (w / 2) * 1.42;
+  const ry = (h / 2) * 1.42;
 
   ctx.save();
   if (pArt < 1) {
     ctx.beginPath();
-    ctx.arc(cx, cy, Math.max(0.001, reach * pArt), 0, Math.PI * 2);
+    ctx.ellipse(cx, cy, Math.max(0.001, rx * pArt), Math.max(0.001, ry * pArt), 0, 0, Math.PI * 2);
     ctx.clip();
   }
   ctx.globalAlpha = ghost ? 0.42 : state === "disarmed" ? 0.6 : 1;
@@ -295,7 +297,7 @@ function drawTellMarker(ctx, o, { x, y, w, h, cell, state, ghost, reveal, pop, s
   if (!ghost && pArt > 0 && pArt < 1) {
     ctx.save();
     ctx.beginPath();
-    ctx.arc(cx, cy, reach * pArt, 0, Math.PI * 2);
+    ctx.ellipse(cx, cy, rx * pArt, ry * pArt, 0, 0, Math.PI * 2);
     ctx.strokeStyle = rgba(sev, (1 - pArt) * 0.9);
     ctx.lineWidth = Math.max(1.5, cell * 0.03);
     ctx.stroke();

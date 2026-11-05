@@ -191,7 +191,7 @@
       "sceneEmpty": "No traps on this scene yet. Drag one from the library onto the map.",
       "noScene": "No scene is open.",
       "searchSelected": "Search with selected tokens",
-      "searchSelectedHint": "Selected tokens roll Perception against traps within {range} ft.",
+      "searchSelectedHint": "Selected tokens roll Perception against traps no farther than their “spot from” range (usually 10 ft) and in line of sight.",
       "pan": "Show on map",
       "configure": "Configure",
       "arm": "Arm",
@@ -235,12 +235,13 @@
       "damage": "Damage",
       "condition": "Condition",
       "area": "Area",
-      "areaValue": "{n}×{n} sq.",
+      "areaValue": "{w}×{h} sq.",
       "auto": "No check",
       "dc": "DC {dc}",
       "noDamage": "none",
       "escape": "Escape",
-      "noDamageShort": "no damage"
+      "noDamageShort": "no damage",
+      "within": "within {n} ft"
     },
     "Chat": {
       "save": "Saving throw: {ability}, DC {dc}",
@@ -309,6 +310,10 @@
           "label": "Detect DC",
           "hint": "Against passive Perception and searching."
         },
+        "detectRange": {
+          "label": "Spot from, ft",
+          "hint": "Passive Perception and searching work up to this far, counted in squares like the ruler: 10 ft is one empty square between."
+        },
         "disarmDC": {
           "label": "Disarm DC"
         },
@@ -365,6 +370,12 @@
         },
         "size": {
           "label": "Size in library"
+        },
+        "width": {
+          "label": "Width, squares"
+        },
+        "height": {
+          "label": "Height, squares"
         },
         "detected": {
           "label": "Spotted by players"
@@ -424,10 +435,6 @@
       "passiveDetect": {
         "name": "Passive Perception",
         "hint": "A player character coming near a trap notices it if their passive Perception meets the detect DC."
-      },
-      "detectRange": {
-        "name": "Detection range (ft)",
-        "hint": "How far from a trap passive Perception and searching work."
       },
       "detectSight": {
         "name": "Spot only in line of sight",
@@ -620,7 +627,8 @@
       "checkSave": "Saving throw",
       "checkAttack": "Attack vs AC",
       "checkAuto": "No roll",
-      "size": "Side, squares",
+      "width": "Width, squares",
+      "height": "Height, squares",
       "escapeHint": "0 — no need to escape",
       "tierNote": "Damage is for a level {levels} party.",
       "tierFixed": "Damage is the same at any party level.",

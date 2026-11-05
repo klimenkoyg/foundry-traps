@@ -1,13 +1,13 @@
 /* Действия ведущего с ловушками: поставить, взвести, показать, обезвредить, искать, сохранить. */
 
-import { distanceToRect, placementRect, tokenCenter } from "../core/geometry.mjs";
+import { placementRect, rangeCells, rectCells } from "../core/geometry.mjs";
 import { addNoticer, fromBehaviorData, knowsTrap, normalizeTrap, notices, resolveDisarm, toBehaviorData } from "../core/trap.mjs";
 import { BEHAVIOR_TYPE, MODULE_ID, SETTINGS, SEVERITY_COLOR, THEME_ATTR } from "./constants.mjs";
 import { passivePerception, rollCheck } from "./dnd5e.mjs";
 import { esc, t } from "./i18n.mjs";
 import { getEntry, saveCustom } from "./library.mjs";
 import { noticeCard, visButton } from "./chat.mjs";
-import { hasLineOfSight, isRevealed, ownerIds, postMessage, regionBounds, sceneTraps, setVisible } from "./scene.mjs";
+import { cellsBetween, hasLineOfSight, isRevealed, ownerIds, postMessage, regionBounds, sceneTraps, setVisible } from "./scene.mjs";
 import { setting } from "./settings.mjs";
 import { fireTrap } from "./trigger.mjs";
 
@@ -20,7 +20,7 @@ export async function placeTrap(scene, source, point, tier = setting(SETTINGS.ti
   const entry = typeof source === "string" ? getEntry(source) : source;
   if (!entry || !scene) return null;
   const trap = normalizeTrap(entry.trap);
-  const rect = placementRect(point, trap.size, scene.grid.size);
+  const rect = placementRect(point, trap.width, scene.grid.size, trap.height);
   const system = toBehaviorData(trap, { tier: entry.scaled ? 1 : tier, flavor: entry.flavor, text: entry.text });
   if (entry.id) system.trapId = entry.id;
   const name = entry.name || trap.name || t("Title");
@@ -51,9 +51,9 @@ export async function updatePlaced(region, behavior, trap) {
   const regionChange = { name: t0.name, color: SEVERITY_COLOR[t0.severity] ?? SEVERITY_COLOR.dangerous };
   const grid = region.parent.grid.size;
   const b = regionBounds(region);
-  const cells = Math.max(1, Math.round(Math.max(b.width, b.height) / grid));
-  if (cells !== t0.size) {
-    const rect = placementRect({ x: b.x + b.width / 2, y: b.y + b.height / 2 }, t0.size, grid);
+  const cells = rectCells(b, grid);
+  if (cells.width !== t0.width || cells.height !== t0.height) {
+    const rect = placementRect({ x: b.x + b.width / 2, y: b.y + b.height / 2 }, t0.width, grid, t0.height);
     regionChange.shapes = [{ type: "rectangle", ...rect, rotation: 0, hole: false }];
   }
   await region.update(regionChange);
@@ -123,24 +123,19 @@ export async function markDetected(region, behavior, token, how = null) {
   return true;
 }
 
-/** Расстояние обнаружения в пикселях сцены. */
-function detectRangePx(scene) {
-  const feet = Number(setting(SETTINGS.detectRange) ?? 10);
-  return (feet / (scene.grid.distance || 5)) * scene.grid.size;
-}
-
 /**
- * Ловушки сцены, которые токен может заметить: ближе дальности обнаружения, не обезврежены и,
- * если включено, в прямой видимости — сквозь стену и закрытую дверь ловушку не заметить.
+ * Ловушки сцены, которые токен может заметить: не дальше, чем «заметить с» у самой ловушки (по
+ * клеткам, как линейка Foundry: 10 фт — через одну пустую клетку, в том числе по диагонали),
+ * не обезврежены и, если включено, в прямой видимости — сквозь стену и закрытую дверь не заметить.
  */
 function trapsNear(token) {
   const scene = token.parent;
-  const center = tokenCenter(token, scene.grid.size);
-  const range = detectRangePx(scene);
   const sight = setting(SETTINGS.detectSight) !== false;
-  return sceneTraps(scene).filter(
-    ({ region, behavior }) => !behavior.disabled && distanceToRect(center, regionBounds(region)) <= range && (!sight || hasLineOfSight(token, region)),
-  );
+  return sceneTraps(scene).filter(({ region, behavior }) => {
+    if (behavior.disabled) return false;
+    if (cellsBetween(token, region) > rangeCells(behavior.system.detectRange ?? 10) + 1e-6) return false;
+    return !sight || hasLineOfSight(token, region);
+  });
 }
 
 /** Пассивная Внимательность: токен игрока передвинулся. */
@@ -210,11 +205,10 @@ export function triggerNow(behavior, tokens) {
 /** Расставленную ловушку — в библиотеку своих (с уроном для 1–4 уровня). */
 export async function saveToLibrary(region, behavior) {
   const system = behavior.system.toObject();
-  const bounds = regionBounds(region);
-  const size = Math.max(1, Math.round(Math.max(bounds.width, bounds.height) / region.parent.grid.size));
+  const { width, height } = rectCells(regionBounds(region), region.parent.grid.size);
   const tier = Number(region.getFlag(MODULE_ID, "tier") ?? 1);
   const id = system.trapId?.startsWith("custom-") && getEntry(system.trapId) ? system.trapId : undefined;
-  const trap = fromBehaviorData(system, { id, name: behavior.name || region.name, size, tier });
+  const trap = fromBehaviorData(system, { id, name: behavior.name || region.name, width, height, tier });
   const entry = await saveCustom(trap);
   ui.notifications.info(t("Notify.saved", { name: entry.name }));
   return entry;

@@ -58,6 +58,8 @@ async function resolve(behavior, region, scene, { trigger, targets }) {
     sound: trap.sound,
     at: rectCenter(bounds),
     area: Math.max(bounds.width, bounds.height, scene.grid.size),
+    width: bounds.width,
+    height: bounds.height,
     elevation: regionElevation(region),
   });
 

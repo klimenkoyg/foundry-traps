@@ -61,7 +61,7 @@
         <label class="st-field{{#if wide}} is-wide{{/if}}{{#if isCheck}} is-check{{/if}}{{#if device}} is-device{{/if}}" {{#if show}}data-show="{{show}}"{{/if}}>
           <span class="st-field-label">{{label}}{{#if device}} <i class="fa-solid fa-gear" data-tooltip="{{localize "TRAPS.Device.controlled"}}" aria-label="{{localize "TRAPS.Device.controlled"}}"></i>{{/if}}</span>
           {{#if isSelect}}<select name="{{name}}">{{#each options}}<option value="{{value}}" {{#if selected}}selected{{/if}}>{{label}}</option>{{/each}}</select>{{/if}}
-          {{#if isNumber}}<input type="number" name="{{name}}" value="{{value}}" min="{{min}}" max="{{max}}" step="1" inputmode="numeric">{{/if}}
+          {{#if isNumber}}<input type="number" name="{{name}}" value="{{value}}" min="{{min}}" max="{{max}}" step="{{step}}" inputmode="numeric">{{/if}}
           {{#if isText}}<input type="text" name="{{name}}" value="{{value}}" placeholder="{{placeholder}}" spellcheck="false" autocomplete="off">{{/if}}
           {{#if isCheck}}<input type="checkbox" name="{{name}}" {{#if value}}checked{{/if}}>{{/if}}
           {{#if isArea}}<textarea name="{{name}}" rows="3">{{value}}</textarea>{{/if}}

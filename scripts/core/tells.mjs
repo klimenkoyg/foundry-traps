@@ -321,11 +321,12 @@ const TELLS = {
     const ih = h - m * 2;
     if (spent) {
       // Открытая яма: стены сходятся ко дну — чем глубже, тем меньше и темнее дно.
-      const k = lerp(0.14, 0.3, deep);
-      const bx = ix + iw * k;
-      const by = iy + ih * k;
-      const bw = iw * (1 - k * 2);
-      const bh = ih * (1 - k * 2);
+      // Откос одинаковый со всех сторон — и у квадратной ямы, и у вытянутой.
+      const ins = Math.min(iw, ih) * lerp(0.14, 0.3, deep);
+      const bx = ix + ins;
+      const by = iy + ins;
+      const bw = iw - ins * 2;
+      const bh = ih - ins * 2;
       const rough = opt.walls === "rough" ? 0.05 : opt.walls === "slick" ? 0.012 : 0.028;
       const rim = (px, py) => [px + between(rand, -rough, rough) * cell, py + between(rand, -rough, rough) * cell];
       const outer = [rim(ix, iy), rim(ix + iw, iy), rim(ix + iw, iy + ih), rim(ix, iy + ih)];
@@ -867,7 +868,11 @@ const TELLS = {
     const color = TOXIN[opt.toxin] ?? TOXIN.choking;
     const dense = { thin: 0.55, dense: 0.8, thick: 1 }[opt.density] ?? 0.8;
     const cells = Math.max(1, Math.round(Math.min(w, h) / cell));
-    const vents = cells === 1 ? [[0.5, 0.5]] : cells === 2 ? [[0.28, 0.3], [0.72, 0.7]] : [[0.22, 0.24], [0.78, 0.26], [0.24, 0.76], [0.76, 0.78]];
+    // Решётки сеткой: примерно через полторы клетки и по ширине, и по длине (коридор — в ряд).
+    const nx = Math.max(1, Math.round(w / cell / 1.5));
+    const ny = Math.max(1, Math.round(h / cell / 1.5));
+    const vents = [];
+    for (let j = 0; j < ny; j++) for (let i = 0; i < nx; i++) vents.push([(i + 0.5 + (ny > 1 && nx > 1 ? (j % 2 ? 0.06 : -0.06) : 0)) / nx, (j + 0.5) / ny]);
     if (spent) {
       for (let i = 0; i < 4 + cells * 2; i++) glow(ctx, x + between(rand, 0.15, 0.85) * w, y + between(rand, 0.15, 0.85) * h, cell * between(rand, 0.5, 0.9), color, 0.16 * dense, 0.1);
     }
@@ -899,6 +904,20 @@ const TELLS = {
   },
 
   rune(ctx, e) {
+    // Вытянутая область — ряд знаков, по одному на каждый квадрат вдоль длинной стороны.
+    const side = Math.min(e.w, e.h);
+    const n = Math.max(1, Math.round(Math.max(e.w, e.h) / side));
+    if (n > 1 && !e.tile) {
+      for (let i = 0; i < n; i++) {
+        const along = e.w >= e.h;
+        const tx = along ? e.x + (e.w / n) * i : e.x;
+        const ty = along ? e.y : e.y + (e.h / n) * i;
+        const tw = along ? e.w / n : e.w;
+        const th = along ? e.h : e.h / n;
+        TELLS.rune(ctx, { ...e, x: tx, y: ty, w: tw, h: th, cx: tx + tw / 2, cy: ty + th / 2, tile: true });
+      }
+      return;
+    }
     const { cx, cy, w, h, cell, rand, opt, fx, spent } = e;
     const color = RUNE[fx] ?? RUNE[e.damageType] ?? [219, 183, 109];
     const power = { weak: 0.45, normal: 0.65, strong: 0.85, devastating: 1 }[opt.power] ?? 0.65;
@@ -978,11 +997,36 @@ export const hasTell = (device) => Object.hasOwn(TELLS, device);
  * Нарисовать ловушку в области (x, y, width, height).
  * spent — после срабатывания; options — настройки устройства; fx, damageType — для цвета.
  */
+/**
+ * Вдоль какой оси рисунок «смотрит» (y — путь сверху вниз: растяжка и щель поперёк, бойницы в торце;
+ * x — колея валуна и стены с дротиками вдоль). В вытянутой области рисунок поворачивается так,
+ * чтобы эта ось шла вдоль коридора.
+ */
+const ORIENT = { arrows: "y", blade: "y", boulder: "x", darts: "x" };
+
+/** Поворачивать ли рисунок на 90°: длинная сторона области не совпадает с осью рисунка. */
+export function turnsTell(device, w, h) {
+  const axis = ORIENT[device];
+  if (!axis || Math.abs(w - h) < 1e-6) return false;
+  return (w > h ? "x" : "y") !== axis;
+}
+
 export function drawTell(ctx, { x, y, width: w, height: h, cell, device, options = {}, fx = "", damageType = "", spent = false, seed = 1 }) {
   const paint = TELLS[device];
   if (!paint) return false;
-  const env = { x, y, w, h, cx: x + w / 2, cy: y + h / 2, cell, rand: mulberry32(seed), opt: options ?? {}, fx, damageType, spent };
+  const cx = x + w / 2;
+  const cy = y + h / 2;
+  const turn = turnsTell(device, w, h);
+  // Повёрнутый рисунок рисуем в рамке со сторонами наоборот и поворачиваем вокруг центра.
+  const fw = turn ? h : w;
+  const fh = turn ? w : h;
+  const env = { x: cx - fw / 2, y: cy - fh / 2, w: fw, h: fh, cx, cy, cell, rand: mulberry32(seed), opt: options ?? {}, fx, damageType, spent };
   ctx.save();
+  if (turn) {
+    ctx.translate(cx, cy);
+    ctx.rotate(Math.PI / 2);
+    ctx.translate(-cx, -cy);
+  }
   paint(ctx, env);
   ctx.restore();
   return true;

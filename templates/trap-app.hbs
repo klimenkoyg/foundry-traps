@@ -1,9 +1,9 @@
 <div class="st-root">
   <nav class="st-tabs" role="tablist">
-    <button type="button" role="tab" data-action="tab" data-tab="library" aria-selected="{{isLibrary}}" class="{{#if isLibrary}}is-active{{/if}}">
+    <button type="button" role="tab" data-action="switchTab" data-tab="library" aria-selected="{{isLibrary}}" class="{{#if isLibrary}}is-active{{/if}}">
       <i class="fa-solid fa-book-skull" inert></i> {{localize "TRAPS.App.tabLibrary"}}
     </button>
-    <button type="button" role="tab" data-action="tab" data-tab="scene" aria-selected="{{#if isLibrary}}false{{else}}true{{/if}}" class="{{#unless isLibrary}}is-active{{/unless}}">
+    <button type="button" role="tab" data-action="switchTab" data-tab="scene" aria-selected="{{#if isLibrary}}false{{else}}true{{/if}}" class="{{#unless isLibrary}}is-active{{/unless}}">
       <i class="fa-solid fa-map-location-dot" inert></i> {{localize "TRAPS.App.tabScene"}}
       {{#if sceneCount}}<span class="st-count">{{sceneCount}}</span>{{/if}}
     </button>

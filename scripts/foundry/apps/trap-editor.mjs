@@ -20,6 +20,7 @@ import { choices } from "../dnd5e.mjs";
 import { previewFx } from "../fx.mjs";
 import { t } from "../i18n.mjs";
 import { getEntry, saveCustom } from "../library.mjs";
+import { rectCells } from "../../core/geometry.mjs";
 import { regionBounds } from "../scene.mjs";
 import { setting } from "../settings.mjs";
 import { fieldChips, stats } from "../summary.mjs";
@@ -27,7 +28,7 @@ import { fieldChips, stats } from "../summary.mjs";
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 /** Поля, которые правятся в окне, и то, как читать их из формы. */
-const NUMBER_FIELDS = new Set(["detectDC", "disarmDC", "saveDC", "attackBonus", "escapeDC", "size"]);
+const NUMBER_FIELDS = new Set(["detectDC", "detectRange", "disarmDC", "saveDC", "attackBonus", "escapeDC", "width", "height"]);
 const CHECK_FIELDS = new Set(["magical", "stops", "fixedDamage"]);
 const FORMULA_FIELDS = new Set(["damage", "damage2"]);
 
@@ -36,10 +37,7 @@ const options = (map, current) =>
   Object.entries(typeof map === "function" ? map() : map).map(([value, text]) => ({ value, label: text, selected: value === String(current ?? "") }));
 
 /** Ячейка размера: сторона области ловушки на сцене в клетках. */
-const cellsOf = (region) => {
-  const b = regionBounds(region);
-  return Math.max(1, Math.round(Math.max(b.width, b.height) / (region.parent?.grid?.size || 100)));
-};
+const cellsOf = (region) => rectCells(regionBounds(region), region.parent?.grid?.size || 100);
 
 export class TrapEditor extends HandlebarsApplicationMixin(ApplicationV2) {
   static DEFAULT_OPTIONS = {
@@ -102,7 +100,7 @@ export class TrapEditor extends HandlebarsApplicationMixin(ApplicationV2) {
         id: system.trapId,
         name: src.behavior.name || src.region.name,
         text: system.notes,
-        size: cellsOf(src.region),
+        ...cellsOf(src.region),
       });
     } else {
       const { entry } = src;
@@ -198,7 +196,7 @@ export class TrapEditor extends HandlebarsApplicationMixin(ApplicationV2) {
       const value = d[name];
       const out = { name, label: extra.label ?? label(name), device: controlled.has(name), hint: extra.hint, show: extra.show, wide: extra.wide };
       if (type === "select") return { ...out, isSelect: true, options: options(extra.choices, value) };
-      if (type === "number") return { ...out, isNumber: true, value: value ?? "", min: extra.min ?? 0, max: extra.max ?? 40 };
+      if (type === "number") return { ...out, isNumber: true, value: value ?? "", min: extra.min ?? 0, max: extra.max ?? 40, step: extra.step ?? 1 };
       if (type === "formula") return { ...out, isText: true, value, placeholder: "—" };
       if (type === "check") return { ...out, isCheck: true, value };
       if (type === "area") return { ...out, isArea: true, value, wide: true };
@@ -215,6 +213,7 @@ export class TrapEditor extends HandlebarsApplicationMixin(ApplicationV2) {
         id: "checks",
         fields: [
           field("detectDC", "number"),
+          field("detectRange", "number", { min: 5, max: 120, step: 5 }),
           field("disarmDC", "number"),
           field("disarmSkill", "select", { choices: choices.skills }),
           {
@@ -246,7 +245,8 @@ export class TrapEditor extends HandlebarsApplicationMixin(ApplicationV2) {
       {
         id: "area",
         fields: [
-          field("size", "number", { label: t("Editor.size"), min: 1, max: 12 }),
+          field("width", "number", { label: t("Editor.width"), min: 1, max: 12 }),
+          field("height", "number", { label: t("Editor.height"), min: 1, max: 12 }),
           field("affects", "select", { choices: { trigger: t("Affects.trigger"), area: t("Affects.area") } }),
           field("rearm", "select", { choices: { auto: t("Rearm.auto"), once: t("Rearm.once") } }),
           field("stops", "check"),
@@ -282,7 +282,7 @@ export class TrapEditor extends HandlebarsApplicationMixin(ApplicationV2) {
       severityLabel: t(`Severity.${d.severity}`),
       magical: d.magical,
       custom: this.isCustom,
-      area: t("Stat.areaValue", { n: d.size }),
+      area: t("Stat.areaValue", { w: d.width, h: d.height }),
       affects: t(`Affects.${d.affects}`),
       rearm: t(`Rearm.${d.rearm}`),
       stats: stats(d),
@@ -501,7 +501,7 @@ export class TrapEditor extends HandlebarsApplicationMixin(ApplicationV2) {
       const b = regionBounds(this.source.region);
       at = { x: b.x + b.width / 2, y: b.y + b.height / 2 };
     }
-    previewFx(scene, { fx: this.draft.fx, sound: this.draft.sound, at: { x: at.x, y: at.y }, area: this.draft.size * grid });
+    previewFx(scene, { fx: this.draft.fx, sound: this.draft.sound, at: { x: at.x, y: at.y }, area: Math.max(this.draft.width, this.draft.height) * grid, width: this.draft.width * grid, height: this.draft.height * grid });
   }
 
   static #onReset() {
