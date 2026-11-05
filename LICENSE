@@ -18,6 +18,22 @@
   в том числе в составе платных сборок и подписок;
 - выдавать модуль за своё, убирать имя автора и этот текст.
 
+Изменением модуля не считается:
+- менять его настройки, создавать и править ловушки в окне модуля, сохранять
+  свои в «Мои ловушки»;
+- делиться сценами и мирами, где расставлены ловушки.
+
+Форк на GitHub. Правила GitHub разрешают любому пользователю смотреть открытый
+репозиторий и делать его копию на GitHub (форк). Форк — это копия, а не
+разрешение: менять в нём код, пользоваться изменённой версией и распространять
+её можно только с согласия автора.
+
+Правки и согласие. Предложить правку можно в Issues или pull request'ом:
+https://github.com/klimenkoyg/foundry-traps. Там же можно попросить согласие на
+изменения; согласие действует, если автор дал его письменно, в том числе
+в переписке. Присылая правку, вы разрешаете автору бесплатно использовать её
+в модуле и распространять на этих условиях.
+
 Часть игровой механики (сложности спасбросков и бонусы атаки по опасности,
 урон по уровню) взята из System Reference Document 5.1 (Wizards of the Coast LLC),
 доступного по лицензии Creative Commons Attribution 4.0 International:
@@ -50,6 +66,22 @@ You may not, without the author's written consent:
 - sell the module or any part of it, rent it out, or charge for access to it,
   including as part of paid compilations or subscriptions;
 - present the module as your own, or remove the author's name or this notice.
+
+The following is not a modification of the module:
+- changing its settings, creating and editing traps in the module window,
+  saving your own under “My traps”;
+- sharing scenes and worlds with traps placed in them.
+
+GitHub forks. GitHub's terms let any user view a public repository and copy it
+on GitHub (fork it). A fork is a copy, not a permission: changing its code,
+using a modified version or distributing one still requires the author's
+consent.
+
+Changes and consent. You can suggest a change in Issues or with a pull request:
+https://github.com/klimenkoyg/foundry-traps. You can also ask for consent to
+make changes there; consent counts only if the author gives it in writing,
+including in a message. By sending a change, you allow the author to use it
+in the module free of charge and distribute it under these terms.
 
 This work includes material taken from the System Reference Document 5.1
 (“SRD 5.1”) by Wizards of the Coast LLC, available at
