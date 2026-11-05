@@ -62,8 +62,13 @@ for (const [key, file] of used) {
 
 // Семейства ключей, которые собираются на лету.
 const behaviorSrc = readFileSync(join(root, "scripts/foundry/behavior.mjs"), "utf8");
-const fields = [...behaviorSrc.matchAll(/^\s{6}(\w+): (?:new f\.|dc\(|formula\()/gm)].map((m) => m[1]);
+// Поля двух поведений: «Ловушка» (до класса триггера) и «Триггер ловушки» — у каждого свои подписи.
+const fieldsOf = (src) => [...src.matchAll(/^\s{6}(\w+): (?:new f\.|dc\(|formula\()/gm)].map((m) => m[1]);
+const [trapSrc, activatorSrc = ""] = behaviorSrc.split("export class ActivatorBehavior");
+const fields = fieldsOf(trapSrc);
+const activatorFields = fieldsOf(activatorSrc);
 if (fields.length < 20) fail(`поля поведения не нашлись в behavior.mjs (${fields.length})`);
+if (activatorFields.length < 2) fail(`поля триггера не нашлись в behavior.mjs (${activatorFields.length})`);
 const families = [
   ...CATALOG.flatMap((x) => ["name", "text", "flavor"].map((k) => `TRAPS.Trap.${x.id}.${k}`)),
   ...FX_NAMES.map((x) => `TRAPS.Fx.${x}`),
@@ -71,10 +76,15 @@ const families = [
   ...SEVERITIES.map((x) => `TRAPS.Severity.${x}`),
   ...TIERS.map((x) => `TRAPS.Tier.${x}`),
   ...fields.map((x) => `TRAPS.Behavior.FIELDS.${x}.label`),
+  ...activatorFields.map((x) => `TRAPS.ActivatorBehavior.FIELDS.${x}.label`),
+  ...["none", "plate", "wire"].map((x) => `TRAPS.Activator.${x}`),
+  ...["plate", "wire"].map((x) => `TRAPS.ActivatorKind.${x}`),
+  ...["manual", "plate", "wire", "count"].map((x) => `TRAPS.Activation.${x}`),
   ...["trigger", "area"].map((x) => `TRAPS.Affects.${x}`),
   ...["auto", "once"].map((x) => `TRAPS.Rearm.${x}`),
   ...["half", "none"].map((x) => `TRAPS.OnSave.${x}`),
   "TYPES.RegionBehavior.ssl_traps.trap",
+  "TYPES.RegionBehavior.ssl_traps.activator",
   ...Object.entries(DEVICES).flatMap(([name, def]) =>
     def.params.flatMap((p) => [`TRAPS.Device.${name}.${p.key}.label`, ...(p.options ?? []).map((o) => `TRAPS.Device.${name}.${p.key}.${o}`)]),
   ),

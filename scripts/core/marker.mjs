@@ -291,6 +291,7 @@ function drawTellMarker(ctx, o, { x, y, w, h, cell, state, ghost, reveal, pop, s
     damageType: o.damageType,
     spent: state === "spent",
     seed: o.seed ?? 1,
+    ownTrigger: o.ownTrigger !== false,
   });
   ctx.restore();
 
@@ -303,6 +304,7 @@ function drawTellMarker(ctx, o, { x, y, w, h, cell, state, ghost, reveal, pop, s
     ctx.stroke();
     ctx.restore();
   }
-  if (!ghost) frame(ctx, { x, y, w, h, cell, live, tone, pArea: pFrame, pFrame });
-  drawBadge(ctx, { x, y, r: cell * 0.15, cell, state, ghost, sev, glyph: o.badgeGlyph, pop, device: o.device, ghostBadge: o.ghostBadge });
+  // badge: false — метка триггера: рамка опасности и значок состояния — у метки самой ловушки.
+  if (!ghost && o.badge !== false) frame(ctx, { x, y, w, h, cell, live, tone, pArea: pFrame, pFrame });
+  if (o.badge !== false) drawBadge(ctx, { x, y, r: cell * 0.15, cell, state, ghost, sev, glyph: o.badgeGlyph, pop, device: o.device, ghostBadge: o.ghostBadge });
 }

@@ -1,13 +1,24 @@
-/* Действия ведущего с ловушками: поставить, взвести, показать, обезвредить, искать, сохранить. */
+/* Действия ведущего с ловушками: поставить, взвести, показать, обезвредить, искать, сохранить;
+   триггеры ловушки — поставить, убрать. */
 
-import { placementRect, rangeCells, rectCells } from "../core/geometry.mjs";
+import { activatorRect, placementRect, rangeCells, rectCells } from "../core/geometry.mjs";
 import { addNoticer, fromBehaviorData, knowsTrap, normalizeTrap, notices, resolveDisarm, toBehaviorData } from "../core/trap.mjs";
-import { BEHAVIOR_TYPE, MODULE_ID, SETTINGS, SEVERITY_COLOR, THEME_ATTR } from "./constants.mjs";
+import { ACTIVATOR_TYPE, BEHAVIOR_TYPE, MODULE_ID, SETTINGS, SEVERITY_COLOR, THEME_ATTR } from "./constants.mjs";
 import { passivePerception, rollCheck, skillLabel } from "./dnd5e.mjs";
 import { esc, t } from "./i18n.mjs";
 import { getEntry, saveCustom } from "./library.mjs";
 import { noticeCard, visButton } from "./chat.mjs";
-import { cellsBetween, hasLineOfSight, isRevealed, ownerIds, postMessage, regionBounds, sceneTraps, setVisible } from "./scene.mjs";
+import {
+  activatorsOf,
+  cellsBetween,
+  hasLineOfSight,
+  isRevealed,
+  ownerIds,
+  postMessage,
+  regionBounds,
+  sceneTraps,
+  setVisible,
+} from "./scene.mjs";
 import { setting } from "./settings.mjs";
 import { fireTrap } from "./trigger.mjs";
 
@@ -35,13 +46,78 @@ export async function placeTrap(scene, source, point, tier = setting(SETTINGS.ti
   // v14: области живут на уровнях сцены — ставим на тот, что сейчас открыт.
   if (game.release.generation >= 14 && canvas.scene?.id === scene.id && canvas.level?.id) data.levels = [canvas.level.id];
   const [region] = await scene.createEmbeddedDocuments("Region", [data]);
-  if (region) ui.notifications.info(t("Notify.placed", { name }));
+  if (!region) return null;
+  // Триггер из предустановки ловушки: растяжка у входа, плита посередине. Не вышел (например,
+  // мир не перезапустили после обновления модуля) — ловушка остаётся и срабатывает от своей области.
+  if (trap.activator) {
+    try {
+      await addActivator(region, trap.activator);
+    } catch (err) {
+      console.warn(`${MODULE_ID} | триггер не поставился`, err);
+      ui.notifications.warn(t("Notify.activatorFailed", { name }));
+    }
+  }
+  ui.notifications.info(t("Notify.placed", { name }));
   return region;
 }
 
-/** Ловушку на сцене поправили в окне настройки: поведение, имя, цвет и размер области. */
+/** Поведение «Ловушка» области. */
+const trapBehaviorOf = (region) => [...(region?.behaviors ?? [])].find((b) => b.type === BEHAVIOR_TYPE) ?? null;
+
+/**
+ * Поставить ловушке триггер: kind "plate" — плита в клетку посередине области, "wire" — растяжка
+ * поперёк у её начала. Это обычная область сцены: ведущий двигает и меняет её как любую другую.
+ */
+export async function addActivator(trapRegion, kind = "plate") {
+  const scene = trapRegion?.parent;
+  if (!scene) return null;
+  const behavior = trapBehaviorOf(trapRegion);
+  const rect = activatorRect(regionBounds(trapRegion), kind === "wire" ? "wire" : "plate", scene.grid.size || 100);
+  const name = `${behavior?.name || trapRegion.name} · ${t(`ActivatorKind.${kind === "wire" ? "wire" : "plate"}`)}`;
+  const data = {
+    name,
+    color: SEVERITY_COLOR[behavior?.system?.severity] ?? SEVERITY_COLOR.dangerous,
+    shapes: [{ type: "rectangle", ...rect, rotation: 0, hole: false }],
+    visibility: CONST.REGION_VISIBILITY.GAMEMASTER,
+    behaviors: [{ type: ACTIVATOR_TYPE, name, system: { trap: trapRegion.id, kind: kind === "wire" ? "wire" : "plate" } }],
+  };
+  // v14: на том же уровне сцены, что и ловушка.
+  const levels = trapRegion.levels;
+  if (game.release?.generation >= 14 && (levels?.size || levels?.length)) data.levels = [...levels];
+  const [region] = await scene.createEmbeddedDocuments("Region", [data]);
+  return region ?? null;
+}
+
+/** Убрать все триггеры ловушки. */
+export async function removeActivators(trapRegion) {
+  const scene = trapRegion?.parent;
+  const ids = activatorsOf(trapRegion)
+    .map((r) => r.id)
+    .filter((id) => scene?.regions?.has?.(id) ?? true);
+  if (!ids.length) return 0;
+  try {
+    await scene.deleteEmbeddedDocuments("Region", ids);
+  } catch (err) {
+    // Ведущий удалял ловушку вместе с триггерами — их уже нет.
+    console.warn(`${MODULE_ID} | триггеры уже удалены`, err);
+  }
+  return ids.length;
+}
+
+/**
+ * В окне настройки ловушки на сцене поменяли «Триггер»: «нет» — триггеры убираем; плита или
+ * растяжка — ставим один такой вместо прежних. Не меняли — триггеры остаются, как их расставили.
+ */
+async function syncActivators(region, before, after) {
+  if (before === after) return;
+  await removeActivators(region);
+  if (after) await addActivator(region, after);
+}
+
+/** Ловушку на сцене поправили в окне настройки: поведение, имя, цвет и размер области, триггеры. */
 export async function updatePlaced(region, behavior, trap) {
   const t0 = normalizeTrap(trap);
+  const activatorBefore = behavior.system.activator ?? "";
   const system = toBehaviorData(t0, { tier: 1, flavor: t0.flavor, text: t0.text });
   system.trapId = behavior.system.trapId || system.trapId;
   const change = { name: t0.name };
@@ -57,6 +133,7 @@ export async function updatePlaced(region, behavior, trap) {
     regionChange.shapes = [{ type: "rectangle", ...rect, rotation: 0, hole: false }];
   }
   await region.update(regionChange);
+  await syncActivators(region, activatorBefore, t0.activator);
 }
 
 /** Взвести / выключить. Взведённая заново больше не «обезврежена» и для игроков. */
@@ -133,8 +210,9 @@ function trapsNear(token) {
   const sight = setting(SETTINGS.detectSight) !== false;
   return sceneTraps(scene).filter(({ region, behavior }) => {
     if (behavior.disabled) return false;
-    if (cellsBetween(token, region) > rangeCells(behavior.system.detectRange ?? 10) + 1e-6) return false;
-    return !sight || hasLineOfSight(token, region);
+    const range = rangeCells(behavior.system.detectRange ?? 10) + 1e-6;
+    // Заметить можно и саму ловушку, и любой её триггер — что ближе и что видно.
+    return [region, ...activatorsOf(region)].some((part) => cellsBetween(token, part) <= range && (!sight || hasLineOfSight(token, part)));
   });
 }
 

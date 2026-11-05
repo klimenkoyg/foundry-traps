@@ -1,14 +1,16 @@
 /* Кнопки ведущего прямо на карте, у правого верхнего угла каждой ловушки:
    - «глаз» — одним щелчком показать ловушку игрокам или спрятать;
-   - «ключ» (у взведённой) — попробовать обезвредить её выделенным токеном.
+   - «ключ» (у взведённой) — попробовать обезвредить её выделенным токеном;
+   - «▶» (у взведённой) — сработать сейчас по всем в её области (так срабатывает «только вручную»).
+   От каждого триггера к его ловушке — пунктирная линия, чтобы было видно, что с чем связано.
    Кнопки живут в #hud Foundry — HTML-слое поверх холста, который двигается и масштабируется вместе
    с картой (там же кнопки токенов). Видны только ведущему. */
 
-import { attemptDisarm, noticedBy, setRevealed } from "./actions.mjs";
+import { attemptDisarm, noticedBy, setRevealed, triggerNow } from "./actions.mjs";
 import { skillLabel } from "./dnd5e.mjs";
 import { SETTINGS, THEME } from "./constants.mjs";
 import { esc, t } from "./i18n.mjs";
-import { isRevealed, regionBounds, sceneTraps } from "./scene.mjs";
+import { activatorsOf, isRevealed, regionBounds, sceneTraps } from "./scene.mjs";
 import { setting } from "./settings.mjs";
 
 const ROOT_ID = "ssl-traps-hud";
@@ -73,7 +75,26 @@ function button(region, behavior) {
   const key = behavior.disabled
     ? ""
     : `<button type="button" class="st-map-btn is-disarm" data-act="disarm" ${ids} aria-label="${disarmTip}" data-tooltip="${disarmTip}"><i class="fa-solid fa-screwdriver-wrench" inert></i></button>`;
-  return `<div class="st-map-trap" style="left:${b.x + b.width}px;top:${b.y}px">${eye}${key}</div>`;
+  const fireTip = esc(t(s.manual ? "Hud.fireManual" : "Hud.fire", { name: behavior.name || region.name }));
+  const fire = behavior.disabled
+    ? ""
+    : `<button type="button" class="st-map-btn is-fire${s.manual ? " is-manual" : ""}" data-act="fire" ${ids} aria-label="${fireTip}" data-tooltip="${fireTip}"><i class="fa-solid fa-play" inert></i></button>`;
+  return `<div class="st-map-trap" style="left:${b.x + b.width}px;top:${b.y}px">${eye}${key}${fire}</div>`;
+}
+
+/** Пунктир от середины каждого триггера к середине его ловушки (в пикселях сцены). */
+function links(traps) {
+  const lines = [];
+  for (const { region } of traps) {
+    const b = regionBounds(region);
+    const to = { x: b.x + b.width / 2, y: b.y + b.height / 2 };
+    for (const part of activatorsOf(region)) {
+      const a = regionBounds(part);
+      const from = { x: a.x + a.width / 2, y: a.y + a.height / 2 };
+      lines.push(`<line x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}"/><circle cx="${from.x}" cy="${from.y}"/>`);
+    }
+  }
+  return lines.length ? `<svg class="st-map-links" width="1" height="1" aria-hidden="true">${lines.join("")}</svg>` : "";
 }
 
 /** Перерисовать кнопки текущей сцены. */
@@ -86,13 +107,13 @@ export function refreshHud() {
   const el = container();
   if (!el) return;
   const seen = new Set();
-  const html = [];
-  for (const { region, behavior } of sceneTraps(canvas.scene)) {
-    if (seen.has(region.id)) continue;
-    seen.add(region.id);
-    html.push(button(region, behavior));
+  const traps = [];
+  for (const found of sceneTraps(canvas.scene)) {
+    if (seen.has(found.region.id)) continue;
+    seen.add(found.region.id);
+    traps.push(found);
   }
-  el.innerHTML = html.join("");
+  el.innerHTML = links(traps) + traps.map(({ region, behavior }) => button(region, behavior)).join("");
   primed = true;
   syncHudZoom();
 }
@@ -123,9 +144,21 @@ async function onClick(event) {
   const behavior = region?.behaviors.get(btn.dataset.behavior);
   if (!region || !behavior) return;
   if (btn.dataset.act === "disarm") return disarm(btn, region, behavior);
+  if (btn.dataset.act === "fire") return fire(btn, behavior);
   btn.disabled = true;
   try {
     await setRevealed(region, behavior, !isRevealed(region));
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+/** Сработать сейчас — по всем в области ловушки. Разыгрывает активный ведущий. */
+async function fire(btn, behavior) {
+  if (!game.users.activeGM?.isSelf) return ui.notifications.warn(t("Notify.noGM"));
+  btn.disabled = true;
+  try {
+    await triggerNow(behavior, []);
   } finally {
     btn.disabled = false;
   }

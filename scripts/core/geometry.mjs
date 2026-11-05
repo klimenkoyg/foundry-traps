@@ -110,3 +110,20 @@ export const chebyshevCells = (p, q, cell) => Math.round(Math.max(Math.abs(p.x -
 
 /** Дальность ловушки в футах → в клетках (клетка — 5 фт, на метрической сетке тоже). */
 export const rangeCells = (feet) => Math.max(0, Number(feet) || 0) / 5;
+
+/**
+ * Где встаёт триггер ловушки (в пикселях): plate — плита в клетку посередине области;
+ * wire — растяжка поперёк области у её начала (у левого края, если область шире, чем выше,
+ * иначе у верхнего). Ведущий потом двигает триггер инструментами регионов.
+ */
+export function activatorRect(rect, kind, gridSize) {
+  const cell = gridSize || 100;
+  const w = Math.max(1, Math.round(rect.width / cell));
+  const h = Math.max(1, Math.round(rect.height / cell));
+  if (kind === "wire") {
+    return w >= h
+      ? { x: rect.x, y: rect.y, width: cell, height: h * cell }
+      : { x: rect.x, y: rect.y, width: w * cell, height: cell };
+  }
+  return { x: rect.x + Math.floor((w - 1) / 2) * cell, y: rect.y + Math.floor((h - 1) / 2) * cell, width: cell, height: cell };
+}

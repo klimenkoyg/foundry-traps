@@ -380,8 +380,26 @@ $("#controls").addEventListener("click", (event) => {
   else if (tool?.button) tool.onChange?.(event, true);
   setTimeout(renderControls, 50);
 });
+/** Как InteractionLayer#activate в v13–v14: слой переключает панель на группу с тем же именем. */
+function toLayerGroup(name) {
+  if (activeGroup === name) return;
+  activeGroup = name;
+  setTimeout(renderControls, 0);
+}
+window.__harness = Object.assign(window.__harness ?? {}, { toLayerGroup });
+
 window.ui.controls = {
   render: () => renderControls(),
+  activate({ control, tool } = {}) {
+    if (control && control !== activeGroup) {
+      const all = sceneControls();
+      all[activeGroup]?.onChange?.(null, false);
+      activeGroup = control;
+      all[control]?.onChange?.(null, true);
+      all[control]?.tools?.[tool ?? all[control].activeTool]?.onChange?.(null, true);
+    }
+    setTimeout(renderControls, 0);
+  },
   get control() {
     return sceneControls()[activeGroup];
   },
@@ -395,7 +413,7 @@ function regionsEditable() {
   const tool = ui.controls.tool;
   return Boolean(canvas.regions.active && tool?.interaction && tool?.control);
 }
-window.__harness = Object.assign(window.__harness ?? {}, { regionsEditable });
+window.__harness = Object.assign(window.__harness ?? {}, { regionsEditable, moveToken });
 renderControls();
 
 $("#open").addEventListener("click", () => {

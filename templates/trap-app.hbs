@@ -101,6 +101,7 @@
             <button type="button" class="st-badge st-vis{{#if visible}} is-shown{{/if}}" data-action="toggleVisible" aria-pressed="{{#if visible}}true{{else}}false{{/if}}" data-tooltip="{{#if visible}}{{localize "TRAPS.App.hide"}}{{else}}{{localize "TRAPS.App.reveal"}}{{/if}}">{{#if visible}}<i class="fa-solid fa-eye" inert></i> {{localize "TRAPS.App.revealed"}}{{else}}<i class="fa-solid fa-eye-slash" inert></i> {{localize "TRAPS.App.hidden"}}{{/if}}</button>
             {{#if detected}}{{#unless visible}}<span class="st-badge is-detected"><i class="fa-solid fa-circle-exclamation" inert></i> {{#if noticed}}{{noticed}}{{else}}{{localize "TRAPS.App.detected"}}{{/if}}</span>{{/unless}}{{/if}}
             {{#if triggers}}<span class="st-badge">{{triggersLabel}}</span>{{/if}}
+            {{#if activation}}<span class="st-badge is-activation{{#if manual}} is-manual{{/if}}"><i class="fa-solid {{#if manual}}fa-hand-pointer{{else}}fa-shoe-prints{{/if}}" inert></i> {{activation}}</span>{{/if}}
           </div>
           <div class="st-row-stats">
             <span><i class="fa-solid fa-vector-square" inert></i> {{area}}</span>
@@ -110,6 +111,7 @@
         <div class="st-row-actions">
           <button type="button" class="st-icon-btn" data-action="pan" data-tooltip="{{localize "TRAPS.App.pan"}}" aria-label="{{localize "TRAPS.App.pan"}}"><i class="fa-solid fa-location-crosshairs" inert></i></button>
           <button type="button" class="st-icon-btn" data-action="trigger" data-tooltip="{{localize "TRAPS.App.triggerHint"}}" aria-label="{{localize "TRAPS.App.trigger"}}"><i class="fa-solid fa-bolt" inert></i></button>
+          <button type="button" class="st-icon-btn" data-action="addActivator" data-tooltip="{{localize "TRAPS.App.addActivatorHint"}}" aria-label="{{localize "TRAPS.App.addActivator"}}"><i class="fa-solid fa-shoe-prints" inert></i></button>
           <button type="button" class="st-icon-btn" data-action="attempt" data-tooltip="{{localize "TRAPS.App.attempt"}}" aria-label="{{localize "TRAPS.App.attempt"}}"><i class="fa-solid fa-screwdriver-wrench" inert></i></button>
           <button type="button" class="st-icon-btn" data-action="toggleArmed" data-tooltip="{{#if armed}}{{localize "TRAPS.App.disarm"}}{{else}}{{localize "TRAPS.App.arm"}}{{/if}}" aria-label="{{#if armed}}{{localize "TRAPS.App.disarm"}}{{else}}{{localize "TRAPS.App.arm"}}{{/if}}"><i class="fa-solid {{#if armed}}fa-power-off{{else}}fa-rotate-left{{/if}}" inert></i></button>
           <button type="button" class="st-icon-btn" data-action="configure" data-tooltip="{{localize "TRAPS.App.configure"}}" aria-label="{{localize "TRAPS.App.configure"}}"><i class="fa-solid fa-sliders" inert></i></button>

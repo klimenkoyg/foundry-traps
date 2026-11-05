@@ -4,6 +4,7 @@ import { rectCells } from "../../core/geometry.mjs";
 import { DAMAGE_MODES, SAVE_ROLLS } from "../../core/resolve.mjs";
 import { DAMAGE_TYPES, DETECT_MODES, SEVERITIES, TIERS, filterTraps, scaleTrap } from "../../core/trap.mjs";
 import {
+  addActivator,
   attemptDisarm,
   noticedBy,
   saveToLibrary,
@@ -18,10 +19,10 @@ import { DRAG_TYPE, IDEAS_URL, SETTINGS, THEME, tpl } from "../constants.mjs";
 import { damageLabel } from "../dnd5e.mjs";
 import { t } from "../i18n.mjs";
 import { deleteCustom, getEntry, listEntries, saveCustom } from "../library.mjs";
-import { isRevealed, regionBounds, sceneTraps } from "../scene.mjs";
+import { activatorsOf, isRevealed, regionBounds, sceneTraps } from "../scene.mjs";
 import { setSetting, setting } from "../settings.mjs";
 import { askName } from "../dialogs.mjs";
-import { stats } from "../summary.mjs";
+import { activationLabel, affectsLabel, stats } from "../summary.mjs";
 import { TrapEditor } from "./trap-editor.mjs";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
@@ -47,6 +48,7 @@ export class TrapApp extends HandlebarsApplicationMixin(ApplicationV2) {
       revealAll: TrapApp.#onRevealAll,
       hideAll: TrapApp.#onHideAll,
       trigger: TrapApp.#onTrigger,
+      addActivator: TrapApp.#onAddActivator,
       attempt: TrapApp.#onAttempt,
       saveTrap: TrapApp.#onSave,
       deleteTrap: TrapApp.#onDelete,
@@ -66,17 +68,27 @@ export class TrapApp extends HandlebarsApplicationMixin(ApplicationV2) {
     let app = foundry.applications.instances.get(APP_ID);
     if (!app) app = new TrapApp();
     if (tab) app._tab = tab;
+    const wasOpen = app.rendered;
     app.render({ force: true });
-    app.bringToFront?.();
+    // Поднять наверх можно только окно, которое уже на странице: у нового его ещё нет (v14 падает).
+    if (wasOpen) app.bringToFront?.();
     return app;
   }
 
   /** Перерисовать, если окно открыто (сцена или библиотека поменялись). */
-  static refresh() {
+  /**
+   * Перерисовать окно, если оно открыто. sceneOnly — поменялась ловушка на сцене: это видно только
+   * на вкладке «На этой сцене», библиотеку и «Мои ловушки» перерисовывать незачем.
+   */
+  static refresh({ sceneOnly = false } = {}) {
     const app = foundry.applications.instances.get(APP_ID);
     if (!app?.rendered) return;
+    if (sceneOnly && app._tab !== "scene" && !TrapApp._timer) return;
     clearTimeout(TrapApp._timer);
-    TrapApp._timer = setTimeout(() => app.render(), 80);
+    TrapApp._timer = setTimeout(() => {
+      TrapApp._timer = null;
+      app.render();
+    }, 120);
   }
 
   _tab = "library";
@@ -111,8 +123,10 @@ export class TrapApp extends HandlebarsApplicationMixin(ApplicationV2) {
         magical: trap.magical,
         custom: e.custom,
         area: t("Stat.areaValue", { w: trap.width, h: trap.height }),
-        affects: t(`Affects.${trap.affects}`),
+        affects: affectsLabel(trap),
         rearm: t(`Rearm.${trap.rearm}`),
+        activation: activationLabel(trap),
+        manual: trap.manual,
         stats: stats(trap),
         damageTypes: [trap.damage && trap.damageType, trap.damage2 && (trap.damage2Type || trap.damageType)].filter(Boolean).join(" "),
         search: `${e.name} ${e.text}`.toLowerCase(),
@@ -124,6 +138,7 @@ export class TrapApp extends HandlebarsApplicationMixin(ApplicationV2) {
       const trap = behavior.system;
       const b = regionBounds(region);
       const cells = rectCells(b, scene.grid.size || 100);
+      const activators = activatorsOf(region).length;
       return {
         regionId: region.id,
         behaviorId: behavior.id,
@@ -137,6 +152,8 @@ export class TrapApp extends HandlebarsApplicationMixin(ApplicationV2) {
         noticed: noticedBy(region).map((n) => n.name).filter(Boolean).join(", "),
         triggers: trap.triggers,
         triggersLabel: t("App.triggered", { n: trap.triggers }),
+        manual: trap.manual,
+        activation: activationLabel(trap, activators),
         area: t("Stat.areaValue", { w: cells.width, h: cells.height }),
         stats: stats(trap),
       };
@@ -279,6 +296,16 @@ export class TrapApp extends HandlebarsApplicationMixin(ApplicationV2) {
     if (!found) return;
     if (!game.users.activeGM?.isSelf) return ui.notifications.warn(t("Notify.noGM"));
     await triggerNow(found.behavior, controlledTokens());
+  }
+
+  /** Ещё один триггер ловушке: плита (или растяжка, если так задано) — дальше ведущий двигает её сам. */
+  static async #onAddActivator(event, target) {
+    const found = this.#row(target);
+    if (!found) return;
+    const kind = found.behavior.system.activator || "plate";
+    const region = await addActivator(found.region, kind);
+    if (!region) return;
+    ui.notifications.info(t(found.behavior.system.manual ? "Notify.activatorAddedManual" : "Notify.activatorAdded", { name: found.behavior.name }));
   }
 
   static async #onAttempt(event, target) {

@@ -1124,12 +1124,26 @@
   border-color: var(--st-bad);
 }
 
+/* Флажок, подпись справа от него, подсказка — под подписью. */
 .ssl-traps .st-field.is-check {
-  flex-direction: row-reverse;
-  justify-content: flex-end;
+  display: grid;
+  grid-template-columns: auto 1fr;
   align-items: center;
-  gap: 9px;
+  column-gap: 9px;
+  row-gap: 2px;
   cursor: pointer;
+}
+
+.ssl-traps .st-field.is-check input {
+  grid-area: 1 / 1;
+}
+
+.ssl-traps .st-field.is-check .st-field-label {
+  grid-area: 1 / 2;
+}
+
+.ssl-traps .st-field.is-check small {
+  grid-area: 2 / 2;
 }
 
 .ssl-traps .st-field.is-check .st-field-label {
@@ -1580,6 +1594,36 @@
   opacity: 0.6;
 }
 
+/* «Только вручную»: ▶ — единственный способ запустить ловушку, выделяем его. */
+.ssl-traps.st-map-hud .st-map-btn.is-fire.is-manual {
+  border-color: var(--st-accent);
+  color: var(--st-accent);
+}
+
+/* Связь триггера с ловушкой: толщина и шаг пунктира — в пикселях экрана при любом масштабе карты
+   (--st-inv — обратный масштаб, как у кнопок). */
+.ssl-traps.st-map-hud .st-map-links {
+  position: absolute;
+  left: 0;
+  top: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.ssl-traps.st-map-hud .st-map-links line {
+  stroke: color-mix(in srgb, var(--st-accent) 85%, white);
+  stroke-width: calc(1.5px * var(--st-inv, 1));
+  stroke-dasharray: calc(6px * var(--st-inv, 1)) calc(5px * var(--st-inv, 1));
+  opacity: 0.8;
+}
+
+.ssl-traps.st-map-hud .st-map-links circle {
+  r: calc(3px * var(--st-inv, 1));
+  fill: var(--st-accent);
+  stroke: var(--st-bg);
+  stroke-width: calc(1px * var(--st-inv, 1));
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ssl-traps button.st-badge.st-vis,
   .ssl-traps.st-map-hud .st-map-btn {
@@ -1969,4 +2013,51 @@
 
 .ssl-traps .st-idea .fa-arrow-up-right-from-square {
   font-size: 10px;
+}
+
+/* ---------------------------------------------------------------- вышла новая версия */
+
+.ssl-traps.st-update {
+  max-width: 520px;
+  color: var(--st-ink-2);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.ssl-traps.st-update p {
+  margin: 0 0 8px;
+}
+
+.ssl-traps.st-update .st-update-lead {
+  color: var(--st-ink);
+}
+
+.ssl-traps.st-update h4 {
+  margin: 10px 0 4px;
+  padding: 0;
+  border: 0;
+  color: var(--st-ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.ssl-traps.st-update ul {
+  max-height: 260px;
+  margin: 0 0 8px;
+  padding-left: 18px;
+  overflow-y: auto;
+}
+
+.ssl-traps.st-update li + li {
+  margin-top: 4px;
+}
+
+.ssl-traps.st-update .st-update-more,
+.ssl-traps.st-update .st-update-how {
+  color: var(--st-ink-3);
+  font-size: 12px;
+}
+
+.ssl-traps.st-update a {
+  color: var(--st-accent);
 }

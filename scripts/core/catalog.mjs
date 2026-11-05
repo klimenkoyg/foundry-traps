@@ -1,7 +1,9 @@
 /* Встроенная библиотека ловушек. Числа — для партии 1–4 уровня; на других уровнях урон
    пересчитывается по таблице опасности (см. trap.mjs). Названия и описания — в lang/*.json:
    TRAPS.Trap.<id>.name / .text / .flavor. device и options — устройство (devices.mjs): числа здесь
-   совпадают с тем, что устройство даёт при этих параметрах (проверяет тест). */
+   совпадают с тем, что устройство даёт при этих параметрах (проверяет тест).
+   activator — триггер, который ставится вместе с ловушкой: растяжка у входа для залпа, сети,
+   обвала и валуна, плита посередине для газа. Остальные срабатывают от самой области. */
 
 /** @typedef {import("./trap.mjs").TrapDef} TrapDef */
 
@@ -102,6 +104,7 @@ export const CATALOG = [
   },
   {
     id: "arrowVolley",
+    activator: "wire",
     device: "arrows",
     options: { count: 2, tips: "plain" },
     icon: "fa-solid fa-arrows-to-dot",
@@ -137,6 +140,7 @@ export const CATALOG = [
   },
   {
     id: "fallingNet",
+    activator: "wire",
     device: "net",
     options: { net: "rope" },
     escapeDC: 10,
@@ -159,6 +163,7 @@ export const CATALOG = [
   },
   {
     id: "collapsingRoof",
+    activator: "wire",
     device: "roof",
     options: { debris: "stones", buried: false },
     icon: "fa-solid fa-house-crack",
@@ -179,6 +184,7 @@ export const CATALOG = [
   },
   {
     id: "rollingBoulder",
+    activator: "wire",
     device: "boulder",
     options: { boulder: "large", knockdown: true },
     icon: "fa-solid fa-bowling-ball",
@@ -238,6 +244,7 @@ export const CATALOG = [
   },
   {
     id: "poisonGas",
+    activator: "plate",
     device: "gas",
     options: { toxin: "choking", density: "dense" },
     icon: "fa-solid fa-skull-crossbones",
@@ -259,6 +266,7 @@ export const CATALOG = [
   },
   {
     id: "sleepGas",
+    activator: "plate",
     device: "gas",
     options: { toxin: "sleep", density: "thin" },
     damageType: "poison",

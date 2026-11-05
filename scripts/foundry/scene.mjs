@@ -1,7 +1,7 @@
 /* Ловушки на сцене: найти, рамка области, видимость, сообщения в чат. */
 
 import { chebyshevCells, distanceToRect, nearestCellCenters, shapesBounds, sightPoints, tokenCenter } from "../core/geometry.mjs";
-import { BEHAVIOR_TYPE, MODULE_ID, SETTINGS } from "./constants.mjs";
+import { ACTIVATOR_TYPE, BEHAVIOR_TYPE, MODULE_ID, SETTINGS } from "./constants.mjs";
 import { setting } from "./settings.mjs";
 
 /** Все ловушки сцены: [{ region, behavior }]. */
@@ -14,6 +14,24 @@ export function sceneTraps(scene) {
     }
   }
   return list;
+}
+
+/** Поведение «Триггер ловушки» области или null. */
+export const activatorBehavior = (region) => [...(region?.behaviors ?? [])].find((b) => b.type === ACTIVATOR_TYPE) ?? null;
+
+/** Триггеры ловушки: области сцены, чьё поведение «Триггер ловушки» ссылается на неё. */
+export function activatorsOf(trapRegion) {
+  const scene = trapRegion?.parent;
+  if (!scene || !trapRegion.id) return [];
+  return [...(scene.regions ?? [])].filter((r) => r.id !== trapRegion.id && activatorBehavior(r)?.system?.trap === trapRegion.id);
+}
+
+/** Ловушка, которую запускает область-триггер: { region, behavior } или null (ловушку убрали). */
+export function trapOfActivator(region) {
+  const id = activatorBehavior(region)?.system?.trap;
+  const trapRegion = id ? region.parent?.regions?.get?.(id) : null;
+  const behavior = trapRegion ? [...trapRegion.behaviors].find((b) => b.type === BEHAVIOR_TYPE) : null;
+  return behavior ? { region: trapRegion, behavior } : null;
 }
 
 /** Рамка области { x, y, width, height } в пикселях сцены. */

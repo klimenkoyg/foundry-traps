@@ -4,11 +4,11 @@
    (foundry/layers.mjs): её закрывает туман войны, токены рисуются поверх. */
 
 import { POP_MS, REVEAL_MS, badgeFor, drawMarker, markerPad, markerState } from "../core/marker.mjs";
-import { seedOf } from "../core/tells.mjs";
+import { ACTIVATOR_TELL, seedOf } from "../core/tells.mjs";
 import { MODULE_ID } from "./constants.mjs";
 import { mapButtonsOn } from "./gm-hud.mjs";
 import { regionElevation, sceneSprite } from "./layers.mjs";
-import { isRevealed, regionBounds, sceneTraps } from "./scene.mjs";
+import { activatorBehavior, activatorsOf, isRevealed, regionBounds, sceneTraps } from "./scene.mjs";
 
 /** Сторона холста метки не больше этого числа пикселей: дальше растягиваем спрайт. */
 const MAX_SIDE = 1024;
@@ -101,6 +101,8 @@ function viewOf(region, behavior) {
     seed: seedOf(region.id),
     // Перечёркнутый глаз на бледной метке не нужен, если рядом кнопка-глаз ведущего.
     ghostBadge: !revealed && !mapButtonsOn(),
+    // Отдельный триггер рисуется своей меткой — своя растяжка или плита в рисунке ловушки не нужна.
+    ownTrigger: activatorsOf(region).length === 0,
   };
 }
 
@@ -135,7 +137,9 @@ function render(entry, now = performance.now()) {
     fx: spec.view.fx,
     damageType: spec.view.damageType,
     seed: spec.view.seed,
+    ownTrigger: spec.view.ownTrigger,
     ghostBadge: spec.view.ghostBadge,
+    badge: spec.view.badge,
     reveal,
     pop,
   });
@@ -146,12 +150,18 @@ function destroy(entry) {
   if (!entry.sprite.destroyed) entry.sprite.destroy({ texture: true, baseTexture: true });
 }
 
+/** Кадр анимации метки не чаще этого: холст перерисовывается и заново уходит в видеокарту. */
+const FRAME_MS = 32;
+
 function step() {
   const now = performance.now();
   let busy = false;
   for (const entry of markers.values()) {
     if (!entry.anim) continue;
-    render(entry, now);
+    if (now - (entry.drawnAt ?? 0) >= FRAME_MS) {
+      render(entry, now);
+      entry.drawnAt = now;
+    }
     if (entry.anim) busy = true;
   }
   if (!busy) stopTicker();
@@ -209,20 +219,16 @@ export function refreshMarkers({ animate = true } = {}) {
   const motion = animate && !reduceMotion();
   const alive = new Set();
 
-  for (const { region, behavior } of sceneTraps(scene)) {
-    if (alive.has(region.id)) continue; // одна метка на область
-    const view = viewOf(region, behavior);
-    if (!view) continue;
-    alive.add(region.id);
-
+  /** Метка одной области: ловушки или её триггера. */
+  const place = (region, view) => {
     const bounds = regionBounds(region);
-    if (!(bounds.width > 0 && bounds.height > 0)) continue;
+    if (!(bounds.width > 0 && bounds.height > 0)) return;
     const glyph = readyGlyph(view.icon);
-    const badge = badgeFor({ ...view, ghost: view.ghost && view.ghostBadge });
+    const badge = view.badge === false ? null : badgeFor({ ...view, ghost: view.ghost && view.ghostBadge });
     const badgeGlyph = badge ? readyGlyph(badge.icon) : null;
-    const key = JSON.stringify([bounds.x, bounds.y, bounds.width, bounds.height, cell, regionElevation(region), view.severity, view.icon, view.state, view.ghost, view.device, view.options, view.fx, view.damageType, view.ghostBadge, Boolean(glyph), Boolean(badgeGlyph)]);
+    const key = JSON.stringify([bounds.x, bounds.y, bounds.width, bounds.height, cell, regionElevation(region), view.severity, view.icon, view.state, view.ghost, view.device, view.options, view.fx, view.damageType, view.ghostBadge, view.badge, view.ownTrigger, Boolean(glyph), Boolean(badgeGlyph)]);
     const prev = markers.get(region.id);
-    if (prev?.key === key) continue;
+    if (prev?.key === key) return;
 
     const now = performance.now();
     let anim = null;
@@ -230,6 +236,21 @@ export function refreshMarkers({ animate = true } = {}) {
     else if (motion && prev && prev.view.state !== view.state) anim = { kind: "pop", start: now };
     else if (prev?.anim) anim = prev.anim; // шрифт догрузился посреди анимации — досмотреть её
     paint(region.id, { bounds, cell, view, key, glyph, badgeGlyph, elevation: regionElevation(region) }, prev, anim);
+  };
+
+  for (const { region, behavior } of sceneTraps(scene)) {
+    if (alive.has(region.id)) continue; // одна метка на область
+    const view = viewOf(region, behavior);
+    if (!view) continue;
+    alive.add(region.id);
+    place(region, view);
+    // Триггеры видны вместе с ловушкой: плита или растяжка, в том же состоянии, без значка.
+    for (const part of activatorsOf(region)) {
+      if (alive.has(part.id)) continue;
+      alive.add(part.id);
+      const kind = activatorBehavior(part)?.system?.kind === "wire" ? "wire" : "plate";
+      place(part, { ...view, device: ACTIVATOR_TELL, options: { kind }, icon: "", seed: seedOf(part.id), ghostBadge: false, badge: false });
+    }
   }
 
   for (const [id, entry] of markers) {

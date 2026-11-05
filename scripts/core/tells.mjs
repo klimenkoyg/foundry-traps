@@ -485,7 +485,8 @@ const TELLS = {
       hole(ctx, px, y + m, cell * 0.045, tint);
       hole(ctx, px, y + h - m, cell * 0.045, tint);
     }
-    plate(ctx, cx, cy, Math.min(w, h) * 0.34, spent);
+    // Своя плита в центре — если у ловушки нет отдельного триггера (он рисуется своей меткой).
+    if (e.ownTrigger !== false) plate(ctx, cx, cy, Math.min(w, h) * 0.34, spent);
     if (!spent) return;
     for (let i = 0; i < n * 2; i++) {
       const a = between(rand, 0, TAU);
@@ -527,11 +528,12 @@ const TELLS = {
       ctx.lineTo(px + Math.cos(a) * cell * 0.06, py + Math.sin(a) * cell * 0.06);
     }
     ctx.stroke();
-    // Растяжка поперёк зоны.
+    // Растяжка поперёк зоны — если у ловушки нет отдельного триггера (он рисуется своей меткой).
+    const wire = e.ownTrigger !== false;
     const wy = cy + h * 0.12;
     const x1 = x + cell * 0.12;
     const x2 = x + w - cell * 0.12;
-    for (const px of [x1, x2]) {
+    for (const px of wire ? [x1, x2] : []) {
       ctx.fillStyle = rgba([70, 56, 40], 1);
       ctx.beginPath();
       ctx.arc(px, wy, cell * 0.04, 0, TAU);
@@ -540,6 +542,7 @@ const TELLS = {
     }
     ctx.lineCap = "round";
     if (!spent) {
+      if (!wire) return;
       ctx.strokeStyle = rgba([0, 0, 0], 0.45);
       ctx.lineWidth = Math.max(1.5, cell * 0.018);
       ctx.beginPath();
@@ -555,14 +558,16 @@ const TELLS = {
       return;
     }
     // Порванная растяжка и стрелы в полу.
-    ctx.strokeStyle = rgba([230, 222, 204], 0.9);
-    ctx.lineWidth = Math.max(1, cell * 0.012);
-    ctx.beginPath();
-    ctx.moveTo(x1, wy);
-    ctx.quadraticCurveTo(lerp(x1, x2, 0.2), wy + cell * 0.12, lerp(x1, x2, 0.38), wy + cell * 0.16);
-    ctx.moveTo(x2, wy);
-    ctx.quadraticCurveTo(lerp(x1, x2, 0.8), wy + cell * 0.1, lerp(x1, x2, 0.62), wy + cell * 0.14);
-    ctx.stroke();
+    if (wire) {
+      ctx.strokeStyle = rgba([230, 222, 204], 0.9);
+      ctx.lineWidth = Math.max(1, cell * 0.012);
+      ctx.beginPath();
+      ctx.moveTo(x1, wy);
+      ctx.quadraticCurveTo(lerp(x1, x2, 0.2), wy + cell * 0.12, lerp(x1, x2, 0.38), wy + cell * 0.16);
+      ctx.moveTo(x2, wy);
+      ctx.quadraticCurveTo(lerp(x1, x2, 0.8), wy + cell * 0.1, lerp(x1, x2, 0.62), wy + cell * 0.14);
+      ctx.stroke();
+    }
     for (let i = 0; i < n * 2 + 1; i++) {
       const px = x + between(rand, 0.15, 0.85) * w;
       const py = y + between(rand, 0.35, 0.88) * h;
@@ -988,6 +993,68 @@ const TELLS = {
   },
 };
 
+/** Рисунок триггера ловушки: не устройство, а отдельная метка на области-триггере. */
+export const ACTIVATOR_TELL = "activator";
+
+/** Колышек растяжки. */
+function peg(ctx, px, py, cell) {
+  ctx.fillStyle = rgba([70, 56, 40], 1);
+  ctx.beginPath();
+  ctx.arc(px, py, cell * 0.045, 0, TAU);
+  ctx.fill();
+  ring(ctx, px, py, cell * 0.045, Math.max(1, cell * 0.012), [180, 160, 130], 0.8);
+}
+
+/**
+ * Триггер: plate — плита, чуть приподнятая над полом (сработала — вдавлена); wire — растяжка
+ * вдоль длинной стороны области между двумя колышками (сработала — порвана и провисла).
+ */
+TELLS[ACTIVATOR_TELL] = function activator(ctx, e) {
+  const { x, y, w, h, cx, cy, cell, opt, spent } = e;
+  if (opt.kind !== "wire") {
+    const s = Math.min(w, h) * 0.6;
+    // Пыль не ложится на край плиты: тонкая светлая щель вокруг.
+    ctx.strokeStyle = rgba([196, 180, 150], spent ? 0.12 : 0.22);
+    ctx.lineWidth = Math.max(1, cell * 0.012);
+    roundRect(ctx, cx - s * 0.62, cy - s * 0.62, s * 1.24, s * 1.24, s * 0.18);
+    ctx.stroke();
+    plate(ctx, cx, cy, s, spent);
+    return;
+  }
+  const vertical = h > w;
+  const m = cell * 0.14;
+  const [x1, y1, x2, y2] = vertical ? [cx, y + m, cx, y + h - m] : [x + m, cy, x + w - m, cy];
+  // Поперёк провиса — от проволоки «вниз» по экрану или вбок.
+  const [nx, ny] = vertical ? [1, 0] : [0, 1];
+  ctx.lineCap = "round";
+  if (!spent) {
+    ctx.strokeStyle = rgba([0, 0, 0], 0.45);
+    ctx.lineWidth = Math.max(1.5, cell * 0.018);
+    ctx.beginPath();
+    ctx.moveTo(x1 + cell * 0.02, y1 + cell * 0.03);
+    ctx.lineTo(x2 + cell * 0.02, y2 + cell * 0.03);
+    ctx.stroke();
+    ctx.strokeStyle = rgba([236, 228, 210], 1);
+    ctx.lineWidth = Math.max(1.2, cell * 0.016);
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+  } else {
+    const at = (k, sag) => [lerp(x1, x2, k) + nx * sag, lerp(y1, y2, k) + ny * sag];
+    ctx.strokeStyle = rgba([230, 222, 204], 0.9);
+    ctx.lineWidth = Math.max(1, cell * 0.012);
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.quadraticCurveTo(...at(0.2, cell * 0.12), ...at(0.4, cell * 0.16));
+    ctx.moveTo(x2, y2);
+    ctx.quadraticCurveTo(...at(0.8, cell * 0.1), ...at(0.6, cell * 0.14));
+    ctx.stroke();
+  }
+  peg(ctx, x1, y1, cell);
+  peg(ctx, x2, y2, cell);
+};
+
 export const TELL_DEVICES = Object.keys(TELLS);
 
 /** Есть ли у устройства свой рисунок. */
@@ -995,7 +1062,8 @@ export const hasTell = (device) => Object.hasOwn(TELLS, device);
 
 /**
  * Нарисовать ловушку в области (x, y, width, height).
- * spent — после срабатывания; options — настройки устройства; fx, damageType — для цвета.
+ * spent — после срабатывания; options — настройки устройства; fx, damageType — для цвета;
+ * ownTrigger: false — у ловушки отдельный триггер, своя растяжка или плита в рисунке не нужна.
  */
 /**
  * Вдоль какой оси рисунок «смотрит» (y — путь сверху вниз: растяжка и щель поперёк, бойницы в торце;
@@ -1011,7 +1079,7 @@ export function turnsTell(device, w, h) {
   return (w > h ? "x" : "y") !== axis;
 }
 
-export function drawTell(ctx, { x, y, width: w, height: h, cell, device, options = {}, fx = "", damageType = "", spent = false, seed = 1 }) {
+export function drawTell(ctx, { x, y, width: w, height: h, cell, device, options = {}, fx = "", damageType = "", spent = false, seed = 1, ownTrigger = true }) {
   const paint = TELLS[device];
   if (!paint) return false;
   const cx = x + w / 2;
@@ -1020,7 +1088,7 @@ export function drawTell(ctx, { x, y, width: w, height: h, cell, device, options
   // Повёрнутый рисунок рисуем в рамке со сторонами наоборот и поворачиваем вокруг центра.
   const fw = turn ? h : w;
   const fh = turn ? w : h;
-  const env = { x: cx - fw / 2, y: cy - fh / 2, w: fw, h: fh, cx, cy, cell, rand: mulberry32(seed), opt: options ?? {}, fx, damageType, spent };
+  const env = { x: cx - fw / 2, y: cy - fh / 2, w: fw, h: fh, cx, cy, cell, rand: mulberry32(seed), opt: options ?? {}, fx, damageType, spent, ownTrigger };
   ctx.save();
   if (turn) {
     ctx.translate(cx, cy);

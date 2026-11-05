@@ -3,13 +3,14 @@ import { test } from "node:test";
 import { CATALOG } from "../scripts/core/catalog.mjs";
 import { DEVICES } from "../scripts/core/devices.mjs";
 import { MARKER_STATES, drawMarker, markerPad } from "../scripts/core/marker.mjs";
-import { TELL_DEVICES, drawTell, hasTell, seedOf } from "../scripts/core/tells.mjs";
+import { ACTIVATOR_TELL, TELL_DEVICES, drawTell, hasTell, seedOf } from "../scripts/core/tells.mjs";
 import { stubContext } from "./stub-context.mjs";
 
 const trapOf = (e) => e.trap ?? e;
 
 test("у каждого устройства есть рисунок, у каждой ловушки библиотеки — устройство с рисунком", () => {
-  assert.deepEqual([...TELL_DEVICES].sort(), Object.keys(DEVICES).sort());
+  // Рисунки: у каждого устройства свой, и ещё один — у триггера ловушки.
+  assert.deepEqual([...TELL_DEVICES].sort(), [...Object.keys(DEVICES), ACTIVATOR_TELL].sort());
   for (const e of CATALOG) assert.ok(hasTell(trapOf(e).device), trapOf(e).id);
   assert.equal(hasTell(""), false);
   assert.equal(hasTell("toString"), false, "не ловится на свойства прототипа");
@@ -23,6 +24,10 @@ test("seedOf: одна область — одни и те же трещины",
 
 /** Все значения каждого параметра устройства: для choice — варианты, для range — края и середина. */
 function* optionSets(device) {
+  if (device === ACTIVATOR_TELL) {
+    yield* [{ kind: "plate" }, { kind: "wire" }, {}, { kind: "мусор" }];
+    return;
+  }
   const params = DEVICES[device].params;
   for (const p of params) {
     const values = p.type === "choice" ? p.options : p.type === "toggle" ? [false, true] : [p.min, Math.round((p.min + p.max) / 2), p.max];
@@ -90,6 +95,31 @@ test("коридор: рисунки поворачиваются по оси и
         drawTell(ctx, { x: 0, y: 0, width: w * 100, height: h * 100, cell: 100, device, spent, seed: 5 });
         assert.deepEqual(ctx.bad, [], `${device} ${w}×${h} spent=${spent}`);
       }
+    }
+  }
+});
+
+test("триггер: растяжка вдоль полосы любой формы, плита — в любой клетке, без NaN", () => {
+  for (const kind of ["plate", "wire"]) {
+    for (const spent of [false, true]) {
+      for (const [w, h] of [[1, 1], [1, 3], [3, 1], [2, 2]]) {
+        const ctx = stubContext();
+        assert.equal(drawTell(ctx, { x: 0, y: 0, width: w * 100, height: h * 100, cell: 100, device: ACTIVATOR_TELL, options: { kind }, spent }), true);
+        assert.deepEqual(ctx.bad, [], `${kind} ${w}×${h} spent=${spent}`);
+      }
+    }
+  }
+});
+
+test("у ловушки с отдельным триггером своя растяжка и плита в рисунке не рисуются", () => {
+  for (const device of ["arrows", "darts"]) {
+    for (const spent of [false, true]) {
+      const own = stubContext();
+      const sep = stubContext();
+      drawTell(own, { x: 0, y: 0, width: 200, height: 200, cell: 100, device, spent, seed: 3 });
+      drawTell(sep, { x: 0, y: 0, width: 200, height: 200, cell: 100, device, spent, seed: 3, ownTrigger: false });
+      assert.deepEqual(sep.bad, [], `${device} spent=${spent}`);
+      assert.ok(sep.calls < own.calls, `${device} spent=${spent}: без своей растяжки или плиты`);
     }
   }
 });

@@ -11,6 +11,8 @@ import {
   scaleFormula,
   scaleTrap,
   tierFactor,
+  activation,
+  ACTIVATORS,
   toBehaviorData,
   trapMode,
 } from "../scripts/core/trap.mjs";
@@ -135,4 +137,25 @@ test("ширина и высота ловушки: старый size — ква�
   assert.deepEqual([back.width, back.height], [4, 1], "размер берётся с области на сцене");
   const old = fromBehaviorData({ ...sys, width: undefined, height: undefined, size: 2 });
   assert.deepEqual([old.width, old.height], [2, 2], "старая ловушка без ширины — квадрат");
+});
+
+test("срабатывание: вручную, от триггера или от самой области; предустановки каталога", () => {
+  assert.equal(activation({ manual: true }, 3), "manual");
+  assert.equal(activation({ manual: false }, 2), "activator");
+  assert.equal(activation({ manual: false }, 0), "area");
+  const clean = normalizeTrap({ activator: "lava", manual: "yes" });
+  assert.equal(clean.activator, "");
+  assert.equal(clean.manual, true);
+  assert.equal(normalizeTrap({}).manual, false);
+  const byId = Object.fromEntries(CATALOG.map((e) => [e.id, normalizeTrap(e)]));
+  for (const t of Object.values(byId)) assert.ok(ACTIVATORS.includes(t.activator), t.id);
+  assert.equal(byId.poisonGas.activator, "plate");
+  assert.equal(byId.rollingBoulder.activator, "wire");
+  assert.equal(byId.pit.activator, "");
+  assert.equal(byId.fireJet.activator, "");
+  // В поведение области и обратно.
+  const system = toBehaviorData({ ...byId.arrowVolley, manual: true });
+  assert.equal(system.activator, "wire");
+  assert.equal(system.manual, true);
+  assert.equal(fromBehaviorData(system, { id: "x" }).activator, "wire");
 });

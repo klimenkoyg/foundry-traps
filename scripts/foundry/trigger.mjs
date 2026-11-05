@@ -1,7 +1,7 @@
 /* Срабатывание ловушки (только у активного ведущего): кто под ударом, анимация, бросок урона,
    карточка розыгрыша в чате (foundry/card.mjs). */
 
-import { rectCenter } from "../core/geometry.mjs";
+import { rectCenter, rectContains, tokenCenter } from "../core/geometry.mjs";
 import { hasDamage, normalizeTrap } from "../core/trap.mjs";
 import { startCard } from "./card.mjs";
 import { playTrapFx } from "./fx.mjs";
@@ -17,28 +17,35 @@ const busy = new Set();
 /**
  * Сработать.
  * trigger — токен, который наступил (для «только наступивший»);
- * targets — явный список токенов (ручной запуск из окна).
+ * targets — явный список токенов (ручной запуск из окна);
+ * viaActivator — наступили на триггер ловушки: бьёт всех в её области, наступивший — если он в ней;
+ * stepperInside — триггер лежит внутри области ловушки (наступивший точно в ней);
+ * onImpact — вызывается, когда эффект «долетел» (отпустить движение, не дожидаясь карточки и записи).
  */
-export async function fireTrap(behavior, { trigger = null, targets = null, cause = null } = {}) {
+export async function fireTrap(behavior, { trigger = null, targets = null, cause = null, viaActivator = false, stepperInside = false, onImpact = null } = {}) {
   const region = behavior.region ?? behavior.parent;
   const scene = region?.parent;
   if (!region || !scene || busy.has(behavior.uuid)) return null;
   busy.add(behavior.uuid);
   try {
-    return await resolve(behavior, region, scene, { trigger, targets, cause });
+    return await resolve(behavior, region, scene, { trigger, targets, cause, viaActivator, stepperInside, onImpact });
   } finally {
     busy.delete(behavior.uuid);
   }
 }
 
-async function resolve(behavior, region, scene, { trigger, targets, cause }) {
+async function resolve(behavior, region, scene, { trigger, targets, cause, viaActivator, stepperInside, onImpact }) {
   const trap = normalizeTrap(behavior.system.toObject());
   const name = behavior.name || region.name || t("Title");
   const bounds = regionBounds(region);
 
   let tokens;
   if (targets) tokens = targets;
-  else if (trap.affects === "area") tokens = [...regionTokens(region), ...(trigger ? [trigger] : [])];
+  else if (viaActivator) {
+    // Плита или растяжка могут быть и вне области: наступивший попадает под удар, только если он в ней.
+    const inside = trigger && (stepperInside || rectContains(bounds, tokenCenter(trigger, scene.grid.size)));
+    tokens = [...regionTokens(region), ...(inside ? [trigger] : [])];
+  } else if (trap.affects === "area") tokens = [...regionTokens(region), ...(trigger ? [trigger] : [])];
   else tokens = trigger ? [trigger] : regionTokens(region);
   tokens = [...new Set(tokens)].filter((tk) => tk?.actor);
 
@@ -61,8 +68,17 @@ async function resolve(behavior, region, scene, { trigger, targets, cause }) {
     .filter(([formula]) => formula)
     .map(([formula, type]) => ({ formula, type, value: null }));
 
-  // Пусть эффект «долетит», прежде чем у персонажей поменяются хиты.
-  if (duration) await sleep(Math.min(700, duration * 0.35));
+  // Персонаж замирает на миг, пока эффект начинается, потом идёт дальше — карточку и запись
+  // на сервер он не ждёт. Карточка появляется, когда эффект «долетел».
+  const hold = duration ? Math.min(400, duration * 0.2) : 0;
+  const land = duration ? Math.min(700, duration * 0.35) : 0;
+  if (hold) await sleep(hold);
+  try {
+    onImpact?.();
+  } catch (err) {
+    console.warn("ssl_traps | не удалось отпустить движение", err);
+  }
+  if (land > hold) await sleep(land - hold);
 
   // Карточка розыгрыша: цели, почему они под ударом, спасброски (игроков или модуля), урон —
   // сразу или по кнопке ведущего (foundry/card.mjs).

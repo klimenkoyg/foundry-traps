@@ -38,9 +38,15 @@ import { deriveDevice, DEVICES, normalizeOptions } from "./devices.mjs";
  * @property {boolean} fixedDamage    Урон не пересчитывается по уровню партии (по умолчанию — да)
  * @property {number} escapeDC        Выбраться (из ямы, капкана, сети): Сл; 0 — не нужно
  * @property {string} escapeSkill     Чем выбираться: навык dnd5e
+ * @property {boolean} manual         Срабатывает только по кнопке ведущего
+ * @property {""|"plate"|"wire"} activator  Отдельный триггер, который ставится вместе с ловушкой:
+ *                                    "" — нет, срабатывает сама область; plate — плита в центре;
+ *                                    wire — растяжка с края. Триггеров на сцене может быть несколько.
  */
 
 export const SEVERITIES = ["setback", "dangerous", "deadly"];
+/** Какой триггер ставить вместе с ловушкой: "" — без него, срабатывает сама область. */
+export const ACTIVATORS = ["", "plate", "wire"];
 export const TIERS = [1, 2, 3, 4];
 export const TIER_LEVELS = { 1: "1–4", 2: "5–10", 3: "11–16", 4: "17–20" };
 export const ABILITIES = ["str", "dex", "con", "int", "wis", "cha"];
@@ -98,6 +104,8 @@ const DEFAULTS = {
   fixedDamage: true,
   escapeDC: 0,
   escapeSkill: "ath",
+  manual: false,
+  activator: "",
 };
 
 const int = (v, fallback, min = -Infinity, max = Infinity) => {
@@ -148,7 +156,18 @@ export function normalizeTrap(raw = {}) {
     fixedDamage: t.fixedDamage == null ? DEFAULTS.fixedDamage : Boolean(t.fixedDamage),
     escapeDC: int(t.escapeDC, 0, 0, 40),
     escapeSkill: str(t.escapeSkill) || DEFAULTS.escapeSkill,
+    manual: Boolean(t.manual),
+    activator: oneOf(t.activator, ACTIVATORS, ""),
   };
+}
+
+/**
+ * Как срабатывает ловушка: "manual" — только по кнопке ведущего; "activator" — когда наступают
+ * на её триггер (count — сколько их на сцене); "area" — когда заходят в саму область.
+ */
+export function activation({ manual = false } = {}, count = 0) {
+  if (manual) return "manual";
+  return count > 0 ? "activator" : "area";
 }
 
 /** Простая проверка формулы урона: кубики, числа, + и −. Пустая строка — урона нет. */
@@ -314,6 +333,8 @@ export function toBehaviorData(trap, { tier = 1, flavor = "", text = "" } = {}) 
     fixedDamage: t.fixedDamage,
     escapeDC: t.escapeDC,
     escapeSkill: t.escapeSkill,
+    manual: t.manual,
+    activator: t.activator,
     flavor: flavor || t.flavor,
     notes: text || t.text,
     size: t.size,

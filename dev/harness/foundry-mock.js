@@ -7,6 +7,17 @@
   const rid = () => Math.random().toString(36).slice(2, 12);
   const params = new URLSearchParams(location.search);
   const changed = () => window.__harness?.onWorldChange?.();
+  // Версия и адрес модуля — как у Foundry, из module.json (для «Вышла новая версия»).
+  const manifest = (() => {
+    try {
+      const xhr = new XMLHttpRequest();
+      xhr.open("GET", "/module.json", false);
+      xhr.send();
+      return JSON.parse(xhr.responseText);
+    } catch {
+      return {};
+    }
+  })();
 
   /* ---------- Hooks ---------- */
   const Hooks = {
@@ -20,6 +31,7 @@
 
   const collection = (list) => ({
     get: (id) => list.find((x) => x.id === id) ?? null,
+    has: (id) => list.some((x) => x.id === id),
     filter: (fn) => list.filter(fn),
     find: (fn) => list.find(fn),
     map: (fn) => list.map(fn),
@@ -168,6 +180,12 @@
       for (const r of made) Hooks.callAll("createRegion", r);
       changed();
       return made;
+    },
+    async deleteEmbeddedDocuments(type, ids) {
+      if (type !== "Region") throw new Error(`стенд: ${type} не поддерживается`);
+      const gone = scene._regions.filter((r) => ids.includes(r.id));
+      for (const r of gone) await r.delete();
+      return gone;
     },
   };
 
@@ -335,9 +353,10 @@
     // Зрение токенов считает стенд (harness.js): глазами игрока видно только то, что видят его токены.
     visibility: { tokenVision: true, testVisibility: (point) => window.__harness?.isVisiblePoint?.(point) ?? true },
     app: { ticker: { add: (fn) => tickers.add(fn), remove: (fn) => tickers.delete(fn) } },
-    // Слои: как в v13, их включает обработчик группы панели (layer.activate()), а не поле layer.
-    tokens: { active: true, activate() { canvas.regions.active = false; canvas.tokens.active = true; }, get controlled() { return scene._tokens.filter((tk) => controlled.has(tk.id)).map((document) => ({ document })); } },
-    regions: { active: false, activate() { canvas.tokens.active = false; canvas.regions.active = true; }, setAllRenderFlags() {} },
+    // Слои: как в v13–v14, их включает обработчик группы панели (layer.activate()), а не поле layer.
+    // И как там же: включённый слой переключает панель на «свою» группу (InteractionLayer#activate).
+    tokens: { active: true, activate() { canvas.regions.active = false; canvas.tokens.active = true; window.__harness?.toLayerGroup?.("tokens"); }, get controlled() { return scene._tokens.filter((tk) => controlled.has(tk.id)).map((document) => ({ document })); } },
+    regions: { active: false, activate() { canvas.tokens.active = false; canvas.regions.active = true; window.__harness?.toLayerGroup?.("regions"); }, setAllRenderFlags() {}, releaseAll() {} },
     animatePan: () => window.__harness?.toast?.("info", "Камера перелетает к ловушке."),
   };
 
@@ -402,7 +421,7 @@
       },
     },
     messages: { get: (id) => messages.get(id) ?? null },
-    modules: { get: (id) => (id === MODULE ? (game._module ??= { id, active: true }) : null) },
+    modules: { get: (id) => (id === MODULE ? (game._module ??= { id, active: true, version: manifest.version, url: manifest.url }) : null) },
     i18n: {
       lang: params.get("lang") ?? "ru",
       translations: {},

@@ -82,4 +82,7 @@ export function registerSettings({ onLibrary, onMapButtons, onModes }) {
   });
   // Кнопки «показать / скрыть» у ловушек на карте — у каждого ведущего свои.
   reg(SETTINGS.mapButtons, { ...name("mapButtons"), scope: "client", config: true, type: Boolean, default: true, onChange: onMapButtons });
+  // «Вышла новая версия»: у каждого ведущего своё — проверять ли и что уже показали (foundry/update-check.mjs).
+  reg(SETTINGS.updateCheck, { ...name("updateCheck"), scope: "client", config: true, type: Boolean, default: true });
+  reg(SETTINGS.updateState, { scope: "client", config: false, type: Object, default: {} });
 }

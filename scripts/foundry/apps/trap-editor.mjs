@@ -24,15 +24,15 @@ import { t } from "../i18n.mjs";
 import { askName } from "../dialogs.mjs";
 import { getEntry, saveCustom } from "../library.mjs";
 import { rectCells } from "../../core/geometry.mjs";
-import { regionBounds } from "../scene.mjs";
+import { activatorsOf, regionBounds } from "../scene.mjs";
 import { setting } from "../settings.mjs";
-import { fieldChips, stats } from "../summary.mjs";
+import { activationLabel, affectsLabel, fieldChips, stats } from "../summary.mjs";
 
 const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 /** Поля, которые правятся в окне, и то, как читать их из формы. */
 const NUMBER_FIELDS = new Set(["detectDC", "detectRange", "disarmDC", "saveDC", "attackBonus", "escapeDC", "width", "height"]);
-const CHECK_FIELDS = new Set(["magical", "stops", "fixedDamage"]);
+const CHECK_FIELDS = new Set(["magical", "stops", "fixedDamage", "manual"]);
 const FORMULA_FIELDS = new Set(["damage", "damage2"]);
 
 const label = (name) => t(`Behavior.FIELDS.${name}.label`);
@@ -81,8 +81,10 @@ export class TrapEditor extends HandlebarsApplicationMixin(ApplicationV2) {
       return null;
     }
     const app = foundry.applications.instances.get(id) ?? make();
+    const wasOpen = app.rendered;
     app.render({ force: true });
-    app.bringToFront?.();
+    // Поднять наверх можно только окно, которое уже на странице: у нового его ещё нет (v14 падает).
+    if (wasOpen) app.bringToFront?.();
     return app;
   }
 
@@ -280,6 +282,12 @@ export class TrapEditor extends HandlebarsApplicationMixin(ApplicationV2) {
           field("affects", "select", { choices: { trigger: t("Affects.trigger"), area: t("Affects.area") } }),
           field("rearm", "select", { choices: { auto: t("Rearm.auto"), once: t("Rearm.once") } }),
           field("stops", "check"),
+          field("activator", "select", {
+            choices: { "": t("Activator.none"), plate: t("Activator.plate"), wire: t("Activator.wire") },
+            hint: this.#activatorHint(),
+            wide: true,
+          }),
+          field("manual", "check", { hint: t("Editor.manualHint"), wide: true }),
         ],
       },
       {
@@ -300,6 +308,13 @@ export class TrapEditor extends HandlebarsApplicationMixin(ApplicationV2) {
     return groups.map((g) => ({ ...g, label: t(`Editor.${g.id}`), open: open.has(g.id) }));
   }
 
+  /** Подсказка под «Триггер»: у ловушки на сцене — сколько триггеров уже стоит. */
+  #activatorHint() {
+    if (!this.isScene) return t("Editor.activatorHint");
+    const n = activatorsOf(this.source.region).length;
+    return n ? t("Editor.activatorScene", { n }) : t("Editor.activatorHint");
+  }
+
   #previewCard(d) {
     const parts = [d.damage && d.damageType, d.damage2 && (d.damage2Type || d.damageType)].filter(Boolean);
     return {
@@ -313,8 +328,10 @@ export class TrapEditor extends HandlebarsApplicationMixin(ApplicationV2) {
       magical: d.magical,
       custom: this.isCustom,
       area: t("Stat.areaValue", { w: d.width, h: d.height }),
-      affects: t(`Affects.${d.affects}`),
+      affects: affectsLabel(d),
       rearm: t(`Rearm.${d.rearm}`),
+      activation: activationLabel(d),
+      manual: d.manual,
       stats: stats(d),
       damageTypes: parts.join(" "),
     };

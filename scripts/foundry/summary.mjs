@@ -7,6 +7,20 @@ import { t } from "./i18n.mjs";
 
 const damagePart = (formula, type) => `${formula} ${damageLabel(type).toLowerCase()}`;
 
+/**
+ * Как срабатывает ловушка — подпись в подвале карточки; "" — от самой области (обычный случай).
+ * count — сколько триггеров стоит на сцене (у ловушки на сцене); null — карточка из библиотеки,
+ * тогда по предустановке «Триггер».
+ */
+export function activationLabel(trap, count = null) {
+  if (trap.manual) return t("Activation.manual");
+  if (count !== null) return count ? t("Activation.count", { n: count }) : "";
+  return trap.activator ? t(`Activation.${trap.activator}`) : "";
+}
+
+/** На кого действует: с триггером — на всех в области, иначе как настроено. */
+export const affectsLabel = (trap, hasActivator = Boolean(trap.activator)) => t(`Affects.${hasActivator ? "area" : trap.affects}`);
+
 /** Строки характеристик: заметить, обезвредить, проверка, урон, состояние, выбраться. */
 export function stats(trap) {
   const mode = trapMode(trap);

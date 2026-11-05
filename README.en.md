@@ -24,11 +24,11 @@ https://github.com/klimenkoyg/foundry-traps/releases/latest/download/module.json
 
 ## How to use
 
-1. The left Foundry toolbar has its own **Traps** group with a skull (GM only). It works on the
-   regions layer: trap outlines are visible and a region can be moved or redrawn. The group has
-   Library, My traps and Traps on this scene (each opens the window on that tab) and a toggle for
-   the reveal / hide buttons on traps on the map. For quicker access, bind a key in the controls
-   settings.
+1. The left Foundry toolbar has its own **Traps** group with a skull (GM only). Click the skull
+   and the Trap Library window opens. The group has Library, My traps and Traps on this scene (each
+   opens the window on that tab), a toggle for the reveal / hide buttons on traps on the map, and
+   Select and edit trap regions — it switches to the Regions group, where you select, move and
+   redraw a trap's region or its triggers. For quicker access, bind a key in the controls settings.
 2. On the **Library** tab, drag a trap onto the map. It becomes a hidden
    region under the cursor; players don't see it. Click a trap to configure it first.
 3. A player character steps in — movement holds while the effect plays; a pit, bear trap, net or
@@ -97,6 +97,27 @@ By default damage is the same at any party level. Untick “Damage ignores party
 settings and damage grows at 5–10, 11–16 and 17–20 with the SRD 5.1 severity table (×2, ×5 and ×9
 for a dangerous trap); the right side of the settings window shows the damage for each level. The
 party level is picked in the library. DCs stay as written.
+
+## What sets a trap off
+
+Each trap uses one of three options — in the settings window, under Area and triggering:
+
+1. **The area itself.** The trap fires when a character walks into its area. Pits, the bear trap,
+   darts, the blade, runes and plates work this way.
+2. **A trigger** — a separate area someone has to step on: “Plate in the middle” or “Tripwire at
+   the edge”. It's placed with the trap; after that, move and resize it with the region tools like
+   any region. Step on the trigger and the trap fires, hitting everyone in its own area (the one who
+   stepped too, if they're in it). A trap can have several triggers: “Add trigger” (the footprints)
+   on the On this scene tab adds another. The arrow volley, net, collapsing roof and boulder come with
+   a tripwire at the entrance; poison and sleep gas come with a plate in the middle.
+3. **Manual only.** The trap doesn't fire from footsteps — only from the ▶ button next to it on the
+   map (everyone in its area) or Set off on the scene tab.
+
+The GM sees triggers as a faint plate or tripwire, with a dashed line to their trap; players see
+the triggers along with the trap. A trap can also be spotted from its trigger: the spot range
+counts from it too. Remove a trap and its triggers go with it; remove all its triggers and the trap
+fires from its own area again. In the settings of a trap on the scene, picking another Trigger
+option replaces the existing triggers with one new trigger.
 
 ## Triggering
 
@@ -201,6 +222,11 @@ traps off (player characters only by default, or everyone), who rolls saves (pla
 module), when damage is applied (when the GM clicks or automatically), who sees the trigger card,
 passive Perception, spot only in line of sight, when a character spots a trap (tell the GM or
 reveal right away), trap buttons on the map (per GM).
+
+**Tell me about new versions** (per GM, on by default): once a day the module asks GitHub whether a
+new Trap Library is out. If so, the GM gets a small window with what's new and how to update —
+“Got it” hides it for that version, “Remind me tomorrow” shows it again in a day. Players see
+nothing. Turn it off and the module doesn't contact anything.
 
 ## For macros
 

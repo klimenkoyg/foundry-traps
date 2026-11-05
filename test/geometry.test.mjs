@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { distanceToRect, placementRect, rectCenter, shapesBounds, tokenCenter } from "../scripts/core/geometry.mjs";
+import { activatorRect, distanceToRect, placementRect, rectCenter, shapesBounds, tokenCenter } from "../scripts/core/geometry.mjs";
 
 test("ловушка встаёт под курсор по клеткам", () => {
   assert.deepEqual(placementRect({ x: 250, y: 130 }, 1, 100), { x: 200, y: 100, width: 100, height: 100 });
@@ -66,4 +66,20 @@ test("прямоугольная ловушка под курсором: шир�
   assert.deepEqual(placementRect({ x: 450, y: 450 }, 2, G), { x: 400, y: 400, width: 200, height: 200 }, "без высоты — квадрат");
   assert.deepEqual(rectCells({ x: 0, y: 0, width: 100, height: 400 }, G), { width: 1, height: 4 });
   assert.deepEqual(rectCells({ x: 0, y: 0, width: 10, height: 10 }, G), { width: 1, height: 1 }, "не меньше клетки");
+});
+
+test("триггер: плита в клетку посередине, растяжка поперёк у начала области", () => {
+  const cell = 100;
+  const gas = { x: 300, y: 200, width: 300, height: 300 };
+  assert.deepEqual(activatorRect(gas, "plate", cell), { x: 400, y: 300, width: 100, height: 100 });
+  // Коридор вдоль x — растяжка поперёк, у левого края.
+  const hall = { x: 0, y: 0, width: 400, height: 100 };
+  assert.deepEqual(activatorRect(hall, "wire", cell), { x: 0, y: 0, width: 100, height: 100 });
+  // Квадрат 2×2 — растяжка во всю высоту у левого края.
+  assert.deepEqual(activatorRect({ x: 0, y: 0, width: 200, height: 200 }, "wire", cell), { x: 0, y: 0, width: 100, height: 200 });
+  // Коридор вдоль y — растяжка поперёк, у верхнего края.
+  assert.deepEqual(activatorRect({ x: 100, y: 0, width: 200, height: 500 }, "wire", cell), { x: 100, y: 0, width: 200, height: 100 });
+  // Плита в чётной области — в клетке левее и выше середины; в 1×1 — та же клетка.
+  assert.deepEqual(activatorRect({ x: 0, y: 0, width: 200, height: 200 }, "plate", cell), { x: 0, y: 0, width: 100, height: 100 });
+  assert.deepEqual(activatorRect({ x: 50, y: 50, width: 100, height: 100 }, "plate", cell), { x: 50, y: 50, width: 100, height: 100 });
 });

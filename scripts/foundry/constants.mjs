@@ -3,6 +3,9 @@ export const MODULE_ID = "ssl_traps";
 /** Тип поведения области: «<id модуля>.trap» (documentTypes в module.json). */
 export const BEHAVIOR_TYPE = `${MODULE_ID}.trap`;
 
+/** Тип поведения области-триггера: «<id модуля>.activator» — наступили на неё, сработала ловушка. */
+export const ACTIVATOR_TYPE = `${MODULE_ID}.activator`;
+
 /** Что тащим из окна на карту. */
 export const DRAG_TYPE = `${MODULE_ID}.Trap`;
 
@@ -25,6 +28,8 @@ export const SETTINGS = {
   detectSight: "detectSight",
   detectMode: "detectMode",
   mapButtons: "mapButtons",
+  updateCheck: "updateCheck",
+  updateState: "updateState",
 };
 
 /** Цвет области по опасности. */

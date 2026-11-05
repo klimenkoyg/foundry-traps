@@ -1,12 +1,18 @@
-/* Поведение области «Ловушка»: все параметры ловушки лежат в нём, срабатывает на вход токена.
+/* Поведения областей модуля.
+   «Ловушка» — все параметры ловушки; срабатывает, когда в область заходит токен, если у ловушки
+   нет триггеров и она не «только вручную».
+   «Триггер ловушки» — отдельная область (плита, растяжка): наступили на неё — срабатывает ловушка,
+   на которую она ссылается, и бьёт всех в своей области. Триггеров у ловушки может быть несколько.
    Окно настройки поведения Foundry строит само по схеме — так любую расставленную ловушку
    можно поправить в обычном окне области. */
 
 import { FX_NAMES } from "../core/fx/presets.mjs";
-import { SEVERITIES } from "../core/trap.mjs";
-import { BEHAVIOR_TYPE, SETTINGS } from "./constants.mjs";
+import { rectCenter, rectContains } from "../core/geometry.mjs";
+import { ACTIVATORS, SEVERITIES } from "../core/trap.mjs";
+import { ACTIVATOR_TYPE, BEHAVIOR_TYPE, SETTINGS } from "./constants.mjs";
 import { choices } from "./dnd5e.mjs";
 import { t } from "./i18n.mjs";
+import { activatorsOf, regionBounds, trapOfActivator } from "./scene.mjs";
 import { setting } from "./settings.mjs";
 import { fireTrap } from "./trigger.mjs";
 
@@ -56,6 +62,8 @@ export class TrapBehavior extends RegionBehaviorType {
       fixedDamage: new f.BooleanField({ initial: true }),
       escapeDC: dc(0),
       escapeSkill: new f.StringField({ required: true, initial: "ath", choices: choices.skills }),
+      manual: new f.BooleanField({ initial: false }),
+      activator: new f.StringField({ required: true, blank: true, initial: "", choices: labelled("TRAPS.Activator", ACTIVATORS.filter(Boolean)) }),
       flavor: new f.StringField({ required: true, blank: true, initial: "" }),
       notes: new f.StringField({ required: true, blank: true, initial: "" }),
       size: new f.NumberField({ required: true, nullable: false, integer: true, min: 1, max: 12, initial: 1 }),
@@ -71,44 +79,95 @@ export class TrapBehavior extends RegionBehaviorType {
     [CONST.REGION_EVENTS.TOKEN_MOVE_IN]: TrapBehavior.#onMoveIn,
   };
 
-  /**
-   * Токен вошёл в область. Событие приходит всем клиентам: тот, кто двигал токен, останавливает
-   * или придерживает его, а ловушку разыгрывает активный ведущий и потом отпускает движение.
-   */
+  /** Токен вошёл в область ловушки: срабатывает, если у неё нет триггеров и она не «вручную». */
   static async #onMoveIn(event) {
-    const token = event.data?.token;
-    const movement = event.data?.movement;
-    // Токен сдвинули принудительно (ведущий перетащил без хода) — не считается.
-    if (movement?.passed?.waypoints?.at(-1)?.action === "displace") return;
-    if (!canTrigger(token)) return;
+    if (this.manual) return;
+    const region = this.parent.region ?? this.parent.parent;
+    if (activatorsOf(region).length) return;
+    await stepOn(event, this.parent, this.parent, {});
+  }
+}
 
-    const gm = game.users.activeGM;
-    if (event.user?.isSelf && movement && gm) {
-      try {
-        if (this.stops) token.stopMovement();
-        else token.pauseMovement(this.parent.uuid);
-      } catch (err) {
-        console.warn("ssl_traps | не удалось придержать движение", err);
-      }
-    }
-    if (!game.user.isActiveGM) return;
+/**
+ * Область-триггер: ссылается на область ловушки (её id на той же сцене). Ставит её модуль —
+ * вместе с ловушкой или кнопкой «Добавить триггер»; ведущий двигает и меняет её как обычную область.
+ */
+export class ActivatorBehavior extends RegionBehaviorType {
+  static LOCALIZATION_PREFIXES = ["TRAPS.ActivatorBehavior"];
+
+  static defineSchema() {
+    return {
+      trap: new f.StringField({ required: true, blank: true, initial: "" }),
+      kind: new f.StringField({ required: true, initial: "plate", choices: labelled("TRAPS.ActivatorKind", ["plate", "wire"]) }),
+    };
+  }
+
+  static events = {
+    [CONST.REGION_EVENTS.TOKEN_MOVE_IN]: ActivatorBehavior.#onMoveIn,
+  };
+
+  /** Наступили на триггер: срабатывает его ловушка — по всем в её области. */
+  static async #onMoveIn(event) {
+    const region = this.parent.region ?? this.parent.parent;
+    const found = trapOfActivator(region);
+    if (!found || found.behavior.disabled || found.behavior.system.manual) return;
+    // Триггер внутри области ловушки — наступивший тоже под ударом (и яма его остановит); снаружи — нет.
+    const stepperInside = rectContains(regionBounds(found.region), rectCenter(regionBounds(region)));
+    await stepOn(event, this.parent, found.behavior, { viaActivator: true, stepperInside });
+  }
+}
+
+/**
+ * Токен наступил на область (саму ловушку или её триггер). Событие приходит всем клиентам: тот,
+ * кто двигал токен, останавливает или придерживает его, а ловушку разыгрывает активный ведущий
+ * и потом отпускает движение. holder — поведение, от имени которого держим движение.
+ */
+async function stepOn(event, holder, trapBehavior, options) {
+  const token = event.data?.token;
+  const movement = event.data?.movement;
+  // Токен сдвинули принудительно (ведущий перетащил без хода) — не считается.
+  if (movement?.passed?.waypoints?.at(-1)?.action === "displace") return;
+  if (!canTrigger(token)) return;
+
+  // Яма, капкан и сеть останавливают того, кто в них попал; плита снаружи — только придерживает.
+  const stops = Boolean(trapBehavior.system.stops) && (!options.viaActivator || options.stepperInside);
+  const gm = game.users.activeGM;
+  if (event.user?.isSelf && movement && gm) {
     try {
-      await fireTrap(this.parent, { trigger: token });
-    } finally {
-      if (!this.stops && movement?.id) {
-        try {
-          await token.resumeMovement(movement.id, this.parent.uuid);
-        } catch {
-          /* движение уже закончено или отменено */
-        }
-      }
+      if (stops) token.stopMovement();
+      else token.pauseMovement(holder.uuid);
+    } catch (err) {
+      console.warn("ssl_traps | не удалось придержать движение", err);
     }
+  }
+  if (!game.user.isActiveGM) return;
+  // Отпускаем движение, как только эффект «долетел», — не дожидаясь карточки в чате и записи
+  // ловушки на сервер: иначе персонаж стоит лишнюю секунду. Не вышло раньше — отпустим в конце.
+  let resumed = false;
+  const resume = async () => {
+    if (resumed || stops || !movement?.id) return;
+    resumed = true;
+    try {
+      await token.resumeMovement(movement.id, holder.uuid);
+    } catch {
+      /* движение уже закончено или отменено */
+    }
+  };
+  try {
+    await fireTrap(trapBehavior, { trigger: token, ...options, onImpact: () => void resume() });
+  } finally {
+    await resume();
   }
 }
 
 export function registerBehavior() {
   CONFIG.RegionBehavior.dataModels[BEHAVIOR_TYPE] = TrapBehavior;
   CONFIG.RegionBehavior.typeIcons[BEHAVIOR_TYPE] = "fa-solid fa-skull-crossbones";
-  if (CONFIG.RegionBehavior.typeLabels) CONFIG.RegionBehavior.typeLabels[BEHAVIOR_TYPE] = "TRAPS.Behavior.label";
+  CONFIG.RegionBehavior.dataModels[ACTIVATOR_TYPE] = ActivatorBehavior;
+  CONFIG.RegionBehavior.typeIcons[ACTIVATOR_TYPE] = "fa-solid fa-shoe-prints";
+  if (CONFIG.RegionBehavior.typeLabels) {
+    CONFIG.RegionBehavior.typeLabels[BEHAVIOR_TYPE] = "TRAPS.Behavior.label";
+    CONFIG.RegionBehavior.typeLabels[ACTIVATOR_TYPE] = "TRAPS.ActivatorBehavior.label";
+  }
 }
 
