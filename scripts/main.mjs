@@ -139,6 +139,8 @@ Hooks.on("canvasTearDown", () => {
   clearHud();
 });
 Hooks.on("canvasPan", () => syncHudZoom());
+// Ушли в «Регионы» — кнопки у ловушек прячутся, вернулись — снова на месте.
+Hooks.on("activateCanvasLayer", () => scheduleHud());
 
 // Кнопка ведущего «показать игрокам / скрыть» в сообщении о замеченной ловушке.
 Hooks.on("renderChatMessageHTML", onRenderChatMessage);

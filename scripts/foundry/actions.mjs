@@ -5,6 +5,7 @@ import { activatorSpots, moveShape, placementRect, rangeCells, rectCells, rectCe
 import { addNoticer, fromBehaviorData, knowsTrap, MAX_ACTIVATORS, normalizeTrap, notices, resolveDisarm, toBehaviorData } from "../core/trap.mjs";
 import { ACTIVATOR_COLOR, ACTIVATOR_TYPE, BEHAVIOR_TYPE, MODULE_ID, SETTINGS, SEVERITY_COLOR, THEME_ATTR } from "./constants.mjs";
 import { passivePerception, rollCheck, skillLabel } from "./dnd5e.mjs";
+import { rollMessageId, waitForDice } from "./dice.mjs";
 import { esc, t } from "./i18n.mjs";
 import { getEntry, saveCustom } from "./library.mjs";
 import { noticeCard, visButton } from "./chat.mjs";
@@ -265,6 +266,7 @@ export async function searchWith(tokens) {
   for (const token of tokens) {
     if (!token.actor) continue;
     const roll = await rollCheck(token.actor, "prc");
+    await waitForDice(rollMessageId(roll));
     let found = 0;
     let known = 0;
     for (const { region, behavior } of trapsNear(token)) {
@@ -298,6 +300,7 @@ export async function searchWith(tokens) {
 export async function attemptDisarm(region, behavior, token) {
   const trap = normalizeTrap(behavior.system.toObject());
   const roll = await rollCheck(token.actor, trap.disarmSkill, trap.disarmDC);
+  await waitForDice(rollMessageId(roll));
   const outcome = resolveDisarm(roll.total, trap.disarmDC);
   const key = { success: "Chat.disarmOk", fail: "Chat.disarmFail", triggered: "Chat.disarmTriggered" }[outcome];
   const icon = { success: "fa-shield-halved", fail: "fa-hand", triggered: "fa-burst" }[outcome];

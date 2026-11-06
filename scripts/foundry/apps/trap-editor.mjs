@@ -283,7 +283,6 @@ export class TrapEditor extends HandlebarsApplicationMixin(ApplicationV2) {
           field("height", "number", { label: t("Editor.height"), min: 1, max: 12 }),
           field("affects", "select", { choices: { trigger: t("Affects.trigger"), area: t("Affects.area") } }),
           field("rearm", "select", { choices: { auto: t("Rearm.auto"), once: t("Rearm.once") } }),
-          field("stops", "check"),
           field("activators", "select", {
             choices: { 0: t("Activators.none"), 1: t("Activators.1"), 2: t("Activators.2"), 3: t("Activators.3") },
             hint: t("Editor.activatorHint"),

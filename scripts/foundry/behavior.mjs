@@ -84,7 +84,7 @@ export class TrapBehavior extends RegionBehaviorType {
     if (this.manual) return;
     const region = this.parent.region ?? this.parent.parent;
     if (activatorsOf(region).length) return;
-    await stepOn(event, this.parent, this.parent, {});
+    await stepOn(event, this.parent, {});
   }
 }
 
@@ -110,52 +110,65 @@ export class ActivatorBehavior extends RegionBehaviorType {
     const region = this.parent.region ?? this.parent.parent;
     const found = trapOfActivator(region);
     if (!found || found.behavior.disabled || found.behavior.system.manual) return;
-    // Триггер внутри области ловушки — наступивший тоже под ударом (и яма его остановит); снаружи — нет.
+    // Триггер внутри области ловушки — наступивший тоже под ударом; снаружи — нет.
     const stepperInside = rectContains(regionBounds(found.region), rectCenter(regionBounds(region)));
-    await stepOn(event, this.parent, found.behavior, { viaActivator: true, stepperInside });
+    await stepOn(event, found.behavior, { viaActivator: true, stepperInside });
   }
 }
 
 /**
- * Токен наступил на область (саму ловушку или её триггер). Событие приходит всем клиентам: тот,
- * кто двигал токен, останавливает или придерживает его, а ловушку разыгрывает активный ведущий
- * и потом отпускает движение. holder — поведение, от имени которого держим движение.
+ * Токен наступил на область (саму ловушку или её триггер). Событие приходит всем клиентам.
+ * Ловушку не пройти: тот, кто двигал токен, останавливает его на ней — остаток пути отменяется.
+ * Foundry сообщает о входе в область уже в начале хода, если путь проходит через неё, а токен ещё
+ * идёт; поэтому ведущий ждёт, пока токен у него на экране дойдёт до ловушки, и только тогда
+ * разыгрывает её (так же делает пример нажимной плиты в самом Foundry).
  */
-async function stepOn(event, holder, trapBehavior, options) {
+async function stepOn(event, trapBehavior, options) {
   const token = event.data?.token;
   const movement = event.data?.movement;
   // Токен сдвинули принудительно (ведущий перетащил без хода) — не считается.
   if (movement?.passed?.waypoints?.at(-1)?.action === "displace") return;
   if (!canTrigger(token)) return;
 
-  // Яма, капкан и сеть останавливают того, кто в них попал; плита снаружи — только придерживает.
-  const stops = Boolean(trapBehavior.system.stops) && (!options.viaActivator || options.stepperInside);
-  const gm = game.users.activeGM;
-  if (event.user?.isSelf && movement && gm) {
+  if (event.user?.isSelf && movement && game.users.activeGM) {
     try {
-      if (stops) token.stopMovement();
-      else token.pauseMovement(holder.uuid);
+      token.stopMovement();
     } catch (err) {
-      console.warn("ssl_traps | не удалось придержать движение", err);
+      console.warn("ssl_traps | не удалось остановить движение", err);
     }
   }
   if (!game.user.isActiveGM) return;
-  // Отпускаем движение, как только эффект «долетел», — не дожидаясь карточки в чате и записи
-  // ловушки на сервер: иначе персонаж стоит лишнюю секунду. Не вышло раньше — отпустим в конце.
-  let resumed = false;
-  const resume = async () => {
-    if (resumed || stops || !movement?.id) return;
-    resumed = true;
-    try {
-      await token.resumeMovement(movement.id, holder.uuid);
-    } catch {
-      /* движение уже закончено или отменено */
-    }
-  };
+  await arrival(token);
+  await intoCell(token);
+  await fireTrap(trapBehavior, { trigger: token, ...options });
+}
+
+/**
+ * Foundry останавливает токен ровно на краю области — между клетками. Ставим его в клетку ловушки:
+ * мгновенно («displace» — так ловушка не сработает второй раз). Только на квадратной сетке.
+ */
+async function intoCell(token) {
+  const grid = token?.parent?.grid;
+  if (!grid || typeof token.move !== "function" || grid.type !== CONST.GRID_TYPES?.SQUARE) return;
+  const size = grid.size || 100;
+  const x = Math.round(token.x / size) * size;
+  const y = Math.round(token.y / size) * size;
+  if (x === token.x && y === token.y) return;
   try {
-    await fireTrap(trapBehavior, { trigger: token, ...options, onImpact: () => void resume() });
-  } finally {
-    await resume();
+    await token.move({ x, y, action: "displace" });
+  } catch (err) {
+    console.warn("ssl_traps | не удалось поставить токен в клетку", err);
+  }
+}
+
+/** Дождаться, пока токен дойдёт до места по анимации (не дольше 10 с: вдруг анимация не закончится). */
+async function arrival(token) {
+  const walking = token?.rendered ? token.object?.movementAnimationPromise : null;
+  if (!walking) return;
+  try {
+    await Promise.race([walking, new Promise((resolve) => setTimeout(resolve, 10000))]);
+  } catch {
+    /* анимацию прервали — разыгрываем сразу */
   }
 }
 

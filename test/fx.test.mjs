@@ -63,8 +63,14 @@ test("звук и JB2A", () => {
   assert.equal(soundPath("worlds/x/boom.ogg", "ssl_traps"), "worlds/x/boom.ogg");
   assert.equal(soundPath("", "ssl_traps"), "");
   assert.equal(soundPath("unknown", "ssl_traps"), "");
-  const has = (k) => k === "jb2a.explosion";
-  assert.equal(pickJb2a("fire", has), "jb2a.explosion");
-  assert.equal(pickJb2a("fire", () => false), null);
-  assert.equal(pickJb2a("fire", () => { throw new Error("not ready"); }), null);
+  const has = (k) => k === "jb2a.fog_cloud";
+  assert.equal(pickJb2a("gas", has), "jb2a.fog_cloud");
+  assert.equal(pickJb2a("gas", () => false), null);
+  assert.equal(pickJb2a("gas", () => { throw new Error("not ready"); }), null);
+});
+
+test("JB2A — только там, где у него подходящая анимация; механика всегда своя", () => {
+  const all = () => true;
+  for (const fx of ["pit", "spikes", "jaws", "darts", "arrows", "net", "boulder", "fire", "blade", "alarm", "burst"]) assert.equal(pickJb2a(fx, all), null, fx);
+  for (const fx of ["rocks", "gas", "sleep", "lightning", "frost", "acid", "thunder", "necrotic"]) assert.ok(pickJb2a(fx, all), fx);
 });

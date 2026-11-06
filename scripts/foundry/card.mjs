@@ -18,6 +18,7 @@ import {
   rollSaveVisible,
   skillLabel,
 } from "./dnd5e.mjs";
+import { rollMessageId, waitForDice } from "./dice.mjs";
 import { esc, t } from "./i18n.mjs";
 import { ownerIds, postMessage } from "./scene.mjs";
 import { setting } from "./settings.mjs";
@@ -182,12 +183,14 @@ async function rollDamage(state) {
 /** Урон, брошенный позже карточки, — отдельным сообщением: кубики видят все, кто видит карточку. */
 async function postDamage(state, rolls) {
   const parts = state.parts.map((p) => `<b>${p.value}</b> ${esc(damageLabel(p.type))} <small>${esc(p.formula)}</small>`).join(" + ");
-  await postMessage({
+  const message = await postMessage({
     alias: state.name,
     rolls,
     audience: state.audience ?? "auto",
     content: `<p ${THEME_ATTR} class="ssl-traps-note"><i class="fa-solid fa-burst" inert></i> ${t("Chat.damageRolled", { trap: esc(state.name) })} ${parts}</p>`,
   });
+  // С Dice So Nice числа в карточке появляются, когда кубики урона докатились.
+  await waitForDice(message);
 }
 
 /** Все проверки пришли — бросить урон сам. force — ведущий нажал «Бросить урон», не дожидаясь. */
@@ -304,6 +307,7 @@ async function onRoll(message, index) {
   if (!actor) return;
   const roll = await rollSaveVisible(actor, state.trap.saveAbility, state.trap.saveDC);
   if (!roll) return;
+  await waitForDice(rollMessageId(roll));
   if (game.user.isGM) {
     await mutate(message.id, async (s) => {
       if (stage(s, s.targets[index]) !== "roll") return false;

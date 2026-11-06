@@ -567,7 +567,7 @@
       },
       "updateCheck": {
         "name": "Tell me about new versions",
-        "hint": "Once a day the module asks GitHub whether a new version of Trap Library is out and shows the GM what's new and how to update. Players see nothing."
+        "hint": "When the GM enters the world (at most once an hour), the module asks GitHub whether a new version of Trap Library is out and shows what's new and how to update. Players see nothing."
       }
     },
     "Device": {

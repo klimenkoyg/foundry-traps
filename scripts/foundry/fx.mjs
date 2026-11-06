@@ -30,31 +30,41 @@ export async function playTrapFx(scene, { fx, sound, at, area, width = area, hei
   if (mode === "off") return 0;
 
   const cell = scene.grid.size;
-  if (mode === "auto" && sequencerReady() && canvas.scene?.id === scene.id) {
-    const key = pickJb2a(fx, (k) => Sequencer.Database.entryExists(k));
-    if (key) {
-      try {
-        // Вытянутая область — эффект растягивается по её форме.
-        await new Sequence().effect().file(key).atLocation(at).size({ width: Math.max(width, cell) * 1.25, height: Math.max(height, cell) * 1.25 }).play();
-        return 900;
-      } catch (err) {
-        console.warn(`${MODULE_ID} | Sequencer не сыграл ${key}, показываю свой эффект`, err);
-      }
-    }
-  }
+  if (await playJb2a(scene, { fx, at, width, height, cell })) return 900;
   const payload = { sceneId: scene.id, fx, x: at.x, y: at.y, area, width, height, cell, elevation, seed: Math.floor(Math.random() * 1e9) };
   game.socket.emit(SOCKET, { action: "fx", fx: payload });
   const duration = playLocal(payload);
   return duration;
 }
 
-/** Посмотреть анимацию и звук только у себя (окно настройки): игроки ничего не видят. */
-export function previewFx(scene, { fx, sound, at, area, width = area, height = area }) {
+/**
+ * JB2A через Sequencer, если для этой анимации он есть и в настройках не «только свои».
+ * locally — только у себя (предпросмотр). → true, если сыграл.
+ */
+async function playJb2a(scene, { fx, at, width, height, cell, locally = false }) {
+  if (setting(SETTINGS.fxMode) !== "auto" || !sequencerReady() || canvas.scene?.id !== scene.id) return false;
+  const key = pickJb2a(fx, (k) => Sequencer.Database.entryExists(k));
+  if (!key) return false;
+  try {
+    // Вытянутая область — эффект растягивается по её форме.
+    const effect = new Sequence().effect().file(key).atLocation(at).size({ width: Math.max(width, cell) * 1.25, height: Math.max(height, cell) * 1.25 });
+    if (locally) effect.locally();
+    await effect.play();
+    return true;
+  } catch (err) {
+    console.warn(`${MODULE_ID} | Sequencer не сыграл ${key}, показываю свой эффект`, err);
+    return false;
+  }
+}
+
+/** Посмотреть анимацию и звук только у себя (окно настройки): ровно то, что сыграет ловушка. */
+export async function previewFx(scene, { fx, sound, at, area, width = area, height = area }) {
   const src = soundPath(sound || FX_PRESETS[fx]?.sound, MODULE_ID);
   const volume = Number(setting(SETTINGS.volume) ?? 0.7);
   if (src && volume > 0) foundry.audio.AudioHelper.play({ src, volume, autoplay: true, loop: false }, false);
   if (setting(SETTINGS.fxMode) === "off") return 0;
   const cell = scene.grid.size;
+  if (await playJb2a(scene, { fx, at, width, height, cell, locally: true })) return 900;
   return playLocal({ sceneId: scene.id, fx, x: at.x, y: at.y, area: Math.max(area, cell), width, height, cell, seed: Math.floor(Math.random() * 1e9) });
 }
 

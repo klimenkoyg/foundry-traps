@@ -116,7 +116,8 @@ function links(traps) {
 /** Перерисовать кнопки текущей сцены. */
 export function refreshHud() {
   if (dragging) return void (dragging.stale = true);
-  const on = mapButtonsOn() && canvas?.ready && canvas.scene;
+  // В «Регионах» у области свои ручки (поворот у правого верхнего угла, размер) — не закрываем их.
+  const on = mapButtonsOn() && canvas?.ready && canvas.scene && !canvas.regions?.active;
   if (!on) {
     document.getElementById(ROOT_ID)?.replaceChildren();
     return;

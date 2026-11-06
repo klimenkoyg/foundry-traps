@@ -20,7 +20,8 @@ https://github.com/klimenkoyg/foundry-traps/releases/latest/download/module.json
 - System: **D&D 5e** — saves, skills, damage and conditions come from it.
 - No other modules needed: the animations and sounds are built in. Optionally,
   [Sequencer](https://foundryvtt.com/packages/sequencer) with the free [JB2A](https://foundryvtt.com/packages/JB2A_DnD5e):
-  traps then play JB2A effects (you can turn this off in the settings).
+  gases, runes, the sigil, acid and the collapsing roof then play JB2A effects, while mechanical
+  traps keep their own, which show the device itself (you can turn this off in the settings).
 
 ## How to use
 
@@ -40,8 +41,8 @@ https://github.com/klimenkoyg/foundry-traps/releases/latest/download/module.json
    traps; that's only for redrawing a free-form shape.
 2. On the **Library** tab, drag a trap onto the map. It becomes a hidden
    region under the cursor; players don't see it. Click a trap to configure it first.
-3. A player character steps in — movement holds while the effect plays; a pit, bear trap, net or
-   sleep gas stops it altogether. A trigger card goes to chat: who is hit, how they're checked and
+3. A player character steps in — they stop on the trap (a long path can't carry them past it; the
+   rest of the move is cancelled), and the effect plays once they get there. A trigger card goes to chat: who is hit, how they're checked and
    what they take (see “Triggering” below). A triggered trap gets a marker on everyone's map; a
    single-use trap switches off.
 4. The **My traps** tab holds the traps you configured and saved (see below).
@@ -233,8 +234,8 @@ module), when damage is applied (when the GM clicks or automatically), who sees 
 passive Perception, spot only in line of sight, when a character spots a trap (tell the GM or
 reveal right away), trap buttons on the map (per GM).
 
-**Tell me about new versions** (per GM, on by default): once a day the module asks GitHub whether a
-new Trap Library is out. If so, the GM gets a small window with what's new and how to update —
+**Tell me about new versions** (per GM, on by default): when the GM enters the world (at most once
+an hour) the module asks GitHub whether a new Trap Library is out. If so, the GM gets a small window with what's new and how to update —
 “Got it” hides it for that version, “Remind me tomorrow” shows it again in a day. Players see
 nothing. Turn it off and the module doesn't contact anything.
 

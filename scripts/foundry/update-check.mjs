@@ -1,5 +1,6 @@
-/* «Вышла новая версия». Ведущий входит в мир — модуль раз в сутки спрашивает GitHub, какой релиз
-   последний; если он новее установленного, ведущему всплывает окошко: что нового и как обновить.
+/* «Вышла новая версия». Ведущий входит в мир — модуль спрашивает GitHub, какой релиз последний (не
+   чаще раза в час: перезагрузки страницы не в счёт); если он новее установленного, ведущему всплывает
+   окошко: что нового и как обновить.
    Окошко — один раз на версию («Понятно») или снова завтра («Напомнить завтра»). Игроки ничего
    не видят; проверку можно выключить в настройках модуля. */
 
@@ -8,7 +9,10 @@ import { MODULE_ID, SETTINGS, THEME_ATTR } from "./constants.mjs";
 import { esc, t } from "./i18n.mjs";
 import { setSetting, setting } from "./settings.mjs";
 
-const DAY = 24 * 60 * 60 * 1000;
+const HOUR = 60 * 60 * 1000;
+const DAY = 24 * HOUR;
+/** Ответ GitHub помним час: новый релиз ведущий увидит при следующем входе, а не через сутки. */
+const CHECK_EVERY = HOUR;
 const FALLBACK_REPO = "klimenkoyg/foundry-traps";
 /** Сколько пунктов «что нового» показать в окошке; остальное — на странице релиза. */
 const MAX_ITEMS = 6;
@@ -76,7 +80,7 @@ async function showUpdate(state, installed) {
 
 /**
  * Проверить, вышла ли новая версия, и показать окошко. Только у ведущего; GitHub спрашиваем не
- * чаще раза в сутки (ответ хранится в настройке этого ведущего). force — спросить сейчас.
+ * чаще раза в час (ответ хранится в настройке этого ведущего). force — спросить сейчас.
  */
 export async function checkForUpdate({ force = false } = {}) {
   if (!game.user?.isGM || setting(SETTINGS.updateCheck) === false) return null;
@@ -86,7 +90,7 @@ export async function checkForUpdate({ force = false } = {}) {
 
   const state = { ...(setting(SETTINGS.updateState) ?? {}) };
   const now = Date.now();
-  if (force || !state.checkedAt || now - state.checkedAt > DAY) {
+  if (force || !state.checkedAt || now - state.checkedAt > CHECK_EVERY) {
     const latest = await fetchLatest(repoOf(mod?.url) ?? FALLBACK_REPO);
     state.checkedAt = now;
     if (latest) Object.assign(state, latest);
