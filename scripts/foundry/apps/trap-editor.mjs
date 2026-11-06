@@ -18,7 +18,7 @@ import {
 } from "../../core/trap.mjs";
 import { placeTrap, updatePlaced } from "../actions.mjs";
 import { DRAG_TYPE, MODULE_ID, SETTINGS, THEME, tpl } from "../constants.mjs";
-import { choices } from "../dnd5e.mjs";
+import { choices, skillLabel } from "../dnd5e.mjs";
 import { previewFx } from "../fx.mjs";
 import { t } from "../i18n.mjs";
 import { askName } from "../dialogs.mjs";
@@ -248,6 +248,7 @@ export class TrapEditor extends HandlebarsApplicationMixin(ApplicationV2) {
         fields: [
           field("detectDC", "number"),
           field("detectRange", "number", { min: 5, max: 120, step: 5 }),
+          field("detectSkill", "select", { choices: () => ({ prc: skillLabel("prc"), inv: skillLabel("inv") }) }),
           field("disarmDC", "number"),
           field("disarmSkill", "select", { choices: choices.skills }),
           {

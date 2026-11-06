@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { activatorLook, activatorSpots, distanceToRect, moveShape, snapDelta, placementRect, rectCenter, shapesBounds, tokenCenter } from "../scripts/core/geometry.mjs";
+import { activatorLook, activatorSpots, distanceToRect, moveShape, quarterTurn, snapDelta, turnPivot, uprightRect, placementRect, rectCenter, shapesBounds, tokenCenter } from "../scripts/core/geometry.mjs";
 
 test("ловушка встаёт под курсор по клеткам", () => {
   assert.deepEqual(placementRect({ x: 250, y: 130 }, 1, 100), { x: 200, y: 100, width: 100, height: 100 });
@@ -110,3 +110,47 @@ test("вид триггера по форме: полоса — растяжка
   assert.equal(activatorLook({ width: 100, height: 300 }), "wire");
   assert.equal(activatorLook({ width: 300, height: 100 }), "wire");
 });
+
+test("поворот на 90°: клетки в клетки, четыре поворота — на место, триггер едет вместе", () => {
+  const cell = 100;
+  const hall = { x: 300, y: 100, width: 100, height: 400 }; // коридор 1×4
+  const pivot = turnPivot(hall, cell);
+  assert.deepEqual(pivot, { x: 350, y: 250 });
+  const once = quarterTurn(hall, pivot);
+  assert.deepEqual(once, { x: 100, y: 200, width: 400, height: 100 });
+  for (const v of [once.x, once.y, once.width, once.height]) assert.equal(v % cell, 0);
+  let r = hall;
+  for (let i = 0; i < 4; i++) r = quarterTurn(r, pivot);
+  assert.deepEqual(r, hall);
+  // Триггер в начале коридора (верхняя клетка) после поворота — в его начале справа.
+  const plate = { x: 300, y: 100, width: 100, height: 100 };
+  assert.deepEqual(quarterTurn(plate, pivot), { x: 400, y: 200, width: 100, height: 100 });
+  // Квадраты 3×3 и 2×2 — на месте; 2×4 — вокруг своей середины, клетки в клетки.
+  const room = { x: 0, y: 0, width: 300, height: 300 };
+  assert.deepEqual(quarterTurn(room, turnPivot(room, cell)), room);
+  const small = { x: 300, y: 200, width: 200, height: 200 };
+  assert.deepEqual(quarterTurn(small, turnPivot(small, cell)), small);
+  const wide = { x: 0, y: 0, width: 200, height: 400 };
+  assert.deepEqual(quarterTurn(wide, turnPivot(wide, cell)), { x: -100, y: 100, width: 400, height: 200 });
+});
+
+test("повёрнутая ловушка выпрямляется на том же месте", () => {
+  const cell = 100;
+  // Foundry 14: коридор 1×4 с привязкой в углу, повёрнут на 90° вокруг угла (400, 100):
+  // занимает x 0…400, y 100…200 — те же клетки, но без поворота.
+  const v14 = { x: 400, y: 100, width: 100, height: 400, anchorX: 0, anchorY: 0, rotation: 90 };
+  assert.deepEqual(uprightRect(v14, cell), { x: 0, y: 100, width: 400, height: 100, swapped: true });
+  // 180° — те же размеры, прямоугольник по другую сторону от угла.
+  assert.deepEqual(uprightRect({ ...v14, rotation: 180 }, cell), { x: 300, y: -300, width: 100, height: 400, swapped: false });
+  // Без поворота — ничего не меняется.
+  assert.deepEqual(uprightRect({ ...v14, rotation: 0 }, cell), { x: 400, y: 100, width: 100, height: 400, swapped: false });
+  // Foundry 13: вокруг центра. 2×4 повёрнут на 90° — 4×2 с тем же центром (300, 300).
+  const v13 = { x: 200, y: 100, width: 200, height: 400, rotation: 270 };
+  assert.deepEqual(uprightRect(v13, cell), { x: 100, y: 200, width: 400, height: 200, swapped: true });
+  // Наискось (30°) — по тому же центру, без обмена сторон, по клеткам.
+  const tilted = uprightRect({ x: 200, y: 100, width: 200, height: 400, rotation: 30 }, cell);
+  assert.deepEqual(tilted, { x: 200, y: 100, width: 200, height: 400, swapped: false });
+  // 60° — ближе к 90°: стороны меняются.
+  assert.equal(uprightRect({ x: 200, y: 100, width: 200, height: 400, rotation: 60 }, cell).swapped, true);
+});
+

@@ -60,6 +60,29 @@ export function registerSettings({ onLibrary, onMapButtons, onModes }) {
     default: "button",
     onChange: onModes,
   });
+  // Обезвреживание: кто бросает, когда ведущий жмёт ключ, и есть ли свой ключ у игроков
+  // (переключается и на вкладке сцены).
+  reg(SETTINGS.disarmRolls, {
+    ...name("disarmRolls"),
+    scope: "world",
+    config: true,
+    type: String,
+    choices: { players: "TRAPS.Settings.disarmRolls.players", gm: "TRAPS.Settings.disarmRolls.gm" },
+    default: "players",
+    onChange: onModes,
+  });
+  reg(SETTINGS.playerDisarm, {
+    ...name("playerDisarm"),
+    scope: "world",
+    config: true,
+    type: String,
+    choices: { on: "TRAPS.Settings.playerDisarm.on", off: "TRAPS.Settings.playerDisarm.off" },
+    default: "on",
+    onChange: () => {
+      onModes?.();
+      onMapButtons?.();
+    },
+  });
   reg(SETTINGS.chatMode, {
     ...name("chatMode"),
     scope: "world",

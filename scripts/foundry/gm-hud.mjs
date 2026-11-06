@@ -1,15 +1,16 @@
 /* Кнопки ведущего прямо на карте. У правого верхнего угла каждой ловушки — два столбика:
    - «глаз» — показать ловушку игрокам или спрятать; «ключ» (у взведённой) — попробовать обезвредить
      выделенным токеном; «▶» (у взведённой) — сработать сейчас по всем в её области;
-   - «✥» — перетащить ловушку (триггеры внутри неё едут вместе с ней); «⚙» — окно её настройки;
-     «+» — добавить триггер (до трёх).
+   - «✥» — перетащить ловушку (триггеры внутри неё едут вместе с ней); «↻» — повернуть на 90°
+     (вместе с триггерами внутри); «⚙» — окно её настройки; «+» — добавить триггер (до трёх).
    У каждого триггера посередине — «✥» (перетащить) и «×» (убрать); от триггера к ловушке — пунктир.
    Двигать ловушки и триггеры можно, не уходя в «Регионы»: тянешь ручку — бежит рамка по клеткам,
    отпустил — область переехала. Кнопки живут в #hud Foundry — HTML-слое поверх холста, который
    двигается и масштабируется вместе с картой (там же кнопки токенов). Видны только ведущему. */
 
 import { snapDelta } from "../core/geometry.mjs";
-import { attemptDisarm, moveRegion, noticedBy, setRevealed, triggerNow } from "./actions.mjs";
+import { moveRegion, noticedBy, playerKnows, rotateTrap90, setRevealed, triggerNow } from "./actions.mjs";
+import { nearTrap, playerDisarm, playersDisarm, requestDisarm } from "./disarm.mjs";
 import { addTriggerNotified } from "./activators.mjs";
 import { TrapEditor } from "./apps/trap-editor.mjs";
 import { skillLabel } from "./dnd5e.mjs";
@@ -82,6 +83,7 @@ function trapButtons(region, behavior) {
   ].join("");
   const setup = [
     btn("move", "is-move", ids, esc(t("Hud.move", { name: label })), "fa-up-down-left-right"),
+    btn("rotate", "is-rotate", ids, esc(t("Hud.rotate", { name: label })), "fa-rotate-right"),
     btn("config", "is-config", ids, esc(t("Hud.config", { name: label })), "fa-sliders"),
     btn("addTrigger", "is-add", ids, esc(t("Hud.addTrigger", { name: label })), "fa-shoe-prints"),
   ].join("");
@@ -113,9 +115,38 @@ function links(traps) {
   return lines.length ? `<svg class="st-map-links" width="1" height="1" aria-hidden="true">${lines.join("")}</svg>` : "";
 }
 
+/**
+ * Ключ игрока: у взведённой ловушки, про которую он знает (показали всем или ведущий сообщил ему),
+ * если его выделенный токен стоит рядом. Ничего другого игроку на карте не показываем.
+ */
+function playerKeys(scene) {
+  if (!playersDisarm()) return "";
+  const mine = (canvas.tokens?.controlled ?? []).map((tk) => tk.document ?? tk).filter((d) => d?.actor?.isOwner);
+  if (!mine.length) return "";
+  const out = [];
+  for (const { region, behavior } of sceneTraps(scene)) {
+    if (behavior.disabled) continue;
+    const token = mine.find((d) => playerKnows(region, d.actor.id) && nearTrap(d, region));
+    if (!token) continue;
+    const b = regionBounds(region);
+    const tip = esc(t("Hud.playerDisarm", { name: behavior.name || region.name, skill: skillLabel(behavior.system.disarmSkill) }));
+    const ids = `data-region="${region.id}" data-behavior="${behavior.id}" data-token="${token.id}"`;
+    out.push(`<div class="st-map-trap" style="left:${b.x + b.width}px;top:${b.y}px">${btn("playerDisarm", "is-disarm", ids, tip, "fa-screwdriver-wrench")}</div>`);
+  }
+  return out.join("");
+}
+
 /** Перерисовать кнопки текущей сцены. */
 export function refreshHud() {
   if (dragging) return void (dragging.stale = true);
+  // У игрока — только его ключи у ловушек, которые он может обезвредить сам.
+  if (!game.user?.isGM) {
+    const el = canvas?.ready && canvas.scene ? container() : null;
+    if (!el) return;
+    el.innerHTML = playerKeys(canvas.scene);
+    syncHudZoom();
+    return;
+  }
   // В «Регионах» у области свои ручки (поворот у правого верхнего угла, размер) — не закрываем их.
   const on = mapButtonsOn() && canvas?.ready && canvas.scene && !canvas.regions?.active;
   if (!on) {
@@ -214,7 +245,8 @@ function onPointerDown(event) {
 
 async function onClick(event) {
   const button = event.target.closest(".st-map-btn");
-  if (!button || !game.user.isGM) return;
+  if (!button) return;
+  if (!game.user.isGM) return onPlayerClick(event, button);
   event.preventDefault();
   event.stopPropagation();
   const act = button.dataset.act;
@@ -227,6 +259,11 @@ async function onClick(event) {
   if (act === "disarm") return disarm(button, region, behavior);
   if (act === "fire") return fire(button, behavior);
   if (act === "config") return TrapEditor.openPlaced(region, behavior);
+  if (act === "rotate") {
+    return busy(button, async () => {
+      if (!(await rotateTrap90(region))) ui.notifications.warn(t("Notify.rotateShape", { name: behavior.name || region.name }));
+    });
+  }
   if (act === "addTrigger") return busy(button, () => addTriggerNotified(region, behavior));
   return busy(button, () => setRevealed(region, behavior, !isRevealed(region)));
 }
@@ -259,5 +296,17 @@ function fire(button, behavior) {
 function disarm(button, region, behavior) {
   const [token] = (canvas.tokens?.controlled ?? []).map((tk) => tk.document ?? tk).filter((d) => d?.actor);
   if (!token) return ui.notifications.warn(t("Notify.selectToken"));
-  return busy(button, () => attemptDisarm(region, behavior, token));
+  return busy(button, () => requestDisarm(region, behavior, token));
+}
+
+/** Игрок жмёт свой ключ: бросок с окном dnd5e, итог — ведущему. */
+function onPlayerClick(event, button) {
+  event.preventDefault();
+  event.stopPropagation();
+  if (button.dataset.act !== "playerDisarm") return;
+  const region = canvas.scene?.regions.get(button.dataset.region);
+  const behavior = region?.behaviors.get(button.dataset.behavior);
+  const token = canvas.scene?.tokens.get(button.dataset.token);
+  if (!region || !behavior || !token) return;
+  return busy(button, () => playerDisarm(region, behavior, token));
 }

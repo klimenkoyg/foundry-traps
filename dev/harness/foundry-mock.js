@@ -100,7 +100,8 @@
       statuses,
       get hasPlayerOwner() { return owners.length > 0; },
       system: {
-        skills: { prc: { passive: prc } },
+        // Пассивный Анализ — на 2 ниже Внимательности: так видно, каким навыком заметили.
+        skills: { prc: { passive: prc }, inv: { passive: prc - 2 } },
         attributes: { ac: { value: ac }, hp: { value: hp, max: hp, temp: 0 } },
         abilities: { str: { mod: 1 }, dex: { mod: dex, save: { value: dex } }, con: { mod: con, save: { value: con } }, int: { mod: 0 }, wis: { mod: 1 }, cha: { mod: 0 } },
       },
@@ -175,7 +176,7 @@
     get tokens() { return collection(this._tokens); },
     async createEmbeddedDocuments(type, list) {
       if (type !== "Region") throw new Error(`стенд: ${type} не поддерживается`);
-      const made = list.map((data) => makeRegion(data));
+      const made = list.map((data) => makeRegion(data)).filter((r, i) => Hooks.call("preCreateRegion", r, list[i], {}, game.user.id) !== false);
       scene._regions.push(...made);
       for (const r of made) Hooks.callAll("createRegion", r);
       changed();
@@ -246,7 +247,10 @@
       getFlag: (ns, key) => region.flags?.[ns]?.[key],
       _behaviors: [],
       get behaviors() { return collection(region._behaviors); },
+      // Как в Foundry: перед изменением модули могут его поправить или отменить.
+      updateSource(change) { applyUpdate(region, change); },
       async update(change) {
+        if (Hooks.call("preUpdateRegion", region, change, {}, game.user.id) === false) return region;
         applyUpdate(region, change);
         Hooks.callAll("updateRegion", region, change);
         changed();
@@ -430,6 +434,8 @@
       },
     },
     messages: { get: (id) => messages.get(id) ?? null },
+    // Одна сцена — как game.scenes в Foundry.
+    scenes: { get: (id) => (id === scene.id ? scene : null), get active() { return scene; } },
     modules: { get: (id) => (id === MODULE ? (game._module ??= { id, active: true, version: manifest.version, url: manifest.url }) : null) },
     i18n: {
       lang: params.get("lang") ?? "ru",

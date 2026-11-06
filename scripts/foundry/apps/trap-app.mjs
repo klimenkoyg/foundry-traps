@@ -2,10 +2,9 @@
 
 import { rectCells } from "../../core/geometry.mjs";
 import { DAMAGE_MODES, SAVE_ROLLS } from "../../core/resolve.mjs";
-import { DAMAGE_TYPES, DETECT_MODES, SEVERITIES, TIERS, filterTraps, scaleTrap } from "../../core/trap.mjs";
+import { DAMAGE_TYPES, DETECT_MODES, DISARM_ROLLS, PLAYER_DISARM, SEVERITIES, TIERS, filterTraps, scaleTrap } from "../../core/trap.mjs";
 import {
   addActivators,
-  attemptDisarm,
   noticedBy,
   saveToLibrary,
   searchWith,
@@ -16,6 +15,7 @@ import {
   triggerNow,
 } from "../actions.mjs";
 import { addTriggerNotified } from "../activators.mjs";
+import { requestDisarm } from "../disarm.mjs";
 import { DRAG_TYPE, IDEAS_URL, SETTINGS, THEME, tpl } from "../constants.mjs";
 import { damageLabel } from "../dnd5e.mjs";
 import { t } from "../i18n.mjs";
@@ -182,6 +182,8 @@ export class TrapApp extends HandlebarsApplicationMixin(ApplicationV2) {
         ["detectMode", DETECT_MODES],
         ["saveRolls", SAVE_ROLLS],
         ["damageMode", DAMAGE_MODES],
+        ["disarmRolls", DISARM_ROLLS],
+        ["playerDisarm", PLAYER_DISARM],
       ].map(([key, values]) => ({
         key,
         label: t(`App.${key}Label`),
@@ -310,7 +312,7 @@ export class TrapApp extends HandlebarsApplicationMixin(ApplicationV2) {
     const [token] = controlledTokens();
     if (!found) return;
     if (!token) return ui.notifications.warn(t("Notify.selectToken"));
-    await attemptDisarm(found.region, found.behavior, token);
+    await requestDisarm(found.region, found.behavior, token);
   }
 
   /** Ловушку со сцены — в «Мои ловушки»: спросить название; поставленную из своей — обновить или новой. */

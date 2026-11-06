@@ -3,8 +3,9 @@
    - «сообщить только игроку» и «на карте» — в сообщении ведущему (режим «сообщить ведущему»).
    Игроки этих кнопок не видят — их убирает собственный клиент игрока при показе сообщения. */
 
-import { noticedBy, setRevealed, tellPlayer } from "./actions.mjs";
+import { noticedBy, setRevealed, tellPlayer, toldTo } from "./actions.mjs";
 import { BEHAVIOR_TYPE, MODULE_ID, THEME_ATTR } from "./constants.mjs";
+import { skillLabel } from "./dnd5e.mjs";
 import { esc, t } from "./i18n.mjs";
 import { isRevealed, ownerIds, regionBounds } from "./scene.mjs";
 
@@ -25,7 +26,8 @@ export const visButton = (region) => `<button type="button" class="st-note-btn" 
  */
 export function noticeCard({ region, behavior, token, how }) {
   const text = t("Chat.noticed", { name: `<b>${esc(token.name)}</b>`, trap: esc(behavior.name) });
-  const check = how ? t(how.kind === "search" ? "Chat.howSearch" : "Chat.howPassive", { value: how.value, dc: how.dc }) : "";
+  const skill = skillLabel(how?.skill || "prc");
+  const check = how ? t(how.kind === "search" ? "Chat.howSearch" : "Chat.howPassive", { skill, value: how.value, dc: how.dc }) : "";
   const pan = esc(t("Chat.pan"));
   return `<div ${THEME_ATTR} class="ssl-traps-note is-notice">
   <p><i class="fa-solid fa-eye" inert></i> ${text}</p>
@@ -46,10 +48,6 @@ function regionOf(el) {
 
 const behaviorOf = (region) => region?.behaviors.find((b) => b.type === BEHAVIOR_TYPE) ?? null;
 const tokenOf = (el, region) => region?.parent?.tokens?.get?.(el.dataset.token) ?? null;
-const toldTo = (region) => {
-  const list = region.getFlag?.(MODULE_ID, "toldTo");
-  return Array.isArray(list) ? list : [];
-};
 
 function sync(el) {
   const region = regionOf(el);

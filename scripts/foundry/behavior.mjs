@@ -8,9 +8,9 @@
 
 import { FX_NAMES } from "../core/fx/presets.mjs";
 import { rectCenter, rectContains } from "../core/geometry.mjs";
-import { MAX_ACTIVATORS, SEVERITIES } from "../core/trap.mjs";
+import { DETECT_SKILLS, MAX_ACTIVATORS, SEVERITIES } from "../core/trap.mjs";
 import { ACTIVATOR_TYPE, BEHAVIOR_TYPE, SETTINGS } from "./constants.mjs";
-import { choices } from "./dnd5e.mjs";
+import { choices, skillLabel } from "./dnd5e.mjs";
 import { t } from "./i18n.mjs";
 import { activatorsOf, regionBounds, trapOfActivator } from "./scene.mjs";
 import { setting } from "./settings.mjs";
@@ -43,6 +43,7 @@ export class TrapBehavior extends RegionBehaviorType {
       stops: new f.BooleanField({ initial: false }),
       detectDC: dc(15),
       detectRange: new f.NumberField({ required: true, nullable: false, integer: true, min: 5, max: 120, initial: 10 }),
+      detectSkill: new f.StringField({ required: true, initial: "prc", choices: () => Object.fromEntries(DETECT_SKILLS.map((k) => [k, skillLabel(k)])) }),
       disarmDC: dc(15),
       disarmSkill: new f.StringField({ required: true, initial: "thief", choices: choices.skills }),
       attackBonus: new f.NumberField({ required: false, nullable: true, integer: true, min: -5, max: 30, initial: null }),

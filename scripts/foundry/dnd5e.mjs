@@ -26,6 +26,9 @@ export function damageLabel(key) {
 
 export function skillLabel(key) {
   if (key === "thief") return t("Skill.thief");
+  // Чем замечают ловушку (Внимательность, Анализ), модуль называет сам, если язык — его: без
+  // перевода dnd5e в русском мире подпись иначе вышла бы по-английски.
+  if ((key === "prc" || key === "inv") && /^(ru|en)/.test(game.i18n?.lang ?? "")) return t(`Skill.${key}`);
   const entry = cfg().skills?.[key];
   return loc(entry?.label ?? entry) || key;
 }
@@ -63,6 +66,9 @@ function conditionKeys() {
 /* ---------- характеристики ---------- */
 
 export const passivePerception = (actor) => Number(actor?.system?.skills?.prc?.passive ?? 10);
+
+/** Пассивное значение навыка: Внимательность, Анализ… (без навыка — 10). */
+export const passiveSkill = (actor, skill = "prc") => Number(actor?.system?.skills?.[skill]?.passive ?? 10);
 
 export const armorClass = (actor) => Number(actor?.system?.attributes?.ac?.value ?? 10);
 
@@ -112,13 +118,17 @@ export async function rollAttack(bonus) {
   return { roll, natural };
 }
 
-/** Проверка обезвреживания или поиска: навык или воровские инструменты. С сообщением в чате. */
-export async function rollCheck(actor, skill, dc) {
+/**
+ * Проверка обезвреживания или поиска: навык или воровские инструменты. С сообщением в чате.
+ * configure — с окном dnd5e (преимущество, бонусы): так бросает сам игрок. → Roll или null (окно закрыли).
+ */
+export async function rollCheck(actor, skill, dc, { configure = false } = {}) {
   try {
     const rolls = skill === "thief"
-      ? await actor.rollToolCheck({ tool: "thief", target: dc }, { configure: false }, { create: true })
-      : await actor.rollSkill({ skill, target: dc }, { configure: false }, { create: true });
+      ? await actor.rollToolCheck({ tool: "thief", target: dc }, { configure }, { create: true })
+      : await actor.rollSkill({ skill, target: dc }, { configure }, { create: true });
     if (rolls?.[0]) return rolls[0];
+    if (configure) return null; // окно закрыли
   } catch (err) {
     console.warn("ssl_traps | проверка dnd5e не удалась, бросаю сам", err);
   }

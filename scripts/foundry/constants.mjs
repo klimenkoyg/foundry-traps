@@ -29,6 +29,8 @@ export const SETTINGS = {
   detectMode: "detectMode",
   mapButtons: "mapButtons",
   updateCheck: "updateCheck",
+  disarmRolls: "disarmRolls",
+  playerDisarm: "playerDisarm",
   updateState: "updateState",
 };
 

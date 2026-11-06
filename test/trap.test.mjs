@@ -162,3 +162,12 @@ test("срабатывание: вручную, от триггера или о�
   assert.equal(system.manual, true);
   assert.equal(fromBehaviorData(system, { id: "x" }).activators, 2);
 });
+
+test("чем заметить: Внимательность по умолчанию, Анализ по выбору, в поведение и обратно", () => {
+  assert.equal(normalizeTrap({}).detectSkill, "prc");
+  assert.equal(normalizeTrap({ detectSkill: "inv" }).detectSkill, "inv");
+  assert.equal(normalizeTrap({ detectSkill: "ath" }).detectSkill, "prc");
+  const system = toBehaviorData({ ...CATALOG[0], detectSkill: "inv" });
+  assert.equal(system.detectSkill, "inv");
+  assert.equal(fromBehaviorData(system, { id: "x" }).detectSkill, "inv");
+});

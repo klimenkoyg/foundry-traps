@@ -37,8 +37,10 @@ https://github.com/klimenkoyg/foundry-traps/releases/latest/download/module.json
 
    Each trap on the map has two columns of buttons (GM only): the eye (reveal to players or hide),
    the wrench (disarm with the selected token), ▶ (set it off now); ✥ (drag the trap — triggers
-   inside it move along), ⚙ (settings) and + (add a trigger). No need to switch to Regions to move
-   traps; that's only for redrawing a free-form shape.
+   inside it move along), ↻ (rotate 90°: width and height swap, triggers inside turn with it),
+   ⚙ (settings) and + (add a trigger). No need to switch to Regions to move traps; that's only for
+   redrawing a free-form shape. Traps and triggers don't rotate to arbitrary angles: a rotation in
+   Regions won't apply.
 2. On the **Library** tab, drag a trap onto the map. It becomes a hidden
    region under the cursor; players don't see it. Click a trap to configure it first.
 3. A player character steps in — they stop on the trap (a long path can't carry them past it; the
@@ -163,7 +165,13 @@ check says “no saving throw” and how much each target takes.
 - **Passive Perception.** A player character notices a trap if their passive Perception meets
   its spot DC, the trap is within its spot range and in line of sight: walls that block
   sight and closed doors get in the way (the “Spot only in line of sight” setting).
-- **Searching.** “Search with selected tokens” — the selected tokens roll Perception.
+- **Spotted with.** In the trap's configuration window, next to the spot DC: **Perception**
+  (default) or **Investigation** — for mechanisms you only notice once you start poking around:
+  a gap under a plate, a thin wire, marks on the floor. The character then notices it with
+  passive Investigation, and the GM's message says so: “Investigation (passive) 13 vs DC 12”.
+- **Searching.** “Search with selected tokens” — the selected tokens roll Perception; if any trap
+  on the scene is spotted with Investigation, they roll Investigation too (for the whole scene,
+  not just nearby traps, so the roll itself doesn't give a trap away).
 - **Spot range.** Each trap has its own range, 10 ft by default, set in the configuration
   window next to the spot DC. It's counted in squares like the Foundry ruler: from the token's
   edge to the trap's edge, using the scene's diagonal rule. 5 ft is the adjacent square, 10 ft is
@@ -181,13 +189,28 @@ check says “no saving throw” and how much each target takes.
   - **Reveal right away.** A marker appears on everyone's map; the player and the GM get a whisper.
 - **Disarming.** Select a token and press the wrench next to the trap — right on the map (under
   the eye of every armed trap) or on the On this scene tab. A skill or thieves' tools check is
-  rolled against the disarm DC; the chat shows the roll vs the DC and what happens next:
+  rolled against the disarm DC. Who rolls is up to the “Disarm” setting (also switchable on the
+  On this scene tab):
+  - **Player rolls** (default). The character's player gets a card with a “Roll Thieves' tools”
+    button and rolls it themselves in the dnd5e dialog, with advantage or disadvantage, just like
+    a saving throw. The GM's copy of the card has “Roll for the player” in case the player is
+    away. The player isn't shown the DC. Characters without a player are rolled by the GM at once.
+  - **GM rolls.** Rolled right away, as before.
+
+  The chat shows the roll vs the DC and what happens next:
   - **meets the DC** — the trap switches off and everyone sees it as disarmed (green check);
   - **fails by less than 5** — nothing happens, the trap stays armed and hidden, try again;
   - **fails by 5 or more** — the trap goes off on whoever was tinkering (an area trap hits everyone
     in the area); the card says “slipped while disarming”.
 
   Whoever tried to disarm a trap knows about it: they show up under “Spotted by” on the scene tab.
+- **Players disarm on their own.** With “Player wrench” on (default), a player gets their own
+  wrench next to a trap on the map — when they know about it and their selected character stands
+  in it or in an adjacent square. “Know” means the trap is revealed to everyone, or the GM told
+  that player with “Tell just this player”. If a character has spotted a trap but the GM hasn't
+  decided yet (“Tell me” mode), there's no wrench — it would give the trap away. The player
+  presses it and rolls; the GM's side checks it's fair (their character, standing next to it, the
+  trap is armed) and resolves it.
 
 ### What players see
 
@@ -232,7 +255,8 @@ Animations (JB2A if Sequencer is installed, or built-in; built-in only; none), v
 traps off (player characters only by default, or everyone), who rolls saves (players or the
 module), when damage is applied (when the GM clicks or automatically), who sees the trigger card,
 passive Perception, spot only in line of sight, when a character spots a trap (tell the GM or
-reveal right away), trap buttons on the map (per GM).
+reveal right away), who rolls disarm checks (the player from a card by default, or the GM right
+away), players disarm spotted traps themselves (on by default), trap buttons on the map (per GM).
 
 **Tell me about new versions** (per GM, on by default): when the GM enters the world (at most once
 an hour) the module asks GitHub whether a new Trap Library is out. If so, the GM gets a small window with what's new and how to update —

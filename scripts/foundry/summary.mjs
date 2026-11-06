@@ -34,7 +34,13 @@ export function stats(trap) {
     .filter(([f]) => f)
     .map(([f, type]) => damagePart(f, type));
   return [
-    { key: "detect", icon: "fa-eye", label: t("Stat.detect"), value: `${t("Stat.dc", { dc: trap.detectDC })} · ${t("Stat.within", { n: trap.detectRange ?? 10 })}` },
+    {
+      key: "detect",
+      icon: "fa-eye",
+      label: t("Stat.detect"),
+      // Анализ — пишем явно; Внимательность — обычный случай, без подписи.
+      value: `${t("Stat.dc", { dc: trap.detectDC })}${trap.detectSkill === "inv" ? ` · ${skillLabel("inv")}` : ""} · ${t("Stat.within", { n: trap.detectRange ?? 10 })}`,
+    },
     { key: "disarm", icon: "fa-screwdriver-wrench", label: t("Stat.disarm"), value: `${t("Stat.dc", { dc: trap.disarmDC })} · ${skillLabel(trap.disarmSkill)}` },
     { key: "check", icon: mode === "attack" ? "fa-crosshairs" : "fa-dice-d20", label: t(mode === "attack" ? "Stat.attack" : "Stat.save"), value: check },
     { key: "damage", icon: "fa-heart-crack", label: t("Stat.damage"), value: parts.join(" + ") || t("Stat.noDamage") },

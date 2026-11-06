@@ -72,7 +72,9 @@
       "none": "No damage"
     },
     "Skill": {
-      "thief": "Thieves’ tools"
+      "thief": "Thieves’ tools",
+      "prc": "Perception",
+      "inv": "Investigation"
     },
     "Fx": {
       "pit": "Pit",
@@ -267,7 +269,17 @@
       "idea": "Suggest an idea",
       "ideaHint": "Opens a form in your browser",
       "addActivator": "Add trigger",
-      "addActivatorHint": "Give the trap a trigger (up to three). It appears in the trap's area; move it on the map with the ✥ handle."
+      "addActivatorHint": "Give the trap a trigger (up to three). It appears in the trap's area; move it on the map with the ✥ handle.",
+      "disarmRollsLabel": "Disarm:",
+      "disarmRolls": {
+        "players": "Player rolls",
+        "gm": "GM rolls"
+      },
+      "playerDisarmLabel": "Player wrench:",
+      "playerDisarm": {
+        "on": "On",
+        "off": "Off"
+      }
     },
     "Hud": {
       "reveal": "“{name}” is hidden from players. Click to reveal.",
@@ -280,7 +292,9 @@
       "config": "Configure “{name}”",
       "addTrigger": "Add a trigger to “{name}” (up to three)",
       "moveTrigger": "Move this trigger of “{name}” — drag",
-      "removeTrigger": "Remove this trigger of “{name}”"
+      "removeTrigger": "Remove this trigger of “{name}”",
+      "rotate": "Rotate “{name}” 90° — width and height swap, triggers inside turn with it",
+      "playerDisarm": "Disarm “{name}” with the selected character: {skill}. Failing by 5 or more sets it off."
     },
     "Stat": {
       "detect": "Spot",
@@ -317,8 +331,8 @@
       "searchNone": "{name} finds no traps nearby.",
       "alarmGm": "The alarm trap “{trap}” went off.",
       "escape": "Escape: {skill}, DC {dc}",
-      "howPassive": "Passive Perception {value} vs DC {dc}",
-      "howSearch": "Search roll {value} vs DC {dc}",
+      "howPassive": "Passive {skill} {value} vs DC {dc}",
+      "howSearch": "{skill} roll {value} vs DC {dc}",
       "hiddenYet": "Players can’t see it yet.",
       "seenByAll": "Players can see it.",
       "tell": "Tell just this player",
@@ -358,7 +372,10 @@
       "damageWait": "damage once everyone has rolled",
       "rollDamage": "Roll damage",
       "rollDamageHint": "Roll damage now without waiting for the remaining saves. It’s one roll for everyone.",
-      "damageRolled": "Damage from “{trap}”:"
+      "damageRolled": "Damage from “{trap}”:",
+      "disarmAsk": "{name} tries to disarm “{trap}”: {skill}.",
+      "disarmRoll": "Roll {skill}",
+      "disarmRollFor": "Roll for the player: {skill}"
     },
     "Notify": {
       "gmOnly": "Only the GM can do this.",
@@ -378,7 +395,10 @@
       "activatorAdded": "“{name}”: trigger added. Move it on the map with the teal ✥ handle.",
       "activatorAddedManual": "“{name}”: trigger added, but the trap only fires manually — untick that in its settings.",
       "activatorFailed": "“{name}”: the trigger couldn't be placed — the trap fires from its own area. If you just updated the module, relaunch the world.",
-      "activatorMax": "“{name}” already has {n} triggers — that's the limit."
+      "activatorMax": "“{name}” already has {n} triggers — that's the limit.",
+      "noRotation": "“{name}”: traps don't rotate to arbitrary angles — the ↻ button next to the trap on the map turns it 90°.",
+      "straightened": "Trap Library straightened {n} rotated traps and triggers in place. To turn a trap 90°, use the ↻ button next to it on the map.",
+      "rotateShape": "“{name}”: only a rectangular region turns 90°."
     },
     "Behavior": {
       "FIELDS": {
@@ -507,6 +527,10 @@
         "activators": {
           "label": "Triggers",
           "hint": "How many separate areas someone has to step on. With none, the trap's own area sets it off."
+        },
+        "detectSkill": {
+          "label": "Spotted with",
+          "hint": "Perception or Investigation — whatever the adventure says. Passive checks and searches use this skill."
         }
       },
       "label": "Trap (Trap Library)"
@@ -568,6 +592,18 @@
       "updateCheck": {
         "name": "Tell me about new versions",
         "hint": "When the GM enters the world (at most once an hour), the module asks GitHub whether a new version of Trap Library is out and shows what's new and how to update. Players see nothing."
+      },
+      "disarmRolls": {
+        "name": "Who rolls disarm checks",
+        "hint": "Player — when the GM clicks the wrench, the character's owner gets a card with a Roll button; the GM's copy has “Roll for the player”. GM — rolled right away. Characters without a player are always rolled by the GM.",
+        "players": "The player rolls from a card",
+        "gm": "The GM rolls right away"
+      },
+      "playerDisarm": {
+        "name": "Players disarm spotted traps themselves",
+        "hint": "A player gets their own wrench next to a trap on the map if they know about it (it's revealed, or the GM told them) and their character stands next to it.",
+        "on": "Players have their own wrench on traps they know about",
+        "off": "Disarming only through the GM's wrench"
       }
     },
     "Device": {

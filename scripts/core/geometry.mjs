@@ -165,3 +165,57 @@ export const snapDelta = (d, gridSize) => Math.round(d / (gridSize || 100)) * (g
 
 /** Растяжка, если триггер вытянут (полоса), иначе плита. */
 export const activatorLook = (rect) => (Math.abs(rect.width - rect.height) > 1 ? "wire" : "plate");
+
+/**
+ * Поворот прямоугольника на 90° по часовой стрелке вокруг точки (на экране y растёт вниз).
+ * Вокруг середины клетки клетки переходят в клетки: четыре поворота возвращают всё на место.
+ */
+export function quarterTurn(rect, pivot) {
+  const turn = (x, y) => ({ x: pivot.x - (y - pivot.y), y: pivot.y + (x - pivot.x) });
+  const a = turn(rect.x, rect.y);
+  const b = turn(rect.x + rect.width, rect.y + rect.height);
+  return { x: Math.min(a.x, b.x), y: Math.min(a.y, b.y), width: rect.height, height: rect.width };
+}
+
+/**
+ * Точка, вокруг которой ловушка поворачивается на 90°. Ширина и высота одной чётности (квадрат,
+ * 2×4, 3×5) — середина области: она остаётся на месте. Разной чётности (коридор 1×4) — середина
+ * средней клетки: только так клетки переходят в клетки.
+ */
+export function turnPivot(rect, gridSize) {
+  const cell = gridSize || 100;
+  const w = Math.max(1, Math.round(rect.width / cell));
+  const h = Math.max(1, Math.round(rect.height / cell));
+  if (w % 2 === h % 2) return { x: rect.x + rect.width / 2, y: rect.y + rect.height / 2 };
+  return { x: rect.x + (Math.floor((w - 1) / 2) + 0.5) * cell, y: rect.y + (Math.floor((h - 1) / 2) + 0.5) * cell };
+}
+
+/**
+ * Повёрнутый прямоугольник области → такой же на том же месте, но без поворота: повёрнутые
+ * ловушки остались с версий, где поворот в «Регионах» ещё не запрещался. На 90° и 270° ширина и
+ * высота меняются местами, и клетки выходят те же; на другой угол — ставим ровно по тому же
+ * центру, стороной туда, куда она ближе. С сеткой — по клеткам (gridSize 0 — без сетки).
+ * Поворот: Foundry 14 — вокруг точки (x, y), сам прямоугольник от неё со сдвигом anchorX/anchorY;
+ * Foundry 13 (без anchorX) — вокруг центра. → { x, y, width, height, swapped }.
+ */
+export function uprightRect(shape, gridSize = 0) {
+  const w = Number(shape.width) || 0;
+  const h = Number(shape.height) || 0;
+  const a = ((((Number(shape.rotation) || 0) % 360) + 360) % 360) * (Math.PI / 180);
+  const cos = Math.cos(a);
+  const sin = Math.sin(a);
+  let cx = shape.x + w / 2;
+  let cy = shape.y + h / 2;
+  if ("anchorX" in shape || "anchorY" in shape) {
+    const dx = (0.5 - (Number(shape.anchorX) || 0)) * w;
+    const dy = (0.5 - (Number(shape.anchorY) || 0)) * h;
+    cx = shape.x + cos * dx - sin * dy;
+    cy = shape.y + sin * dx + cos * dy;
+  }
+  const swapped = Math.abs(sin) > Math.abs(cos);
+  const width = swapped ? h : w;
+  const height = swapped ? w : h;
+  const snap = (v) => (gridSize > 0 ? Math.round(v / gridSize) * gridSize : Math.round(v * 1000) / 1000);
+  return { x: snap(cx - width / 2), y: snap(cy - height / 2), width, height, swapped };
+}
+

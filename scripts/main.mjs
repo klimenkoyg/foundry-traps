@@ -2,6 +2,7 @@
 
 import { checkPassive, placeTrap, recolorActivators, removeActivators } from "./foundry/actions.mjs";
 import { onRenderCard, registerCardSocket } from "./foundry/card.mjs";
+import { onRenderDisarm, registerDisarmSocket } from "./foundry/disarm.mjs";
 import { addSceneControls, refreshSceneControls } from "./foundry/controls.mjs";
 import { onRenderChatMessage, syncChatButtons } from "./foundry/chat.mjs";
 import { TrapApp } from "./foundry/apps/trap-app.mjs";
@@ -14,6 +15,7 @@ import { clearMarkers, refreshMarkers, scheduleMarkers } from "./foundry/markers
 import { t } from "./foundry/i18n.mjs";
 import { getEntry, listEntries } from "./foundry/library.mjs";
 import { sceneTraps } from "./foundry/scene.mjs";
+import { hasTurnedRect, straightenOld, straightenOnCreate, straightShapes, swapSize, trapOf } from "./foundry/straighten.mjs";
 import { registerSettings, setting } from "./foundry/settings.mjs";
 import { fireTrap } from "./foundry/trigger.mjs";
 import { checkForUpdate } from "./foundry/update-check.mjs";
@@ -46,7 +48,10 @@ Hooks.once("init", () => {
 Hooks.once("ready", () => {
   registerFxSocket();
   registerCardSocket();
+  registerDisarmSocket();
   if (game.user.isGM && !isDnd5e()) ui.notifications.warn(t("Notify.notDnd5e"));
+  // Ловушки, повёрнутые в «Регионах» до 0.2.7, — выпрямить на том же месте (один раз).
+  straightenOld().catch((err) => console.warn(`${MODULE_ID} | выпрямить повёрнутые ловушки`, err));
   game.modules.get(MODULE_ID).api = {
     /** Окно ведущего: open("scene") — сразу на вкладке сцены. */
     open: (tab) => TrapApp.open(tab),
@@ -97,6 +102,40 @@ Hooks.on("updateToken", (token, change) => {
   checkPassive(token).catch((err) => console.warn(`${MODULE_ID} | пассивная Внимательность`, err));
 });
 
+// Области модуля: ловушки и их триггеры.
+const OUR_TYPES = new Set([BEHAVIOR_TYPE, ACTIVATOR_TYPE]);
+const isOurs = (doc) => (doc?.behaviors ? [...doc.behaviors] : [doc]).some((b) => OUR_TYPES.has(b?.type));
+
+// Ловушки и триггеры не поворачиваются на произвольный угол: рисунки, «заметить с» и стены
+// считаются по клеткам. Поворот в «Регионах» (ручкой, колесом, в окне области) отбрасываем и
+// подсказываем кнопку ↻ — она разворачивает ловушку на 90°.
+const straight = (shape) => ({ ...shape, rotation: 0 });
+const turned = (shapes) => Array.isArray(shapes) && shapes.some((s) => (Number(s?.rotation) || 0) % 360 !== 0);
+Hooks.on("preUpdateRegion", (region, changes, options) => {
+  if (!isOurs(region) || !turned(changes.shapes)) return;
+  // Повёрнута была и раньше (с прошлых версий, ещё не выпрямлена) — выпрямить на том же месте, а не
+  // снимать поворот вокруг угла: иначе ловушка прыгнула бы в сторону.
+  if (hasTurnedRect(region._source?.shapes)) {
+    const fixed = straightShapes(changes.shapes, region.parent);
+    changes.shapes = fixed.shapes.map(straight);
+    if (fixed.swapped) options.sslTrapsSwap = true;
+    return;
+  }
+  changes.shapes = changes.shapes.map(straight);
+  ui.notifications.info(t("Notify.noRotation", { name: region.name }));
+});
+// Выпрямили ловушку, повёрнутую на 90°, — ширина и высота в её настройке меняются местами.
+Hooks.on("updateRegion", (region, changes, options, userId) => {
+  if (!options?.sslTrapsSwap || userId !== game.user.id) return;
+  const trap = trapOf(region);
+  if (trap) swapSize(trap).catch((err) => console.warn(`${MODULE_ID} | размер ловушки`, err));
+});
+Hooks.on("preCreateRegion", (region, data) => {
+  if (!isOurs(region) || !turned(data.shapes)) return;
+  straightenOnCreate(region, data);
+  if (turned(region._source?.shapes)) region.updateSource({ shapes: region._source.shapes.map(straight) });
+});
+
 // Убрали ловушку — убираем и её триггеры (это делает один клиент: активный ведущий).
 Hooks.on("deleteRegion", (region) => {
   if (!game.user.isActiveGM) return;
@@ -104,8 +143,6 @@ Hooks.on("deleteRegion", (region) => {
 });
 
 // Окно ведущего и метки на карте следят за сценой — только за ловушками и их триггерами.
-const OUR_TYPES = new Set([BEHAVIOR_TYPE, ACTIVATOR_TYPE]);
-const isOurs = (doc) => (doc?.behaviors ? [...doc.behaviors] : [doc]).some((b) => OUR_TYPES.has(b?.type));
 
 // Заметили ловушку — это две-три записи подряд (поведение, кто заметил, показать игрокам): метки,
 // кнопки и сообщения в чате перерисовываем один раз, когда они пришли.
@@ -146,3 +183,8 @@ Hooks.on("activateCanvasLayer", () => scheduleHud());
 Hooks.on("renderChatMessageHTML", onRenderChatMessage);
 // Карточка срабатывания: спасброски игроков и кнопки ведущего «нанести».
 Hooks.on("renderChatMessageHTML", onRenderCard);
+// Просьба обезвредить: кнопка «Бросить» у игрока, «Бросить за игрока» у ведущего.
+Hooks.on("renderChatMessageHTML", onRenderDisarm);
+// Свой ключ у игрока зависит от того, кого он выделил и где стоит его токен.
+Hooks.on("controlToken", () => !game.user.isGM && scheduleHud());
+Hooks.on("updateToken", (token, change) => !game.user.isGM && ("x" in change || "y" in change) && scheduleHud());

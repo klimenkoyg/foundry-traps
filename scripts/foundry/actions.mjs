@@ -1,10 +1,10 @@
 /* Действия ведущего с ловушками: поставить, взвести, показать, обезвредить, искать, сохранить;
    триггеры ловушки — поставить, убрать. */
 
-import { activatorSpots, moveShape, placementRect, rangeCells, rectCells, rectCenter, rectContains } from "../core/geometry.mjs";
+import { activatorSpots, moveShape, placementRect, quarterTurn, rangeCells, rectCells, rectCenter, rectContains, turnPivot } from "../core/geometry.mjs";
 import { addNoticer, fromBehaviorData, knowsTrap, MAX_ACTIVATORS, normalizeTrap, notices, resolveDisarm, toBehaviorData } from "../core/trap.mjs";
 import { ACTIVATOR_COLOR, ACTIVATOR_TYPE, BEHAVIOR_TYPE, MODULE_ID, SETTINGS, SEVERITY_COLOR, THEME_ATTR } from "./constants.mjs";
-import { passivePerception, rollCheck, skillLabel } from "./dnd5e.mjs";
+import { passiveSkill, rollCheck, skillLabel } from "./dnd5e.mjs";
 import { rollMessageId, waitForDice } from "./dice.mjs";
 import { esc, t } from "./i18n.mjs";
 import { getEntry, saveCustom } from "./library.mjs";
@@ -141,11 +141,46 @@ export async function moveRegion(region, dx, dy, { withInside = false } = {}) {
   if (!scene || (!dx && !dy)) return;
   const shifted = (r) => ({ _id: r.id, shapes: r.shapes.map((sh) => moveShape(sh.toObject?.() ?? { ...sh }, dx, dy)) });
   const updates = [shifted(region)];
+  // Точка поворота на 90° едет вместе с ловушкой.
+  const pivot = region.getFlag?.(MODULE_ID, "pivot");
+  if (pivot?.at) {
+    const [x, y, w, h] = pivot.at;
+    updates[0][`flags.${MODULE_ID}.pivot`] = { x: pivot.x + dx, y: pivot.y + dy, at: [x + dx, y + dy, w, h] };
+  }
   if (withInside) {
     const b = regionBounds(region);
     for (const part of activatorsOf(region)) if (rectContains(b, rectCenter(regionBounds(part)))) updates.push(shifted(part));
   }
   await scene.updateEmbeddedDocuments("Region", updates);
+}
+
+/**
+ * Повернуть ловушку на 90° по часовой стрелке (ширина ↔ высота) вместе с триггерами внутри неё.
+ * Поворачиваем вокруг середины средней клетки и запоминаем эту точку: четыре нажатия возвращают
+ * ловушку точно на место. Только для области из одного прямоугольника. → false, если нельзя.
+ */
+export async function rotateTrap90(region) {
+  const scene = region?.parent;
+  const shapes = region?.shapes ?? [];
+  if (!scene || shapes.length !== 1 || shapes[0].type !== "rectangle") return false;
+  const grid = scene.grid.size || 100;
+  const b = regionBounds(region);
+  // Точка поворота живёт, пока область та же, что после прошлого ↻: поменяли её иначе (в настройке,
+  // в «Регионах») — считаем заново.
+  const saved = region.getFlag?.(MODULE_ID, "pivot");
+  const same = (r) => Array.isArray(saved?.at) && saved.at.join() === [r.x, r.y, r.width, r.height].join();
+  const pivot = same(b) ? { x: saved.x, y: saved.y } : turnPivot(b, grid);
+  const next = quarterTurn(b, pivot);
+  const rect = (r) => [{ type: "rectangle", ...r, rotation: 0, hole: false }];
+  const updates = [{ _id: region.id, shapes: rect(next), [`flags.${MODULE_ID}.pivot`]: { ...pivot, at: [next.x, next.y, next.width, next.height] } }];
+  for (const part of activatorsOf(region)) {
+    const pb = regionBounds(part);
+    if (rectContains(b, rectCenter(pb))) updates.push({ _id: part.id, shapes: rect(quarterTurn(pb, pivot)) });
+  }
+  await scene.updateEmbeddedDocuments("Region", updates);
+  const behavior = trapBehaviorOf(region);
+  if (behavior) await behavior.update({ "system.width": behavior.system.height, "system.height": behavior.system.width });
+  return true;
 }
 
 /** Ловушку на сцене поправили в окне настройки: поведение, имя, цвет и размер области, триггеры. */
@@ -192,6 +227,18 @@ export async function setAllRevealed(scene, revealed) {
   }
   return changed;
 }
+
+/** Кому ведущий сообщил о ловушке лично (кнопка «Сообщить только игроку»): id персонажей. */
+export function toldTo(region) {
+  const list = region?.getFlag?.(MODULE_ID, "toldTo");
+  return Array.isArray(list) ? list : [];
+}
+
+/**
+ * Знает ли игрок о ловушке так, что ему можно её показать: её показали всем или ведущий сообщил
+ * этому персонажу. «Заметил, но ведущий ещё не решил» — не считается: иначе кнопка выдала бы ловушку.
+ */
+export const playerKnows = (region, actorId) => isRevealed(region) || toldTo(region).includes(actorId);
 
 /** Кто уже заметил ловушку: [{ id, name }] — флаг области. */
 export function noticedBy(region) {
@@ -254,19 +301,27 @@ function trapsNear(token) {
 export async function checkPassive(token) {
   const actor = token.actor;
   if (!actor?.hasPlayerOwner) return;
-  const passive = passivePerception(actor);
   for (const { region, behavior } of trapsNear(token)) {
+    // Чем замечают эту ловушку: пассивная Внимательность или пассивный Анализ.
+    const skill = behavior.system.detectSkill || "prc";
+    const passive = passiveSkill(actor, skill);
     if (knows(region, token) || !notices(passive, behavior.system.detectDC)) continue;
-    await markDetected(region, behavior, token, { kind: "passive", value: passive, dc: behavior.system.detectDC });
+    await markDetected(region, behavior, token, { kind: "passive", skill, value: passive, dc: behavior.system.detectDC });
   }
 }
 
 /** Поиск ловушек: каждый выделенный токен бросает Внимательность. */
 export async function searchWith(tokens) {
+  // Внимательность — всегда; Анализ — если на сцене есть ловушки, которые им замечают. Бросаем по
+  // сцене, а не по тому, что рядом: иначе сам бросок Анализа выдал бы, что ловушка близко.
+  const skills = ["prc", ...(sceneTraps(tokens[0]?.parent).some(({ behavior }) => behavior.system.detectSkill === "inv") ? ["inv"] : [])];
   for (const token of tokens) {
     if (!token.actor) continue;
-    const roll = await rollCheck(token.actor, "prc");
-    await waitForDice(rollMessageId(roll));
+    const rolls = {};
+    for (const skill of skills) {
+      rolls[skill] = await rollCheck(token.actor, skill);
+      await waitForDice(rollMessageId(rolls[skill]));
+    }
     let found = 0;
     let known = 0;
     for (const { region, behavior } of trapsNear(token)) {
@@ -274,9 +329,12 @@ export async function searchWith(tokens) {
         known++;
         continue;
       }
-      if (roll.total < behavior.system.detectDC) continue;
-      if (await markDetected(region, behavior, token, { kind: "search", value: roll.total, dc: behavior.system.detectDC })) found++;
+      const skill = behavior.system.detectSkill === "inv" && rolls.inv ? "inv" : "prc";
+      const total = rolls[skill].total;
+      if (total < behavior.system.detectDC) continue;
+      if (await markDetected(region, behavior, token, { kind: "search", skill, value: total, dc: behavior.system.detectDC })) found++;
     }
+    const roll = rolls.prc;
     if (found) continue;
     // Ничего нового. В режиме «сообщить ведущему» игрок не должен догадаться по тишине или по ответу,
     // поэтому ответ получает только ведущий.
@@ -301,6 +359,16 @@ export async function attemptDisarm(region, behavior, token) {
   const trap = normalizeTrap(behavior.system.toObject());
   const roll = await rollCheck(token.actor, trap.disarmSkill, trap.disarmDC);
   await waitForDice(rollMessageId(roll));
+  return finishDisarm(region, behavior, token, roll.total);
+}
+
+/**
+ * Итог попытки обезвредить, когда бросок уже есть (бросил ведущий или игрок): сообщение в чат,
+ * а дальше — выключить ловушку, ничего или сработать. Делает активный ведущий. → исход.
+ */
+export async function finishDisarm(region, behavior, token, total) {
+  const trap = normalizeTrap(behavior.system.toObject());
+  const roll = { total: Number(total) || 0 };
   const outcome = resolveDisarm(roll.total, trap.disarmDC);
   const key = { success: "Chat.disarmOk", fail: "Chat.disarmFail", triggered: "Chat.disarmTriggered" }[outcome];
   const icon = { success: "fa-shield-halved", fail: "fa-hand", triggered: "fa-burst" }[outcome];

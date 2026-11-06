@@ -19,6 +19,7 @@ import { deriveDevice, DEVICES, normalizeOptions } from "./devices.mjs";
  * @property {boolean} stops          Останавливает движение наступившего (яма, капкан, сеть)
  * @property {number} detectDC
  * @property {number} detectRange   С какого расстояния её можно заметить, фт (по клеткам, как линейка)
+ * @property {"prc"|"inv"} detectSkill Чем замечают: Внимательность или Анализ (пассивно и при поиске)
  * @property {number} disarmDC
  * @property {string} disarmSkill     Навык dnd5e (ath, arc, slt, inv…) или "thief" — воровские инструменты
  * @property {number|null} attackBonus Ловушка с атакой: бонус к попаданию против КД
@@ -45,6 +46,9 @@ import { deriveDevice, DEVICES, normalizeOptions } from "./devices.mjs";
  */
 
 export const SEVERITIES = ["setback", "dangerous", "deadly"];
+/** Чем замечают ловушку: Внимательность (prc) или Анализ (inv) — как пишут в приключениях. */
+export const DETECT_SKILLS = ["prc", "inv"];
+
 /** Больше триггеров у одной ловушки не ставим. */
 export const MAX_ACTIVATORS = 3;
 export const TIERS = [1, 2, 3, 4];
@@ -84,6 +88,7 @@ const DEFAULTS = {
   stops: false,
   detectDC: 15,
   detectRange: 10,
+  detectSkill: "prc",
   disarmDC: 15,
   disarmSkill: "thief",
   attackBonus: null,
@@ -137,6 +142,7 @@ export function normalizeTrap(raw = {}) {
     stops: Boolean(t.stops),
     detectDC: int(t.detectDC, DEFAULTS.detectDC, 0, 40),
     detectRange: int(t.detectRange, DEFAULTS.detectRange, 5, 120),
+    detectSkill: oneOf(t.detectSkill, DETECT_SKILLS, DEFAULTS.detectSkill),
     disarmDC: int(t.disarmDC, DEFAULTS.disarmDC, 0, 40),
     disarmSkill: str(t.disarmSkill) || DEFAULTS.disarmSkill,
     attackBonus: attack,
@@ -291,6 +297,10 @@ export const notices = (passive, dc) => Number(passive) >= Number(dc);
 
 /** Что делать, когда персонаж заметил ловушку: сообщить ведущему (по умолчанию) или сразу показать игрокам. */
 export const DETECT_MODES = ["gm", "reveal"];
+/** Кто бросает обезвреживание, когда ведущий жмёт ключ: игрок (карточкой) или ведущий сразу. */
+export const DISARM_ROLLS = ["players", "gm"];
+/** Свой ключ у игроков на замеченных ловушках: есть или нет. */
+export const PLAYER_DISARM = ["on", "off"];
 
 /** Знает ли персонаж о ловушке: её показали всем или он сам уже замечал её. */
 export const knowsTrap = ({ revealed = false, noticedBy = [] } = {}, actorId) =>
@@ -315,6 +325,7 @@ export function toBehaviorData(trap, { tier = 1, flavor = "", text = "" } = {}) 
     stops: t.stops,
     detectDC: t.detectDC,
     detectRange: t.detectRange,
+    detectSkill: t.detectSkill,
     disarmDC: t.disarmDC,
     disarmSkill: t.disarmSkill,
     attackBonus: t.attackBonus,
