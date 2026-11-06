@@ -1,8 +1,8 @@
 # Западня · Trap Library
 
-| 🐉 **D&D 5e** | 🧭 [Pathfinder 2e](https://github.com/klimenkoyg/foundry-traps-pf) |
-|:---:|:---:|
-| **Русский** · [English](README.en.md) | [Русский](https://github.com/klimenkoyg/foundry-traps-pf#readme) · [English](https://github.com/klimenkoyg/foundry-traps-pf/blob/main/README.en.md) |
+| 🐉 **D&D 5e** | 🧭 [Pathfinder 2e](https://github.com/klimenkoyg/foundry-traps-pf) | 🎲 [Any system / Любая система](https://github.com/klimenkoyg/foundry-traps-universal) |
+|:---:|:---:|:---:|
+| **Русский** · [English](README.en.md) | [Русский](https://github.com/klimenkoyg/foundry-traps-pf#readme) · [English](https://github.com/klimenkoyg/foundry-traps-pf/blob/main/README.en.md) | [Русский](https://github.com/klimenkoyg/foundry-traps-universal#readme) · [English](https://github.com/klimenkoyg/foundry-traps-universal/blob/main/README.en.md) |
 
 ![Западня · Trap Library — ловушки для D&D 5e в Foundry VTT](docs/promo/banner-ru.png)
 
