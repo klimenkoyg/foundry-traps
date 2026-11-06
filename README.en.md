@@ -1,9 +1,8 @@
 # Западня · Trap Library
 
-[Русский](README.md) · **English**
-
-> 🎲 **Playing Pathfinder 2e?** There’s a separate version with PF2e rules — **[Trap Library PF2e](https://github.com/klimenkoyg/foundry-traps-pf)**:
-> the same traps, animations and sounds, with degrees of success, trap levels, proficiency ranks and damage through the pf2e system.
+| 🐉 **D&D 5e** | 🧭 [Pathfinder 2e](https://github.com/klimenkoyg/foundry-traps-pf) |
+|:---:|:---:|
+| [Русский](README.md) · **English** | [Русский](https://github.com/klimenkoyg/foundry-traps-pf#readme) · [English](https://github.com/klimenkoyg/foundry-traps-pf/blob/main/README.en.md) |
 
 ![Trap Library — traps for D&D 5e in Foundry VTT](docs/promo/banner-en.png)
 
