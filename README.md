@@ -2,6 +2,9 @@
 
 **Русский** · [English](README.en.md)
 
+> 🎲 **Играете в Pathfinder 2e?** Есть отдельная версия по правилам PF2e — **[Западня PF2e](https://github.com/klimenkoyg/foundry-traps-pf)**:
+> те же ловушки, анимации и звуки, но степени успеха, уровень ловушки, ранги и урон через систему pf2e.
+
 ![Западня · Trap Library — ловушки для D&D 5e в Foundry VTT](docs/promo/banner-ru.png)
 
 Библиотека ловушек для D&D 5e в Foundry VTT, с анимациями и звуками. Ведущий перетаскивает ловушку

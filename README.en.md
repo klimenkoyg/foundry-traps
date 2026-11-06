@@ -2,6 +2,9 @@
 
 [Русский](README.md) · **English**
 
+> 🎲 **Playing Pathfinder 2e?** There’s a separate version with PF2e rules — **[Trap Library PF2e](https://github.com/klimenkoyg/foundry-traps-pf)**:
+> the same traps, animations and sounds, with degrees of success, trap levels, proficiency ranks and damage through the pf2e system.
+
 ![Trap Library — traps for D&D 5e in Foundry VTT](docs/promo/banner-en.png)
 
 A trap library for D&D 5e in Foundry VTT, with animations and sounds. The GM drags a trap onto
