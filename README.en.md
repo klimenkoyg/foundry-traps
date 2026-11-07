@@ -24,6 +24,7 @@ https://github.com/klimenkoyg/foundry-traps/releases/latest/download/module.json
   [Sequencer](https://foundryvtt.com/packages/sequencer) with the free [JB2A](https://foundryvtt.com/packages/JB2A_DnD5e):
   gases, runes, the sigil, acid and the collapsing roof then play JB2A effects, while mechanical
   traps keep their own, which show the device itself (you can turn this off in the settings).
+  In a trap's settings you can pick any installed JB2A animation — JB2A Patreon gives more choice.
 
 ## How to use
 
@@ -67,6 +68,13 @@ party level” unticked, it's rescaled to the party level, like the built-in one
 - From the scene: the book button next to the trap. If the trap was placed from one of yours, the
   module offers “Update existing” or “Save as new”.
 - Your traps are stored in the world (a module setting), shared by every GM of that world.
+- **New trap** opens the settings with a starting trap: name it and adjust the numbers. A hazard is
+  made the same way: kind Natural and “When entered and every turn inside”.
+- **Save to file** saves all your traps to one .json file, ⤓ on a card saves one. Use it to move
+  traps to another world or share them with another GM. **Load from file** first shows what will be
+  added, what replaces one of yours (the same file loaded again) and what doesn't fit (a file for
+  Pathfinder 2e). Server pictures travel inside the file and are saved to the world folder
+  `worlds/<world>/ssl-traps/` on load.
 
 ## Configuring a trap
 
@@ -94,6 +102,21 @@ animation, sound and texts. On the right is the card, updating as you go. Place 
 trap on the map (with the button, or by dragging the card), save it to My traps, or, for a trap
 on the scene, save it straight into the region.
 
+The top of the window has the **kind** (mechanical, magical or natural — the library filter uses
+it) and **Visible from the start**: such a trap goes on the map already revealed to players — mold
+on a wall needs no check to be seen. For a trap on the scene this box does the same as the eye on
+the scene tab.
+
+**Picture on the map** replaces the module's drawing with your own picture: a file on the Foundry
+server (Choose…) or an https link. It's drawn where the trap is, once the trap is visible, and as
+a strip on the card. A link to another site only shows if that site allows its pictures on other
+sites; otherwise the map keeps the module's sign. A picture on the Foundry server is more reliable.
+
+**JB2A animation**, with Sequencer and JB2A installed: any installed animation, grouped by topic,
+or “Match the built-in one”, or “None — built-in only”. Arrows, bolts and beams fly across the
+whole area along its long side. Load the trap into a world without that animation and the matched
+or built-in one plays instead.
+
 **Area size** is width and height in squares, 1 to 12 each: a square, a 1×4 corridor for a
 boulder or a blade, a 3×1 strip for a volley. The illustration follows the shape: the tripwire,
 the blade slot, the boulder grooves and the dart holes turn along the corridor, rune signs and gas
@@ -106,6 +129,13 @@ spot range then use the rectangle around it.
 Hidden Pit, Spiked Pit, Bear Trap, Poison Darts, Arrow Volley, Scything Blade, Falling Net,
 Collapsing Roof, Rolling Boulder, Fire Jet, Acid Spray, Poison Gas, Sleep Gas, Lightning Rune,
 Frost Rune, Thunder Plate, Withering Sigil and Alarm Plate. The numbers are for levels 1–4.
+
+**Natural hazards** (the Natural filter in the library): Brown Mold (Con DC 12, 4d10 cold, every
+turn), Yellow Mold (Con DC 15 for everyone in the area, 2d10 poison, poisoned), Green Slime (Dex DC
+10, 1d10 acid, every turn), Razorvine (Dex DC 10, 1d10 slashing, every turn), Quicksand
+(restrained, Athletics DC 12 to escape, DC 15 to spot) and Toxic Fumes (Con DC 13, 2d6 poison,
+poisoned, every turn). Molds, razorvine and fumes are visible from the start. On the map they show
+a hazard sign rather than a device; you can set your own picture.
 
 By default damage is the same at any party level. Untick “Damage ignores party level” in a trap's
 settings and damage grows at 5–10, 11–16 and 17–20 with the SRD 5.1 severity table (×2, ×5 and ×9
@@ -126,6 +156,12 @@ Each trap uses one of three options — in the settings window, under Area and t
    collapsing roof, boulder and gases come with one trigger.
 3. **Manual only.** The trap doesn't fire from footsteps — only from the ▶ button next to it on the
    map (everyone in its area) or Set off on the scene tab.
+
+**Every turn.** The same section has “Fires: When entered / When entered and every turn inside”.
+With the second, in combat the trap also strikes at the start of the turn of everyone standing in
+its area — one card per turn (“starts its turn in the area”). Outside combat it fires only when
+entered. Molds, slime, razorvine and fumes work this way; such a trap has an Every turn badge on
+its card and on the scene tab.
 
 The GM sees triggers in teal — the region and the marker outline — with a dashed line to their
 trap; players see them along with the trap: as a plate, or as a tripwire if the trigger is
