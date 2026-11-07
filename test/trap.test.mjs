@@ -105,7 +105,13 @@ test("фильтр библиотеки", () => {
   const entries = CATALOG.map((raw) => ({ trap: normalizeTrap(raw), name: raw.id, text: "" }));
   assert.ok(filterTraps(entries, { kind: "magical" }).every((e) => e.trap.magical));
   assert.ok(filterTraps(entries, { severity: "deadly" }).every((e) => e.trap.severity === "deadly"));
-  assert.deepEqual(filterTraps(entries, { damageType: "poison" }).map((e) => e.trap.id).sort(), ["poisonDarts", "poisonGas"]);
+  assert.deepEqual(filterTraps(entries, { damageType: "poison" }).map((e) => e.trap.id).sort(), ["poisonDarts", "poisonGas", "toxicFumes", "yellowMold"]);
+  // Вид: механические, магические и природные не пересекаются.
+  const natural = filterTraps(entries, { kind: "natural" }).map((e) => e.trap.id);
+  assert.deepEqual(natural.sort(), ["brownMold", "greenSlime", "quicksand", "razorvine", "toxicFumes", "yellowMold"]);
+  assert.ok(filterTraps(entries, { kind: "mechanical" }).every((e) => !e.trap.magical && !e.trap.natural));
+  const all = ["mechanical", "magical", "natural"].flatMap((kind) => filterTraps(entries, { kind }));
+  assert.equal(all.length, entries.length, "каждая ловушка ровно одного вида");
   assert.deepEqual(filterTraps(entries, { query: "PIT" }).map((e) => e.trap.id), ["pit", "spikedPit"]);
 });
 
@@ -171,3 +177,59 @@ test("чем заметить: Внимательность по умолчан�
   assert.equal(system.detectSkill, "inv");
   assert.equal(fromBehaviorData(system, { id: "x" }).detectSkill, "inv");
 });
+
+test("природная опасность и «каждый ход»: нормализация, в поведение и обратно", async () => {
+  const { blankTrap, trapKind } = await import("../scripts/core/trap.mjs");
+  assert.equal(normalizeTrap({}).natural, false);
+  assert.equal(normalizeTrap({}).everyTurn, false);
+  assert.equal(normalizeTrap({ natural: 1, everyTurn: "yes" }).natural, true);
+  assert.equal(normalizeTrap({ natural: true, everyTurn: true }).everyTurn, true);
+  // Магическая не бывает природной: магия важнее.
+  const both = normalizeTrap({ magical: true, natural: true });
+  assert.equal(both.natural, false);
+  assert.equal(trapKind(both), "magical");
+  assert.equal(trapKind(normalizeTrap({ natural: true })), "natural");
+  assert.equal(trapKind(normalizeTrap({})), "mechanical");
+  const system = toBehaviorData(normalizeTrap({ natural: true, everyTurn: true }));
+  assert.equal(system.natural, true);
+  assert.equal(system.everyTurn, true);
+  const back = fromBehaviorData(system, { id: "x" });
+  assert.equal(normalizeTrap(back).natural, true);
+  assert.equal(normalizeTrap(back).everyTurn, true);
+  // Заготовка для «Новая ловушка».
+  const trap = blankTrap();
+  assert.equal(trapKind(trap), "mechanical");
+  assert.equal(trap.everyTurn, false);
+  assert.ok(isFormula(trap.damage));
+  assert.equal(trapMode(trap), "save");
+});
+
+test("видна сразу, своя картинка, анимация JB2A: нормализация, в поведение и обратно", async () => {
+  const { imagePath, jb2aKey } = await import("../scripts/core/trap.mjs");
+  const t = normalizeTrap({ visible: 1, image: " worlds/w/mold.webp ", jb2a: "jb2a.fog_cloud.02.green" });
+  assert.equal(t.visible, true);
+  assert.equal(t.image, "worlds/w/mold.webp");
+  assert.equal(t.jb2a, "jb2a.fog_cloud.02.green");
+  assert.equal(normalizeTrap({}).visible, false);
+  // Картинка: путь или https; данные внутри, скрипты и разметка — нет.
+  assert.equal(imagePath("https://example.com/a.png"), "https://example.com/a.png");
+  for (const bad of ["data:image/png;base64,AAA", "javascript:alert(1)", "blob:x", 'a"><img', "a\nb", "x".repeat(2001)]) assert.equal(imagePath(bad), "", bad);
+  // JB2A: "" — подобрать, "none" — только своя, иначе запись jb2a.…
+  assert.equal(jb2aKey("none"), "none");
+  assert.equal(jb2aKey("jb2a.explosion.01.orange"), "jb2a.explosion.01.orange");
+  for (const bad of ["fire", "jb2a.", "jb2a.a b", "modules/x.webm"]) assert.equal(jb2aKey(bad), "", bad);
+  const system = toBehaviorData(t);
+  assert.equal(system.visible, true);
+  assert.equal(system.image, "worlds/w/mold.webp");
+  assert.equal(system.jb2a, "jb2a.fog_cloud.02.green");
+  const back = normalizeTrap(fromBehaviorData(system, { id: "x" }));
+  assert.equal(back.visible, true);
+  assert.equal(back.image, "worlds/w/mold.webp");
+  assert.equal(back.jb2a, "jb2a.fog_cloud.02.green");
+  // Природные опасности, которые видно и так, встают показанными.
+  const byId = Object.fromEntries(CATALOG.map((e) => [e.id, normalizeTrap(e)]));
+  assert.equal(byId.brownMold.visible, true);
+  assert.equal(byId.quicksand.visible, false);
+  assert.equal(byId.pit.visible, false);
+});
+

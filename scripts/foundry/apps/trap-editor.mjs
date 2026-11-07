@@ -5,12 +5,15 @@
 import { DEVICES, deviceFields } from "../../core/devices.mjs";
 import { FX_NAMES, SOUND_NAMES } from "../../core/fx/presets.mjs";
 import {
+  blankTrap,
   damageByTier,
   isFormula,
+  KINDS,
   normalizeTrap,
   scaleTrap,
   SEVERITIES,
   TIER_LEVELS,
+  trapKind,
   trapMode,
   unscaleTrap,
   withDevice,
@@ -19,12 +22,12 @@ import {
 import { placeTrap, updatePlaced } from "../actions.mjs";
 import { DRAG_TYPE, MODULE_ID, SETTINGS, THEME, tpl } from "../constants.mjs";
 import { choices, skillLabel } from "../dnd5e.mjs";
-import { previewFx } from "../fx.mjs";
+import { jb2aChoices, previewFx } from "../fx.mjs";
 import { t } from "../i18n.mjs";
 import { askName } from "../dialogs.mjs";
 import { getEntry, saveCustom } from "../library.mjs";
 import { rectCells } from "../../core/geometry.mjs";
-import { activatorsOf, regionBounds } from "../scene.mjs";
+import { activatorsOf, isRevealed, regionBounds } from "../scene.mjs";
 import { setting } from "../settings.mjs";
 import { activationLabel, affectsLabel, fieldChips, stats } from "../summary.mjs";
 
@@ -32,7 +35,10 @@ const { ApplicationV2, HandlebarsApplicationMixin } = foundry.applications.api;
 
 /** Поля, которые правятся в окне, и то, как читать их из формы. */
 const NUMBER_FIELDS = new Set(["detectDC", "detectRange", "disarmDC", "saveDC", "attackBonus", "escapeDC", "width", "height", "activators"]);
-const CHECK_FIELDS = new Set(["magical", "stops", "fixedDamage", "manual"]);
+const CHECK_FIELDS = new Set(["magical", "stops", "fixedDamage", "manual", "visible"]);
+/** Переключатели «да / нет» рядом кнопок: value "true" | "false". */
+const BOOL_SEGS = new Set(["everyTurn"]);
+const KIND_ICONS = { mechanical: "fa-gears", magical: "fa-wand-sparkles", natural: "fa-leaf" };
 const FORMULA_FIELDS = new Set(["damage", "damage2"]);
 
 const label = (name) => t(`Behavior.FIELDS.${name}.label`);
@@ -54,6 +60,8 @@ export class TrapEditor extends HandlebarsApplicationMixin(ApplicationV2) {
       saveCopy: TrapEditor.#onSaveCopy,
       play: TrapEditor.#onPlay,
       reset: TrapEditor.#onReset,
+      pickImage: TrapEditor.#onPickImage,
+      clearImage: TrapEditor.#onClearImage,
     },
   };
 
@@ -67,6 +75,16 @@ export class TrapEditor extends HandlebarsApplicationMixin(ApplicationV2) {
     const entry = getEntry(id);
     if (!entry) return null;
     return TrapEditor.#show(`ssl-traps-editor-${id}`, () => new TrapEditor({ id: `ssl-traps-editor-${id}`, source: { kind: "library", entry } }));
+  }
+
+  /**
+   * С нуля: заготовка спрятанной ловушки — назвать и поправить. Опасность делается из неё же:
+   * вид «Природная» и «каждый ход внутри». Окно одно: второе нажатие поднимает уже открытое.
+   */
+  static openNew() {
+    const id = "ssl-traps-editor-new";
+    const entry = { id: "", trap: blankTrap(), name: t("App.newTrap"), text: "", flavor: "", custom: false };
+    return TrapEditor.#show(id, () => new TrapEditor({ id, source: { kind: "library", entry } }));
   }
 
   /** Ловушка на сцене. */
@@ -108,6 +126,8 @@ export class TrapEditor extends HandlebarsApplicationMixin(ApplicationV2) {
         ...cellsOf(src.region),
         // Сколько триггеров на самом деле стоит на сцене — их ведущий мог добавить и на карте.
         activators: activatorsOf(src.region).length,
+        // Видна ли сейчас: её могли показать или спрятать глазом на вкладке сцены.
+        visible: isRevealed(src.region),
       });
     } else {
       const { entry } = src;
@@ -157,6 +177,8 @@ export class TrapEditor extends HandlebarsApplicationMixin(ApplicationV2) {
       icon: d.icon,
       severity: d.severity,
       magical: d.magical,
+      visible: d.visible,
+      kinds: KINDS.map((k) => ({ value: k, label: t(`KindTag.${k}`), icon: KIND_ICONS[k], checked: trapKind(d) === k })),
       mode: trapMode(d),
       severities: SEVERITIES.map((s) => ({ value: s, label: t(`Severity.${s}`), checked: s === d.severity })),
       device: this.#deviceContext(d),
@@ -280,6 +302,16 @@ export class TrapEditor extends HandlebarsApplicationMixin(ApplicationV2) {
       {
         id: "area",
         fields: [
+          {
+            name: "everyTurn",
+            label: t("Editor.everyTurn"),
+            isSeg: true,
+            hint: t("Turn.hint"),
+            options: [
+              { value: "false", label: t("Turn.enter"), icon: "fa-shoe-prints", checked: !d.everyTurn },
+              { value: "true", label: t("Turn.every"), icon: "fa-arrows-rotate", checked: d.everyTurn },
+            ],
+          },
           field("width", "number", { label: t("Editor.width"), min: 1, max: 12 }),
           field("height", "number", { label: t("Editor.height"), min: 1, max: 12 }),
           field("affects", "select", { choices: { trigger: t("Affects.trigger"), area: t("Affects.area") } }),
@@ -297,7 +329,12 @@ export class TrapEditor extends HandlebarsApplicationMixin(ApplicationV2) {
         fields: [
           field("fx", "select", { choices: () => Object.fromEntries(FX_NAMES.map((x) => [x, t(`Fx.${x}`)])) }),
           field("sound", "select", { choices: sounds }),
+          ...this.#jb2aField(d),
         ],
+      },
+      {
+        id: "look",
+        fields: [{ name: "image", label: label("image"), isImage: true, value: d.image, placeholder: t("Image.placeholder"), hint: t("Image.hint") }],
       },
       {
         id: "texts",
@@ -308,6 +345,32 @@ export class TrapEditor extends HandlebarsApplicationMixin(ApplicationV2) {
     const open = this._open ?? new Set(d.device ? ["checks", "damage"] : groups.map((g) => g.id));
     this._open = open;
     return groups.map((g) => ({ ...g, label: t(`Editor.${g.id}`), open: open.has(g.id) }));
+  }
+
+  /**
+   * Анимация JB2A — только если стоят Sequencer и JB2A: выбор из того, что установлено. Своя запись,
+   * которой в этом мире нет (ловушку загрузили из мира с JB2A Patreon), остаётся в списке с пометкой.
+   */
+  #jb2aField(d) {
+    const groups = jb2aChoices();
+    if (!groups) return [];
+    const known = groups.some((g) => g.options.some((o) => o.value === d.jb2a));
+    const options = [
+      { value: "", label: t("Jb2a.auto"), selected: !d.jb2a },
+      { value: "none", label: t("Jb2a.none"), selected: d.jb2a === "none" },
+      ...(d.jb2a && d.jb2a !== "none" && !known ? [{ value: d.jb2a, label: `${d.jb2a} — ${t("Jb2a.missing")}`, selected: true }] : []),
+    ];
+    return [
+      {
+        name: "jb2a",
+        label: label("jb2a"),
+        isSelect: true,
+        wide: true,
+        hint: t("Editor.jb2aHint"),
+        options,
+        groups: groups.map((g) => ({ label: g.label, options: g.options.map((o) => ({ ...o, selected: o.value === d.jb2a })) })),
+      },
+    ];
   }
 
   #previewCard(d) {
@@ -321,6 +384,9 @@ export class TrapEditor extends HandlebarsApplicationMixin(ApplicationV2) {
       severity: d.severity,
       severityLabel: t(`Severity.${d.severity}`),
       magical: d.magical,
+      natural: d.natural,
+      everyTurn: d.everyTurn,
+      image: d.image,
       custom: this.isCustom,
       area: t("Stat.areaValue", { w: d.width, h: d.height }),
       affects: affectsLabel(d),
@@ -383,6 +449,7 @@ export class TrapEditor extends HandlebarsApplicationMixin(ApplicationV2) {
     if (!el.name || el.type === "range") return;
     if (el.name.startsWith("opt.")) return this.#setDevice(el.name.slice(4), el.value);
     if (el.name === "check") return this.#setMode(el.value);
+    if (el.name === "kind") return this.#setKind(el.value);
     this.#setField(el);
     // Числа, вышедшие за пределы, возвращаем в рамки.
     if (NUMBER_FIELDS.has(el.name)) el.value = this.draft[el.name] ?? "";
@@ -392,6 +459,7 @@ export class TrapEditor extends HandlebarsApplicationMixin(ApplicationV2) {
     const name = el.name;
     let value = el.value;
     if (CHECK_FIELDS.has(name)) value = el.checked;
+    else if (BOOL_SEGS.has(name)) value = el.value === "true";
     else if (NUMBER_FIELDS.has(name)) value = el.value === "" ? (name === "attackBonus" ? null : 0) : Number(el.value);
     if (FORMULA_FIELDS.has(name)) el.classList.toggle("is-invalid", Boolean(value.trim()) && !isFormula(value));
     const before = this.draft;
@@ -405,6 +473,13 @@ export class TrapEditor extends HandlebarsApplicationMixin(ApplicationV2) {
     // Пока формула набирается, не стираем её: в черновик попадёт, когда станет верной.
     if (FORMULA_FIELDS.has(name) && value.trim() && !isFormula(value)) this.draft[name] = before[name];
     if (name === "severity") this.#syncHead();
+    if (name === "image") this.#syncImage();
+    this.#refresh();
+  }
+
+  /** Механическая, магическая или природная. */
+  #setKind(kind) {
+    this.draft = normalizeTrap({ ...this.draft, magical: kind === "magical", natural: kind === "natural" });
     this.#refresh();
   }
 
@@ -440,6 +515,11 @@ export class TrapEditor extends HandlebarsApplicationMixin(ApplicationV2) {
       if (JSON.stringify(value) === JSON.stringify(before[name])) continue;
       const input = form.querySelector(`[name="${name}"]`);
       if (!input) continue;
+      if (input.type === "radio") {
+        for (const r of form.querySelectorAll(`[name="${name}"]`)) r.checked = r.value === String(value);
+        flash(input.closest(".st-field"));
+        continue;
+      }
       if (input.type === "checkbox") input.checked = Boolean(value);
       else input.value = value ?? "";
       flash(input.closest(".st-field"));
@@ -471,6 +551,48 @@ export class TrapEditor extends HandlebarsApplicationMixin(ApplicationV2) {
         form.querySelector(`[name="opt.${p.key}"]`)?.style.setProperty("--fill", `${p.fill}%`);
       }
     }
+  }
+
+  /** Картинка: миниатюра рядом с полем и кнопка «убрать». */
+  #syncImage() {
+    const form = this.element?.querySelector(".st-ed-form");
+    const thumb = form?.querySelector("[data-image-thumb]");
+    if (!thumb) return;
+    const src = this.draft.image;
+    thumb.replaceChildren();
+    if (src) {
+      const img = document.createElement("img");
+      img.alt = "";
+      img.src = src;
+      thumb.append(img);
+    } else {
+      const i = document.createElement("i");
+      i.className = "fa-solid fa-image";
+      thumb.append(i);
+    }
+    form.querySelector('[data-action="clearImage"]')?.toggleAttribute("hidden", !src);
+    const input = form.querySelector('[name="image"]');
+    if (input && input !== document.activeElement) input.value = src;
+  }
+
+  #setImage(path) {
+    this.draft = normalizeTrap({ ...this.draft, image: path });
+    this.#syncImage();
+    this.#refresh();
+  }
+
+  /** Картинка с сервера Foundry — обычным окном выбора файлов. */
+  static async #onPickImage() {
+    const FP = foundry.applications.apps?.FilePicker?.implementation ?? globalThis.FilePicker;
+    if (!FP) return;
+    const current = /^https?:/i.test(this.draft.image) ? "" : this.draft.image;
+    const picker = new FP({ type: "image", current, callback: (path) => this.#setImage(path) });
+    if (typeof picker.browse === "function") await picker.browse(current);
+    else picker.render(true);
+  }
+
+  static #onClearImage() {
+    this.#setImage("");
   }
 
   #syncHead() {
@@ -555,7 +677,7 @@ export class TrapEditor extends HandlebarsApplicationMixin(ApplicationV2) {
       const b = regionBounds(this.source.region);
       at = { x: b.x + b.width / 2, y: b.y + b.height / 2 };
     }
-    previewFx(scene, { fx: this.draft.fx, sound: this.draft.sound, at: { x: at.x, y: at.y }, area: Math.max(this.draft.width, this.draft.height) * grid, width: this.draft.width * grid, height: this.draft.height * grid });
+    previewFx(scene, { fx: this.draft.fx, jb2a: this.draft.jb2a, sound: this.draft.sound, at: { x: at.x, y: at.y }, area: Math.max(this.draft.width, this.draft.height) * grid, width: this.draft.width * grid, height: this.draft.height * grid });
   }
 
   static #onReset() {
