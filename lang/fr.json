@@ -1,0 +1,927 @@
+{
+  "TYPES": {
+    "RegionBehavior": {
+      "ssl_traps": {
+        "trap": "Piège (Bibliothèque de pièges)",
+        "activator": "Déclencheur de piège (Bibliothèque de pièges)"
+      }
+    }
+  },
+  "TRAPS": {
+    "Title": "Bibliothèque de pièges",
+    "Controls": {
+      "title": "Bibliothèque de pièges",
+      "open": "Ouvrir la bibliothèque de pièges",
+      "group": "Pièges",
+      "library": "Bibliothèque",
+      "mine": "Mes pièges",
+      "scene": "Pièges de cette scène",
+      "mapButtons": "Boutons des pièges sur la carte"
+    },
+    "Keybinding": {
+      "open": "Ouvrir la bibliothèque de pièges"
+    },
+    "Severity": {
+      "setback": "Mineur",
+      "dangerous": "Dangereux",
+      "deadly": "Mortel"
+    },
+    "Kind": {
+      "all": "Tous les types",
+      "mechanical": "Mécanique",
+      "magical": "Magique",
+      "natural": "Naturel"
+    },
+    "Tier": {
+      "label": "Niveau du groupe",
+      "1": "1–4",
+      "2": "5–10",
+      "3": "11–16",
+      "4": "17–20",
+      "hint": "Modifie les dégâts des pièges dont l’option « Dégâts indépendants du niveau du groupe » est décochée (table de dangerosité du SRD). Les DD restent inchangés."
+    },
+    "Affects": {
+      "trigger": "Uniquement la créature qui le déclenche",
+      "area": "Toutes les créatures dans la zone"
+    },
+    "Rearm": {
+      "auto": "Se réarme automatiquement",
+      "once": "Usage unique"
+    },
+    "Activators": {
+      "none": "Aucun — la zone elle-même déclenche le piège",
+      "1": "Un",
+      "2": "Deux",
+      "3": "Trois"
+    },
+    "ActivatorName": "déclencheur",
+    "ActivatorBehavior": {
+      "label": "Déclencheur de piège (Bibliothèque de pièges)",
+      "FIELDS": {
+        "trap": {
+          "label": "Piège",
+          "hint": "Identifiant de la région du piège sur cette scène. Le module le définit lors du placement du piège ou avec « Ajouter un déclencheur »."
+        }
+      }
+    },
+    "Activation": {
+      "manual": "Manuel",
+      "count": "Déclencheurs : {n}"
+    },
+    "OnSave": {
+      "half": "Moitié des dégâts",
+      "none": "Aucun dégât"
+    },
+    "Skill": {
+      "thief": "Outils de voleur",
+      "prc": "Perception",
+      "inv": "Investigation"
+    },
+    "Fx": {
+      "pit": "Fosse",
+      "spikes": "Pieux",
+      "jaws": "Piège à mâchoires",
+      "darts": "Fléchettes",
+      "arrows": "Flèches",
+      "net": "Filet",
+      "rocks": "Éboulement",
+      "boulder": "Rocher",
+      "fire": "Feu",
+      "gas": "Gaz empoisonné",
+      "sleep": "Gaz soporifique",
+      "lightning": "Foudre",
+      "frost": "Givre",
+      "acid": "Acide",
+      "thunder": "Tonnerre",
+      "necrotic": "Nécrotique",
+      "blade": "Lame",
+      "alarm": "Alarme",
+      "burst": "Explosion"
+    },
+    "Sound": {
+      "none": "Aucun son",
+      "click": "Clic",
+      "thud": "Choc sourd",
+      "whoosh": "Sifflement",
+      "hiss": "Sifflement de gaz",
+      "fire": "Feu",
+      "zap": "Décharge électrique",
+      "crack": "Craquement de glace",
+      "boom": "Tonnerre",
+      "slash": "Sifflement de lame",
+      "rumble": "Éboulement",
+      "alarm": "Cloche",
+      "sizzle": "Grésillement d’acide",
+      "snap": "Claquement métallique",
+      "drone": "Bourdonnement",
+      "chime": "Tintement de rune"
+    },
+    "Trap": {
+      "pit": {
+        "name": "Fosse dissimulée",
+        "text": "Un couvercle de planches recouvert de terre cède sous le poids d’une créature. Un léger affaissement du sol trahit sa présence. Un test d’Athlétisme permet de bloquer le couvercle.",
+        "flavor": "Le sol se dérobe — un gouffre noir s’ouvre sous vos pieds !"
+      },
+      "spikedPit": {
+        "name": "Fosse garnie de pieux",
+        "text": "Une fosse dissimulée dont le fond est hérissé de pieux acérés. La chute blesse deux fois : à l’impact et sur les pointes.",
+        "flavor": "Le sol s’effondre — des pieux brillent dans les profondeurs !"
+      },
+      "bearTrap": {
+        "name": "Piège à mâchoires",
+        "text": "Des mâchoires d’acier sont dissimulées sous de la paille ou des feuilles. La créature prise au piège reste immobilisée jusqu’à ce qu’elle soit libérée grâce à l’Athlétisme ou aux outils de voleur.",
+        "flavor": "L’acier claque sous vos pieds — les mâchoires se referment !"
+      },
+      "poisonDarts": {
+        "name": "Fléchettes empoisonnées",
+        "text": "Une dalle de pression projette des fléchettes depuis des tubes cachés dans les murs. De minuscules orifices dans la maçonnerie trahissent le mécanisme ; les tubes peuvent être bouchés.",
+        "flavor": "Des fléchettes jaillissent des murs en sifflant !"
+      },
+      "arrowVolley": {
+        "name": "Volée de flèches",
+        "text": "Un fil tendu déclenche une volée de flèches depuis des meurtrières. Toutes les créatures de la zone essuient les tirs.",
+        "flavor": "Un déclic — une pluie de flèches s’abat depuis les meurtrières !"
+      },
+      "scythingBlade": {
+        "name": "Lame faucheuse",
+        "text": "Une lourde lame surgit d’une fente du plafond et balaie l’espace juste au-dessus du sol. La fente et les entailles sur les murs révèlent le mécanisme.",
+        "flavor": "Une immense lame fend l’air depuis le plafond !"
+      },
+      "fallingNet": {
+        "name": "Filet tombant",
+        "text": "Un filet est suspendu sous le plafond ; un fil tendu le fait tomber. Les créatures prises au piège restent entravées jusqu’à ce qu’elles se libèrent.",
+        "flavor": "Un lourd filet tombe du plafond !"
+      },
+      "collapsingRoof": {
+        "name": "Effondrement du plafond",
+        "text": "Des étais ont été sciés ; un fil tendu provoque l’effondrement du plafond. Des fissures et de la poussière fraîche au sol avertissent du danger.",
+        "flavor": "Le plafond gémit — une pluie de pierres s’abat !"
+      },
+      "rollingBoulder": {
+        "name": "Rocher roulant",
+        "text": "Une dalle de pression libère une énorme boule de pierre qui dévale le couloir avec fracas et renverse toutes les créatures sur son passage.",
+        "flavor": "Un grondement enfle — un énorme rocher dévale le couloir !"
+      },
+      "fireJet": {
+        "name": "Jet de flammes",
+        "text": "Des buses dissimulées dans les murs projettent de l’huile alchimique enflammée. La suie autour des orifices et l’odeur d’huile trahissent le piège.",
+        "flavor": "Des flammes rugissantes jaillissent des murs !"
+      },
+      "acidSpray": {
+        "name": "Projection d’acide",
+        "text": "Un réservoir sous pression asperge d’acide la créature qui marche sur la dalle. Le sol alentour est criblé de marques de corrosion.",
+        "flavor": "Un sifflement — de l’acide vous éclabousse le visage !"
+      },
+      "poisonGas": {
+        "name": "Gaz empoisonné",
+        "text": "Une dalle ouvre des soupapes et la pièce se remplit de gaz caustique. Le MJ peut décider que la porte claque et se ferme.",
+        "flavor": "Une fumée verdâtre s’insinue par les fissures !"
+      },
+      "sleepGas": {
+        "name": "Gaz soporifique",
+        "text": "Un gaz à l’odeur douce endort toutes les créatures de la zone. Une créature endormie se réveille si elle subit des dégâts ou si quelqu’un la secoue.",
+        "flavor": "L’air devient suave et vos paupières s’alourdissent…"
+      },
+      "lightningRune": {
+        "name": "Rune de foudre",
+        "text": "Un glyphe invisible tracé au sol foudroie quiconque marche dessus. Un test d’Arcanes ou le sort dissipation de la magie permet de le neutraliser.",
+        "flavor": "Une rune s’embrase sous vos pieds — la foudre frappe !"
+      },
+      "frostRune": {
+        "name": "Rune de givre",
+        "text": "Un glyphe de froid couvre de givre toutes les créatures proches. Le sol alentour est toujours légèrement plus froid.",
+        "flavor": "La rune s’illumine de bleu et l’air se fige sous le gel !"
+      },
+      "thunderPlate": {
+        "name": "Dalle tonitruante",
+        "text": "Une dalle gravée d’un glyphe répond aux pas par une détonation qui renverse toutes les créatures proches. Le bruit s’entend de très loin.",
+        "flavor": "Un coup de tonnerre ébranle la salle !"
+      },
+      "witheringSigil": {
+        "name": "Sceau de flétrissement",
+        "text": "Un sombre sceau draine la vie de toutes les créatures qui se tiennent dessus et les emplit d’effroi. Il menace même les héros aguerris.",
+        "flavor": "Des ombres jaillissent du sceau et un froid glacial vous mord jusqu’aux os !"
+      },
+      "alarmPlate": {
+        "name": "Dalle d’alarme",
+        "text": "Inoffensive, cette dalle déclenche toutefois une sonnerie retentissante : gardes et monstres sont avertis de la présence d’intrus. Le MJ reçoit une notification.",
+        "flavor": "Quelque part au-dessus, une cloche se met à sonner !"
+      },
+      "brownMold": {
+        "name": "Moisissure brune",
+        "text": "Une excroissance brune et duveteuse sur la pierre absorbe la chaleur des êtres vivants proches. Le feu la fait proliférer ; le froid la détruit.",
+        "flavor": "Un froid mortel émane de la tache sur le mur — votre souffle se change en givre !"
+      },
+      "yellowMold": {
+        "name": "Moisissure jaune",
+        "text": "Des plaques jaunes couvrent le mur. Au contact, elles libèrent un nuage de spores caustiques qui atteint toutes les créatures proches. La lumière du soleil et le feu les détruisent.",
+        "flavor": "La moisissure éclate en un nuage de spores jaunes !"
+      },
+      "greenSlime": {
+        "name": "Vase verte",
+        "text": "Une masse visqueuse tombe du plafond sur les créatures qui passent dessous et ronge la chair, le métal et le bois. Elle inflige des brûlures à chaque tour passé sous elle.",
+        "flavor": "Une masse verte et froide vous tombe dessus — et commence à grésiller !"
+      },
+      "razorvine": {
+        "name": "Liane rasoir",
+        "text": "Un enchevêtrement de lianes aux feuilles tranchantes comme des rasoirs. Chaque tour passé dans les broussailles provoque des coupures. On peut les trancher ou les brûler.",
+        "flavor": "Des feuilles acérées s’enfoncent dans votre peau !"
+      },
+      "quicksand": {
+        "name": "Sables mouvants",
+        "text": "Le sable apparemment ferme cède sous les pieds et aspire les imprudents. Une créature prise au piège est entravée jusqu’à ce qu’elle s’en extraie.",
+        "flavor": "Le sable se dérobe sous vos pieds et vous entraîne vers le fond !"
+      },
+      "toxicFumes": {
+        "name": "Émanations toxiques",
+        "text": "Une brume jaune s’échappe des fissures du sol. Chaque inspiration vous prive un peu plus de vos forces.",
+        "flavor": "Une brume jaune caustique vous brûle la gorge !"
+      }
+    },
+    "App": {
+      "tabLibrary": "Bibliothèque",
+      "tabScene": "Sur cette scène",
+      "search": "Rechercher des pièges",
+      "allSeverities": "Toutes les dangerosités",
+      "allDamage": "Tous les types de dégâts",
+      "dragHint": "Cliquez sur un piège pour le configurer ou faites-le glisser sur la carte pour le placer sous forme de région cachée.",
+      "empty": "Aucun résultat. Essayez une autre recherche ou un autre filtre.",
+      "custom": "Personnalisé",
+      "deleteCustom": "Supprimer de Mes pièges",
+      "sceneEmpty": "Aucun piège sur cette scène. Faites-en glisser un depuis la bibliothèque sur la carte.",
+      "noScene": "Aucune scène ouverte.",
+      "searchSelected": "Rechercher avec les tokens sélectionnés",
+      "searchSelectedHint": "Les tokens sélectionnés effectuent un test de Perception contre les pièges à portée de détection (généralement 3 m) et dans leur ligne de vue.",
+      "pan": "Afficher sur la carte",
+      "configure": "Configurer",
+      "arm": "Réarmer",
+      "disarm": "Désactiver (sans test)",
+      "reveal": "Révéler aux joueurs",
+      "hide": "Cacher aux joueurs",
+      "trigger": "Déclencher",
+      "triggerHint": "Déclenche le piège sur les tokens sélectionnés ou sur toutes les créatures dans la zone si aucun token n’est sélectionné.",
+      "attempt": "Tenter de désamorcer avec le token sélectionné",
+      "save": "Enregistrer dans Mes pièges…",
+      "delete": "Retirer de la scène",
+      "armed": "Armé",
+      "disarmed": "Désactivé",
+      "revealed": "Visible des joueurs",
+      "hidden": "Caché",
+      "detected": "Repéré",
+      "triggered": "Déclenché {n} fois",
+      "confirmDelete": "Retirer le piège « {name} » de la scène ?",
+      "confirmDeleteCustom": "Supprimer votre piège « {name} » de Mes pièges ?",
+      "visibility": "Joueurs :",
+      "revealAll": "Tout révéler",
+      "hideAll": "Tout cacher",
+      "revealAllHint": "Révéler tous les pièges de cette scène aux joueurs",
+      "hideAllHint": "Cacher tous les pièges de cette scène aux joueurs",
+      "detectModeLabel": "Lorsqu’un piège est repéré :",
+      "detectMode": {
+        "reveal": "Le révéler immédiatement",
+        "gm": "M’avertir"
+      },
+      "saveRollsLabel": "Jets de sauvegarde :",
+      "saveRolls": {
+        "players": "Les joueurs lancent les dés",
+        "module": "Le module lance les dés"
+      },
+      "damageModeLabel": "Dégâts :",
+      "damageMode": {
+        "button": "Application par le MJ",
+        "auto": "Automatique"
+      },
+      "tabMine": "Mes pièges",
+      "mineEmptyTitle": "Aucun piège pour le moment",
+      "mineEmpty": "Créez un piège de toutes pièces, personnalisez-en un de la bibliothèque ou importez un fichier partagé par un autre MJ. Un danger naturel fonctionne de la même manière : type « Naturel », déclenchement à chaque tour.",
+      "toLibrary": "Ouvrir la bibliothèque",
+      "mineHint": "Cliquez sur un piège pour le configurer ou faites-le glisser sur la carte. Utilisez le crayon pour le renommer.",
+      "renameCustom": "Renommer",
+      "idea": "Proposer une idée",
+      "ideaHint": "Ouvre un formulaire dans votre navigateur",
+      "addActivator": "Ajouter un déclencheur",
+      "addActivatorHint": "Ajoute un déclencheur au piège (trois au maximum). Il apparaît dans la zone du piège ; déplacez-le sur la carte à l’aide de la poignée ✥.",
+      "disarmRollsLabel": "Désamorçage :",
+      "disarmRolls": {
+        "players": "Le joueur lance les dés",
+        "gm": "Le MJ lance les dés"
+      },
+      "playerDisarmLabel": "Outil de désamorçage des joueurs :",
+      "playerDisarm": {
+        "on": "Activé",
+        "off": "Désactivé"
+      },
+      "newTrap": "Nouveau piège",
+      "exportAll": "Enregistrer dans un fichier",
+      "exportAllHint": "Tous mes pièges dans un seul fichier .json",
+      "exportOne": "Enregistrer ce piège dans un fichier",
+      "importFile": "Importer un fichier",
+      "importHint": "Un fichier .json partagé par un autre MJ"
+    },
+    "Hud": {
+      "reveal": "« {name} » est caché aux joueurs. Cliquez pour le révéler.",
+      "hide": "« {name} » est visible des joueurs. Cliquez pour le cacher.",
+      "noticed": "« {name} » a été repéré par {who}. Les joueurs ne le voient pas encore — cliquez pour le révéler.",
+      "disarm": "Désamorcer « {name} » avec le token sélectionné ({skill}, DD {dc}). Un échec de 5 ou plus déclenche le piège.",
+      "fire": "Déclencher « {name} » maintenant, sur toutes les créatures de sa zone.",
+      "fireManual": "« {name} » se déclenche uniquement manuellement. Cliquez pour l’activer sur toutes les créatures de sa zone.",
+      "move": "Déplacer « {name} » en le faisant glisser. Ses déclencheurs se déplacent avec lui.",
+      "config": "Configurer « {name} »",
+      "addTrigger": "Ajouter un déclencheur à « {name} » (trois au maximum)",
+      "moveTrigger": "Déplacer ce déclencheur de « {name} » en le faisant glisser",
+      "removeTrigger": "Supprimer ce déclencheur de « {name} »",
+      "rotate": "Faire pivoter « {name} » de 90° — largeur et hauteur sont échangées, ainsi que l’orientation de ses déclencheurs",
+      "playerDisarm": "Désamorcer « {name} » avec le personnage sélectionné : {skill}. Un échec de 5 ou plus déclenche le piège."
+    },
+    "Stat": {
+      "detect": "Détection",
+      "disarm": "Désamorçage",
+      "save": "Sauvegarde",
+      "attack": "Attaque",
+      "damage": "Dégâts",
+      "condition": "État",
+      "area": "Zone",
+      "areaValue": "{w} × {h} cases",
+      "auto": "Sans test",
+      "dc": "DD {dc}",
+      "noDamage": "aucun",
+      "escape": "Évasion",
+      "noDamageShort": "aucun dégât",
+      "within": "à {n} pieds ou moins"
+    },
+    "Chat": {
+      "save": "Jet de sauvegarde : {ability}, DD {dc}",
+      "attack": "Attaque : +{bonus} contre la CA",
+      "saveOk": "réussite",
+      "saveFail": "échec",
+      "hit": "touché",
+      "miss": "raté",
+      "took": "dégâts : {n}",
+      "tookNone": "aucun dégât",
+      "half": "moitié",
+      "condition": "désormais {condition}",
+      "noTargets": "Le piège s’est déclenché, mais personne ne se trouve dans sa zone.",
+      "disarmOk": "{name} désamorce « {trap} » ({skill} : {total} contre DD {dc}).",
+      "disarmFail": "{name} ne parvient pas à désamorcer « {trap} » ({skill} : {total} contre DD {dc}). Le piège ne s’est pas déclenché ; une nouvelle tentative est possible.",
+      "disarmTriggered": "{name} commet une erreur ({skill} : {total} contre DD {dc}, échec de 5 ou plus) — « {trap} » se déclenche !",
+      "noticed": "{name} repère un piège : « {trap} ».",
+      "searchNone": "{name} ne trouve aucun piège à proximité.",
+      "alarmGm": "Le piège d’alarme « {trap} » s’est déclenché.",
+      "escape": "Évasion : {skill}, DD {dc}",
+      "howPassive": "{skill} passive : {value} contre DD {dc}",
+      "howSearch": "Test de {skill} : {value} contre DD {dc}",
+      "hiddenYet": "Les joueurs ne le voient pas encore.",
+      "seenByAll": "Les joueurs peuvent le voir.",
+      "tell": "Prévenir uniquement ce joueur",
+      "told": "Joueur prévenu",
+      "pan": "Afficher sur la carte",
+      "searchNoneGm": "{name} cherche des pièges et ne trouve rien (Perception {value}).",
+      "searchNothingNew": "{name} ne découvre rien de nouveau.",
+      "noCheck": "Sans test",
+      "noCheckWhy": "sans jet de sauvegarde",
+      "cause": {
+        "trigger": "marche sur le piège",
+        "area": "se trouve dans la zone",
+        "manual": "est frappé par le piège",
+        "disarm": "commet une erreur en désamorçant le piège",
+        "turn": "commence son tour dans la zone"
+      },
+      "waitSave": "doit effectuer un jet de sauvegarde de {ability}, DD {dc}",
+      "whySave": "sauvegarde de {ability} : {total} contre DD {dc} — {outcome}",
+      "whyAttack": "attaque {total} contre CA {ac} — {outcome}",
+      "nat20": "20 naturel",
+      "nat1": "1 naturel",
+      "halfDamage": "moitié des dégâts",
+      "noDamage": "aucun dégât",
+      "fullDamage": "totalité des dégâts",
+      "waiting": "en attente du jet",
+      "willTake": "subira {n} dégâts",
+      "takes": "subit {n} dégâts",
+      "ofNominal": "sur {n}",
+      "willCondition": "subira l’état {condition}",
+      "applied": "appliqué",
+      "rollSave": "Lancer la sauvegarde de {ability}",
+      "saveFlavor": "Sauvegarde de {ability}, DD {dc}",
+      "apply": "Appliquer",
+      "applyCondition": "Appliquer",
+      "rollAll": "Lancer les jets restants",
+      "applyAll": "Appliquer à tous",
+      "damageLater": "jet effectué après les sauvegardes",
+      "damageWait": "dégâts après tous les jets",
+      "rollDamage": "Lancer les dégâts",
+      "rollDamageHint": "Lancer les dégâts maintenant sans attendre les autres sauvegardes. Un seul jet s’applique à tous.",
+      "damageRolled": "Dégâts du piège « {trap} » :",
+      "disarmAsk": "{name} tente de désamorcer « {trap} » : {skill}.",
+      "disarmRoll": "Lancer {skill}",
+      "disarmRollFor": "Lancer pour le joueur : {skill}"
+    },
+    "Notify": {
+      "gmOnly": "Seul le MJ peut effectuer cette action.",
+      "noGM": "Un MJ doit être connecté : les pièges sont résolus sur son client.",
+      "selectToken": "Sélectionnez le token d’un personnage.",
+      "noScene": "Ouvrez d’abord une scène.",
+      "placed": "Piège « {name} » placé.",
+      "saved": "« {name} » enregistré dans Mes pièges.",
+      "noActor": "Ce token n’est lié à aucun acteur.",
+      "notDnd5e": "La Bibliothèque de pièges est conçue pour D&D 5e : les tests et les dégâts ne fonctionneront pas avec un autre système.",
+      "updated": "Piège « {name} » mis à jour.",
+      "revealedAll": "Pièges révélés aux joueurs : {n}.",
+      "hiddenAll": "Pièges cachés aux joueurs : {n}.",
+      "noticed": "{name} a repéré « {trap} ». Les joueurs ne le voient pas encore ; décidez dans le chat ou avec le bouton sur la carte.",
+      "otherScene": "Ce piège se trouve sur une autre scène.",
+      "renamed": "Renommé : « {name} ».",
+      "activatorAdded": "« {name} » : déclencheur ajouté. Déplacez-le sur la carte avec la poignée turquoise ✥.",
+      "activatorAddedManual": "« {name} » : déclencheur ajouté, mais le piège ne s’active que manuellement. Décochez cette option dans ses paramètres.",
+      "activatorFailed": "« {name} » : impossible de placer le déclencheur ; le piège s’active depuis sa propre zone. Si vous venez de mettre à jour le module, relancez le monde.",
+      "activatorMax": "« {name} » possède déjà {n} déclencheurs : c’est la limite.",
+      "noRotation": "« {name} » : les pièges ne peuvent pas pivoter librement ; le bouton ↻ sur la carte permet une rotation de 90°.",
+      "straightened": "La Bibliothèque de pièges a redressé {n} pièges et déclencheurs sans les déplacer. Pour faire pivoter un piège de 90°, utilisez le bouton ↻ à côté de celui-ci sur la carte.",
+      "rotateShape": "« {name} » : seules les régions rectangulaires peuvent pivoter de 90°.",
+      "exported": "Enregistrés dans un fichier : {n}. Retrouvez « {file} » dans les téléchargements de votre navigateur.",
+      "exportEmpty": "Vous n’avez pas encore créé de pièges : rien à enregistrer.",
+      "imported": "Ajoutés à Mes pièges : {n}.",
+      "importBad": "Ce fichier ne contient aucun piège de la Bibliothèque de pièges.",
+      "importOther": "Les pièges de ce fichier sont prévus pour {system} et ne sont pas compatibles.",
+      "imageUploadFailed": "« {name} » : impossible d’enregistrer l’image du fichier sur le serveur ; le piège a été ajouté sans image.",
+      "imageTooBig": "« {name} » : l’image dépasse {mb} Mo ; elle reste un lien au lieu d’être intégrée au fichier."
+    },
+    "Behavior": {
+      "FIELDS": {
+        "trapId": {
+          "label": "Basé sur",
+          "hint": "Le piège prédéfini ou personnalisé dont celui-ci est issu."
+        },
+        "icon": {
+          "label": "Icône",
+          "hint": "Classe d’icône Font Awesome, par exemple fa-solid fa-fire."
+        },
+        "severity": {
+          "label": "Dangerosité"
+        },
+        "magical": {
+          "label": "Magique"
+        },
+        "affects": {
+          "label": "Cibles affectées"
+        },
+        "detectDC": {
+          "label": "DD de détection",
+          "hint": "Comparé à la Perception passive et aux tests de recherche."
+        },
+        "detectRange": {
+          "label": "Portée de détection (pieds)",
+          "hint": "La Perception passive et la recherche fonctionnent jusqu’à cette distance, calculée en cases comme avec la règle : 10 pieds permettent de laisser une case vide entre les deux."
+        },
+        "disarmDC": {
+          "label": "DD de désamorçage"
+        },
+        "disarmSkill": {
+          "label": "Désamorcer avec"
+        },
+        "attackBonus": {
+          "label": "Bonus d’attaque",
+          "hint": "Si défini, le piège attaque la CA au lieu d’imposer un jet de sauvegarde."
+        },
+        "saveAbility": {
+          "label": "Jet de sauvegarde",
+          "hint": "Vide : aucun jet de sauvegarde."
+        },
+        "saveDC": {
+          "label": "DD de sauvegarde"
+        },
+        "onSave": {
+          "label": "En cas de sauvegarde réussie"
+        },
+        "damage": {
+          "label": "Dégâts",
+          "hint": "Une formule telle que 2d10. Vide : aucun dégât."
+        },
+        "damageType": {
+          "label": "Type de dégâts"
+        },
+        "damage2": {
+          "label": "Dégâts supplémentaires"
+        },
+        "damage2Type": {
+          "label": "Type des dégâts supplémentaires"
+        },
+        "condition": {
+          "label": "État préjudiciable",
+          "hint": "Appliqué en cas d’échec à la sauvegarde ou d’attaque réussie."
+        },
+        "fx": {
+          "label": "Animation"
+        },
+        "sound": {
+          "label": "Son",
+          "hint": "Un son intégré ou le chemin vers votre propre fichier."
+        },
+        "rearm": {
+          "label": "Après déclenchement"
+        },
+        "flavor": {
+          "label": "Texte destiné aux joueurs",
+          "hint": "Affiché aux joueurs dans le chat lorsque le piège se déclenche."
+        },
+        "notes": {
+          "label": "Notes du MJ"
+        },
+        "size": {
+          "label": "Taille (cases)"
+        },
+        "width": {
+          "label": "Largeur (cases)"
+        },
+        "height": {
+          "label": "Hauteur (cases)"
+        },
+        "detected": {
+          "label": "Repéré par les joueurs"
+        },
+        "disarmed": {
+          "label": "Désamorcé par un test"
+        },
+        "triggers": {
+          "label": "Nombre de déclenchements"
+        },
+        "stops": {
+          "label": "Interrompt le déplacement",
+          "hint": "Un token qui pénètre dans la zone s’y arrête (fosse, piège à mâchoires, filet)."
+        },
+        "device": {
+          "label": "Mécanisme"
+        },
+        "options": {
+          "label": "Paramètres du mécanisme"
+        },
+        "fixedDamage": {
+          "label": "Dégâts indépendants du niveau du groupe",
+          "hint": "Décochez cette option pour que les dégâts augmentent avec le niveau du groupe ; le tableau de droite indique leur évolution."
+        },
+        "escapeDC": {
+          "label": "DD d’évasion",
+          "hint": "0 : aucune évasion nécessaire."
+        },
+        "escapeSkill": {
+          "label": "S’échapper avec"
+        },
+        "manual": {
+          "label": "Déclenchement manuel uniquement",
+          "hint": "Ne s’active pas au passage d’une créature ; uniquement avec le bouton ▶ sur la carte ou « Déclencher » dans l’onglet de la scène."
+        },
+        "activators": {
+          "label": "Déclencheurs",
+          "hint": "Nombre de zones distinctes sur lesquelles une créature doit marcher. Sans déclencheur, la zone du piège lui-même provoque son activation."
+        },
+        "detectSkill": {
+          "label": "Détection avec",
+          "hint": "Perception ou Investigation, selon les indications de l’aventure. La détection passive et les recherches utilisent cette compétence."
+        },
+        "natural": {
+          "label": "Danger naturel"
+        },
+        "everyTurn": {
+          "label": "À chaque tour",
+          "hint": "En combat, touche aussi toutes les créatures présentes dans la zone au début de leur tour."
+        },
+        "visible": {
+          "label": "Visible dès le départ",
+          "hint": "Apparaît sur la carte déjà visible des joueurs."
+        },
+        "image": {
+          "label": "Image sur la carte"
+        },
+        "jb2a": {
+          "label": "Animation JB2A"
+        }
+      },
+      "label": "Piège (Bibliothèque de pièges)"
+    },
+    "Settings": {
+      "fxMode": {
+        "name": "Animations",
+        "hint": "Les animations intégrées fonctionnent toujours. Si Sequencer et JB2A sont installés, leurs effets peuvent les remplacer.",
+        "auto": "JB2A si installé, sinon animations intégrées",
+        "builtin": "Animations intégrées uniquement",
+        "off": "Aucune animation"
+      },
+      "volume": {
+        "name": "Volume des pièges",
+        "hint": "0 coupe le son."
+      },
+      "chatMode": {
+        "name": "Qui voit la carte de déclenchement",
+        "hint": "Avec « MJ uniquement », les propriétaires des cibles reçoivent tout de même la carte lorsqu’ils doivent effectuer un jet de sauvegarde.",
+        "public": "Tout le monde",
+        "gm": "MJ uniquement"
+      },
+      "passiveDetect": {
+        "name": "Perception passive",
+        "hint": "Un personnage joueur approchant d’un piège le remarque si sa Perception passive atteint le DD de détection."
+      },
+      "detectSight": {
+        "name": "Détection uniquement en ligne de vue",
+        "hint": "Les murs bloquant la vue et les portes fermées empêchent de repérer un piège, par Perception passive comme par une recherche."
+      },
+      "triggerBy": {
+        "name": "Qui peut déclencher les pièges",
+        "hint": "Les pièges peuvent ne se déclencher que sur les personnages joueurs, afin que le MJ déplace librement les monstres.",
+        "players": "Personnages joueurs uniquement",
+        "all": "Tout le monde"
+      },
+      "mapButtons": {
+        "name": "Boutons des pièges sur la carte",
+        "hint": "Le MJ voit un bouton en forme d’œil sur chaque piège : un clic permet de le révéler aux joueurs ou de le cacher. Chaque MJ possède son propre réglage."
+      },
+      "detectMode": {
+        "name": "Lorsqu’un personnage repère un piège",
+        "hint": "Action effectuée lorsqu’un test de Perception (passif ou actif) réussit. Ce réglage peut aussi être modifié dans l’onglet « Sur cette scène ».",
+        "reveal": "Révéler le piège sur la carte à tous et prévenir le joueur en privé",
+        "gm": "Indiquer au MJ qui l’a repéré ; le révéler manuellement aux joueurs"
+      },
+      "saveRolls": {
+        "name": "Qui effectue les jets de sauvegarde contre les pièges",
+        "hint": "Joueurs : chaque cible dispose d’un bouton de sauvegarde sur la carte, utilisable par le propriétaire du personnage (et par le MJ, qui peut aussi lancer les jets restants). Module : les jets sont effectués immédiatement. Le module lance toujours les dés pour les personnages sans joueur.",
+        "players": "Les joueurs lancent les dés avec le bouton de la carte",
+        "module": "Le module lance immédiatement les dés"
+      },
+      "damageMode": {
+        "name": "Moment d’application des dégâts des pièges",
+        "hint": "Sur clic : le MJ voit sur la carte qui subit quels dégâts et appuie sur « Appliquer ». Immédiatement : dégâts et états sont appliqués dès que le résultat du test est connu.",
+        "button": "Lorsque le MJ clique sur « Appliquer » dans la carte",
+        "auto": "Automatiquement, dès que le résultat est connu"
+      },
+      "updateCheck": {
+        "name": "M’avertir des nouvelles versions",
+        "hint": "Lorsque le MJ entre dans le monde (au maximum une fois par heure), le module vérifie sur GitHub si une nouvelle version de Trap Library est disponible et indique les nouveautés et la procédure de mise à jour. Les joueurs ne voient rien."
+      },
+      "disarmRolls": {
+        "name": "Qui effectue les tests de désamorçage",
+        "hint": "Joueur : lorsque le MJ clique sur l’outil, le propriétaire du personnage reçoit une carte avec un bouton de jet ; la copie du MJ comporte « Lancer pour le joueur ». MJ : le jet est effectué immédiatement. Pour un personnage sans joueur, le MJ effectue toujours le jet.",
+        "players": "Le joueur lance les dés depuis une carte",
+        "gm": "Le MJ lance immédiatement les dés"
+      },
+      "playerDisarm": {
+        "name": "Les joueurs peuvent désamorcer eux-mêmes les pièges repérés",
+        "hint": "Un joueur voit son propre outil de désamorçage à côté d’un piège sur la carte s’il en connaît l’existence (piège révélé ou information transmise par le MJ) et si son personnage se tient à proximité.",
+        "on": "Les joueurs disposent de leur propre outil sur les pièges connus",
+        "off": "Désamorçage uniquement avec l’outil du MJ"
+      }
+    },
+    "Device": {
+      "title": "Mécanisme",
+      "hint": "Décrivez le piège dans l’univers du jeu : dégâts, DD et états s’adaptent à vos choix.",
+      "controlled": "Défini par le mécanisme : change lorsque vous modifiez ses paramètres.",
+      "yes": "Oui",
+      "no": "Non",
+      "chip": {
+        "escape": "évasion : DD {dc}",
+        "attack": "attaque +{bonus}",
+        "save": "sauvegarde DD {dc}",
+        "onSave": "en cas de réussite : {result}",
+        "fixed": "identique à tous les niveaux"
+      },
+      "pit": {
+        "depth": {
+          "label": "Profondeur"
+        },
+        "spikes": {
+          "label": "Au fond",
+          "none": "Rien",
+          "stakes": "Pieux",
+          "poisoned": "Pieux empoisonnés"
+        },
+        "walls": {
+          "label": "Parois",
+          "rough": "Rugueuses",
+          "smooth": "Lisses",
+          "slick": "Glissantes"
+        }
+      },
+      "bearTrap": {
+        "jaws": {
+          "label": "Mâchoires",
+          "small": "Piège de chasse",
+          "bear": "Piège à ours",
+          "giant": "Géantes"
+        },
+        "venom": {
+          "label": "Dents empoisonnées"
+        }
+      },
+      "darts": {
+        "count": {
+          "label": "Fléchettes par cible"
+        },
+        "poison": {
+          "label": "Enduit",
+          "none": "Aucun",
+          "venom": "Venin",
+          "sleep": "Somnifère"
+        }
+      },
+      "arrows": {
+        "count": {
+          "label": "Flèches par cible"
+        },
+        "tips": {
+          "label": "Pointes de flèche",
+          "plain": "Ordinaires",
+          "fire": "Enflammées",
+          "poison": "Empoisonnées"
+        }
+      },
+      "blade": {
+        "height": {
+          "label": "Hauteur de frappe",
+          "low": "Jambes",
+          "waist": "Taille",
+          "high": "Tête"
+        },
+        "speed": {
+          "label": "Vitesse",
+          "slow": "Lente",
+          "fast": "Rapide",
+          "blur": "Fulgurante"
+        }
+      },
+      "net": {
+        "net": {
+          "label": "Filet",
+          "rope": "Corde",
+          "weighted": "Lesté",
+          "hooked": "À crochets",
+          "chain": "Chaînes"
+        }
+      },
+      "roof": {
+        "debris": {
+          "label": "Éléments qui tombent",
+          "gravel": "Gravier",
+          "stones": "Pierres",
+          "slabs": "Dalles"
+        },
+        "buried": {
+          "label": "Ensevelit les victimes"
+        }
+      },
+      "boulder": {
+        "boulder": {
+          "label": "Rocher",
+          "medium": "Moyen",
+          "large": "Grand",
+          "huge": "Énorme"
+        },
+        "knockdown": {
+          "label": "Met à terre"
+        }
+      },
+      "jet": {
+        "pressure": {
+          "label": "Pression",
+          "weak": "Faible",
+          "normal": "Normale",
+          "strong": "Forte"
+        },
+        "nozzles": {
+          "label": "Buses",
+          "one": "Une, au centre",
+          "ring": "En cercle autour de la zone"
+        }
+      },
+      "gas": {
+        "toxin": {
+          "label": "Gaz",
+          "choking": "Suffocant",
+          "sleep": "Soporifique",
+          "smoke": "Fumée âcre",
+          "madness": "Hallucinogène"
+        },
+        "density": {
+          "label": "Densité",
+          "thin": "Brume légère",
+          "dense": "Dense",
+          "thick": "Mur de brouillard"
+        }
+      },
+      "rune": {
+        "power": {
+          "label": "Puissance",
+          "weak": "Faible",
+          "normal": "Normale",
+          "strong": "Forte",
+          "devastating": "Dévastatrice"
+        }
+      },
+      "alarm": {
+        "signal": {
+          "label": "Signal",
+          "bell": "Cloche",
+          "gong": "Gong",
+          "chime": "Carillon magique"
+        }
+      }
+    },
+    "Unit": {
+      "ft": "{n} pieds"
+    },
+    "Editor": {
+      "title": "Configurer : {name}",
+      "open": "Configurer",
+      "name": "Nom",
+      "checks": "Tests",
+      "damage": "Dégâts et effets",
+      "area": "Zone et déclenchement",
+      "effects": "Animation et son",
+      "texts": "Textes",
+      "check": "Résolution par",
+      "checkSave": "Jet de sauvegarde",
+      "checkAttack": "Attaque contre la CA",
+      "checkAuto": "Sans test",
+      "width": "Largeur (cases)",
+      "height": "Hauteur (cases)",
+      "escapeHint": "0 : aucune évasion nécessaire",
+      "tiersTitle": "Dégâts selon le niveau du groupe",
+      "tiersFixed": "Dégâts identiques à tous les niveaux du groupe : {damage}.",
+      "dragHint": "Vous pouvez faire glisser la carte sur la scène.",
+      "playersSee": "Les joueurs verront",
+      "place": "Placer sur la carte",
+      "placeHint": "Place le piège, caché, au centre de la vue.",
+      "apply": "Enregistrer les modifications",
+      "saveNew": "Enregistrer dans Mes pièges…",
+      "saveOver": "Enregistrer",
+      "saveCopy": "Enregistrer comme nouveau piège…",
+      "play": "Prévisualiser l’animation",
+      "reset": "Réinitialiser",
+      "activatorHint": "Les déclencheurs apparaissent dans la zone du piège et touchent toutes les créatures qui s’y trouvent. Déplacez-les sur la carte avec la poignée turquoise ✥.",
+      "manualHint": "Ne s’active pas au passage d’une créature ; uniquement avec le bouton ▶ sur la carte ou « Déclencher » dans l’onglet de la scène.",
+      "kind": "Type",
+      "everyTurn": "Déclenchement",
+      "look": "Image sur la carte",
+      "jb2aHint": "Cette liste apparaît parce que Sequencer et JB2A sont installés. Sans eux, le piège utilise son animation intégrée."
+    },
+    "Name": {
+      "title": "Nommer votre piège",
+      "renameTitle": "Nouveau nom",
+      "label": "Nom",
+      "hint": "Nom du piège dans Mes pièges et sur la carte.",
+      "overHint": "Ce piège a été placé depuis votre piège « {name} ». Voulez-vous le mettre à jour ou l’enregistrer comme nouveau piège ?",
+      "overwrite": "Mettre à jour le piège existant",
+      "asNew": "Enregistrer comme nouveau piège",
+      "save": "Enregistrer",
+      "cancel": "Annuler",
+      "copyOf": "{name} (copie)",
+      "untitled": "Mon piège"
+    },
+    "Update": {
+      "title": "Trap Library : la version {version} est disponible",
+      "lead": "Vous utilisez la version {installed} ; la version {version} est disponible.",
+      "whatsNew": "Nouveautés",
+      "more": "…et {n} autres nouveautés sur la page de publication.",
+      "how": "Pour mettre à jour : sur l’écran de configuration de Foundry, Modules complémentaires → Rechercher les mises à jour → mettre à jour Trap Library, puis relancer le monde.",
+      "page": "Page de publication sur GitHub",
+      "ok": "Compris",
+      "later": "Me le rappeler demain"
+    },
+    "KindTag": {
+      "mechanical": "Mécanique",
+      "magical": "Magique",
+      "natural": "Naturel"
+    },
+    "Turn": {
+      "enter": "À l’entrée dans la zone",
+      "every": "À l’entrée et à chaque tour dans la zone",
+      "hint": "Le déclenchement à chaque tour fonctionne en combat : au début du tour de chaque créature présente dans la zone. Hors combat, le piège ne s’active qu’à l’entrée dans la zone.",
+      "badge": "À chaque tour",
+      "tooltip": "En combat, également au début du tour de toutes les créatures présentes dans la zone"
+    },
+    "Import": {
+      "title": "Importer des pièges",
+      "count": "pièges dans le fichier : {n}",
+      "new": "Nouveau",
+      "replace": "Remplace un piège existant",
+      "replaceHint": "Vous possédez déjà ce piège : la version du fichier le remplacera",
+      "skip": "Incompatible",
+      "skipSystem": "Ce piège est prévu pour {system}",
+      "skipEmpty": "Ce piège n’a pas de nom",
+      "note": "Les pièges cochés apparaîtront dans l’onglet Mes pièges.",
+      "add": "Ajouter les pièges cochés",
+      "cancel": "Annuler"
+    },
+    "Share": {
+      "fileAll": "Bibliothèque de pièges — mes pièges",
+      "fileOne": "Bibliothèque de pièges — {name}"
+    },
+    "Image": {
+      "pick": "Choisir…",
+      "clear": "Supprimer l’image",
+      "placeholder": "Chemin sur le serveur ou lien https://",
+      "hint": "Une fois le piège visible, cette image apparaît à son emplacement sur la carte à la place du dessin du module. Un lien externe ne fonctionne que si le site l’autorise ; une image hébergée sur le serveur Foundry est plus fiable. Les images du serveur sont intégrées au fichier du piège."
+    },
+    "Jb2a": {
+      "auto": "Utiliser l’équivalent de l’animation intégrée",
+      "none": "Aucun — animation intégrée uniquement",
+      "missing": "absent de ce monde"
+    }
+  }
+}
